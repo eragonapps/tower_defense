@@ -6,7 +6,13 @@
 - Quellen und Lizenzen der Assets: [`ASSETS.md`](ASSETS.md)
 
 ## Stand
-Meilenstein 0: Grundgerüst mit Hauptmenü, Sprachumschaltung Deutsch/Englisch, automatischen Tests und Test-APK.
+Meilenstein 1: ein spielbares Level mit Platzhalter-Grafik. 2 Türme, 2 Gegner, 6 Wellen, Gold, Leben, Sieg und Niederlage, Touch-Kamera, Deutsch und Englisch.
+
+## Bedienung
+- Ein Finger ziehen: Karte verschieben. Zwei Finger: zoomen.
+- Leuchtenden Bauplatz antippen: Turm wählen und bauen.
+- Gebauten Turm antippen: Reichweite sehen, verkaufen.
+- Oben rechts: Ansicht drehen, Tempo, Pause, Menü.
 
 ## Test-APK aufs Gerät bringen
 1. Auf GitHub den Reiter **Actions** öffnen und den neuesten grünen Lauf von „CI" wählen.
@@ -31,3 +37,11 @@ Screenshot einer Szene erzeugen (Szene, Ausgabedatei, Sprache):
 ```bash
 godot --resolution 2340x1080 --path . -s tools/screenshot.gd -- res://scenes/main_menu.tscn menu.png de
 ```
+
+Balancing-Bericht (Bots spielen jedes Level):
+
+```bash
+godot --headless -s tools/balance_report.gd
+```
+
+Die Spielwerte stehen in `data/towers.json`, `data/enemies.json` und `data/levels/`.

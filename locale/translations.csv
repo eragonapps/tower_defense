@@ -1,8 +1,31 @@
 keys,de,en
 GAME_SUBTITLE,Wacht der Tiefe,Watch of the Deep
 MENU_PLAY,Spielen,Play
-MENU_PLAY_SOON,Spielen (folgt bald),Play (coming soon)
 MENU_LANGUAGE,Sprache,Language
 MENU_QUIT,Beenden,Quit
 LANG_DE,Deutsch,Deutsch
 LANG_EN,English,English
+LEVEL_01_NAME,Der alte Stollen,The Old Gallery
+TOWER_CROSSBOW,Armbrustschütze,Crossbow Dwarf
+TOWER_SLING,Steinschleuder,Stone Sling
+ENEMY_SKELETON_MINION,Skelett-Scherge,Skeleton Minion
+ENEMY_SKELETON_WARRIOR,Skelett-Krieger,Skeleton Warrior
+HUD_LIVES,Leben: %d,Lives: %d
+HUD_GOLD,Gold: %d,Gold: %d
+HUD_WAVE,Welle %d/%d,Wave %d/%d
+HUD_START_WAVE,Welle starten,Start wave
+HUD_NEXT_WAVE,Nächste Welle (%d),Next wave (%d)
+HUD_PAUSE,Pause,Pause
+HUD_RESUME,Weiter,Resume
+HUD_ROTATE,Drehen,Rotate
+HUD_MENU,Menü,Menu
+HUD_BUILD_TITLE,Turm bauen,Build a tower
+HUD_COST,%d Gold,%d gold
+HUD_SELL,Verkaufen (+%d),Sell (+%d)
+HUD_HINT_BUILD,"Tippe auf einen leuchtenden Bauplatz, um einen Turm zu bauen.",Tap a glowing build site to place a tower.
+END_VICTORY,Sieg!,Victory!
+END_DEFEAT,Niederlage,Defeat
+END_LIVES_LEFT,Verbleibende Leben: %d,Lives left: %d
+END_DEFEAT_TEXT,Das Herz der Mine ist gefallen.,The heart of the mine has fallen.
+END_RETRY,Nochmal,Try again
+END_MENU,Hauptmenü,Main menu

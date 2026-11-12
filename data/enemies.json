@@ -1,0 +1,20 @@
+{
+  "skeleton_minion": {
+    "name_key": "ENEMY_SKELETON_MINION",
+    "hp": 45,
+    "speed": 1.6,
+    "bounty": 4,
+    "lives": 1,
+    "color": "#cfc8b4",
+    "size": 0.75
+  },
+  "skeleton_warrior": {
+    "name_key": "ENEMY_SKELETON_WARRIOR",
+    "hp": 180,
+    "speed": 1.0,
+    "bounty": 10,
+    "lives": 1,
+    "color": "#8f9aa3",
+    "size": 1.0
+  }
+}

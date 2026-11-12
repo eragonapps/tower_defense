@@ -1,6 +1,6 @@
 # Plan: Durnhal: Wacht der Tiefe – 3D Tower Defense für Android
 
-Stand: 12.11.2026 · Status: **Meilenstein 0 in Arbeit**
+Stand: 12.11.2026 · Status: **Meilenstein 0 abgeschlossen, Meilenstein 1 umgesetzt und wartet auf den Gerätetest**
 
 ## 1. Festgelegte Entscheidungen
 
@@ -89,20 +89,20 @@ Kapitel 1 nutzt Untote, weil die Skelett-Modelle schon vorliegen und zum düster
 project.godot
 scenes/        main_menu, level_select, level, hud, towers/*, enemies/*
 scripts/
-  core/        GameManager, WaveManager, Economy, GridMap, Pathfinder, SaveSystem
-  towers/      BaseTower, Zielauswahl, Projektile
-  enemies/     BaseEnemy, Bewegung, Statuseffekte
+  core/        Simulation (sim.gd), Raster und Wegfindung (grid.gd), Daten (game_data.gd), Einstellungen
+  view/        3D-Darstellung des Levels, Kamera
   ui/          HUD, Menüs, Sprachauswahl
-data/          Türme, Gegner, Wellen, Levels als Resource-Dateien
+data/          Türme, Gegner, Wellen, Levels als JSON-Dateien
 assets/        Modelle, Texturen, Töne (je Paket ein Ordner mit Lizenzdatei)
 locale/        Übersetzungen de/en (CSV)
 tests/         automatische Tests
+tools/         Bots, Balancing-Bericht, Screenshot-Werkzeug
 .github/workflows/   CI: Tests und Android-Build
 ```
 
 ### Architektur-Grundsätze
 - **Logik getrennt von Darstellung:** Raster, Wegfindung, Wirtschaft, Schaden und Wellen sind reine Skripte ohne 3D-Abhängigkeit. Dadurch laufen sie in Tests ohne Grafik.
-- **Datengetrieben:** Alle Werte (Schaden, Kosten, Wellen) stehen in Resource-Dateien. Balancing braucht keine Code-Änderung.
+- **Datengetrieben:** Alle Werte (Schaden, Kosten, Wellen, Level-Raster) stehen als JSON-Dateien im Ordner `data/`. Balancing braucht keine Code-Änderung.
 - **Austauschbare Assets:** Jede Turm- und Gegner-Szene bindet ihr Modell über einen einzigen Knoten ein. Ein Tausch ändert nur diese Szene und den Eintrag in `ASSETS.md`.
 - **Feste Zeitschritte:** Die Simulation rechnet in festen Schritten und mit festem Zufalls-Startwert. Ein Lauf ist damit exakt wiederholbar. Das ist die Grundlage für die Tests und für die Vorspul-Taste (2×, 3×).
 - **Wiederverwendung:** Gegner und Projektile werden wiederverwendet statt neu erzeugt (Object Pooling).
@@ -114,10 +114,13 @@ tests/         automatische Tests
 ### M0 – Grundgerüst
 Godot-Projekt, Ordnerstruktur, Testrahmen, CI auf GitHub Actions (Tests und Debug-APK), Sprachumschaltung als Gerüst.
 **Fertig, wenn:** eine leere App auf beiden Geräten startet und die CI grün ist.
+**Stand:** abgeschlossen am 12.11.2026.
 
 ### M1 – Spielbarer Prototyp (Platzhalter-Grafik)
 Ein Level mit Raster, Wegfindung, 1 Gegner, 2 Türme, Gold, Leben, Wellen, Sieg und Niederlage, Touch-Kamera.
 **Fertig, wenn:** das Level auf beiden Geräten von Anfang bis Ende spielbar ist.
+**Stand:** umgesetzt am 12.11.2026, Gerätetest offen. Enthalten sind 2 Gegner (Skelett-Scherge, Skelett-Krieger), 2 Türme (Armbrustschütze, Steinschleuder), 6 Wellen, Verkauf mit 70 % Erstattung, Tempo 1× bis 3× und Pause.
+**Abweichung vom Plan:** Gegner und Geschosse werden noch neu erzeugt statt wiederverwendet. Das wird erst nachgezogen, wenn eine Messung auf dem Gerät es nötig macht.
 
 ### M2 – Stollen und Wirtschaft
 Graben und Zuschütten mit Wegprüfung, Erzadern, Arbeiter, zweite Währung, Upgrades in 3 Stufen.
@@ -144,8 +147,8 @@ Geprüft am 12.11.2026: Godot für Linux lässt sich in der Sitzung herunterlade
 |---|---|---|
 | A. Unit-Tests | einzelne Regeln | Godot ohne Fenster (`--headless`) mit Testrahmen GUT oder gdUnit4 |
 | B. Simulations-Tests | ganze Wellen und Levels ohne Grafik | Simulation im Schnelldurchlauf mit festem Zufalls-Startwert |
-| C. Bot-Durchläufe | Balancing und Spielbarkeit | Skript-Spieler mit festen Strategien spielt jedes Level viele Male |
-| D. Bild-Tests | Darstellung und Oberfläche | Godot mit virtuellem Bildschirm, Screenshots über `tools/screenshot.gd`. In M0 geprüft: funktioniert für die Oberfläche. Für 3D-Szenen wird es in M1 geprüft. Das Bild entsteht mit Software-Rendering, es zeigt also nicht die Leistung und nicht exakt die Darstellung des Vulkan-Renderers. |
+| C. Bot-Durchläufe | Balancing und Spielbarkeit | Skript-Spieler mit festen Strategien spielen jedes Level. Bericht mit `tools/balance_report.gd`. |
+| D. Bild-Tests | Darstellung und Oberfläche | Godot mit virtuellem Bildschirm, Screenshots über `tools/screenshot.gd`. In M0 und M1 geprüft: funktioniert für Oberfläche und 3D-Szenen. Das Bild entsteht mit Software-Rendering, es zeigt also nicht die Leistung und nicht exakt die Darstellung des Vulkan-Renderers. |
 | E. Build-Test | APK entsteht | GitHub Actions baut bei jedem Push |
 
 ### Testszenarien

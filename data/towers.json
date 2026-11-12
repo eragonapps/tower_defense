@@ -1,0 +1,22 @@
+{
+  "crossbow": {
+    "name_key": "TOWER_CROSSBOW",
+    "cost": 50,
+    "range": 2.6,
+    "cooldown": 0.6,
+    "damage": 10,
+    "splash": 0.0,
+    "projectile_speed": 12.0,
+    "color": "#b9782f"
+  },
+  "sling": {
+    "name_key": "TOWER_SLING",
+    "cost": 90,
+    "range": 3.2,
+    "cooldown": 1.8,
+    "damage": 22,
+    "splash": 1.1,
+    "projectile_speed": 7.0,
+    "color": "#7d8a94"
+  }
+}

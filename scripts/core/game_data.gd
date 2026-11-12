@@ -1,0 +1,94 @@
+class_name GameData
+extends RefCounted
+## Lädt und prüft die Spieldaten aus dem Ordner data/.
+## Alle Werte für das Balancing stehen dort, nicht im Code.
+
+const TOWERS_PATH := "res://data/towers.json"
+const ENEMIES_PATH := "res://data/enemies.json"
+const LEVEL_PATH := "res://data/levels/%s.json"
+const LEVEL_ORDER: Array[String] = ["level_01"]
+
+const TOWER_FIELDS := ["name_key", "cost", "range", "cooldown", "damage", "splash", "projectile_speed", "color"]
+const ENEMY_FIELDS := ["name_key", "hp", "speed", "bounty", "lives", "color", "size"]
+
+
+static func load_json(path: String) -> Variant:
+	if not FileAccess.file_exists(path):
+		push_error("Datei fehlt: %s" % path)
+		return null
+	var json := JSON.new()
+	if json.parse(FileAccess.get_file_as_string(path)) != OK:
+		push_error("%s, Zeile %d: %s" % [path, json.get_error_line(), json.get_error_message()])
+		return null
+	return json.data
+
+
+static func load_towers() -> Dictionary:
+	var d: Variant = load_json(TOWERS_PATH)
+	return d if d is Dictionary else {}
+
+
+static func load_enemies() -> Dictionary:
+	var d: Variant = load_json(ENEMIES_PATH)
+	return d if d is Dictionary else {}
+
+
+static func load_level(id: String) -> Dictionary:
+	var d: Variant = load_json(LEVEL_PATH % id)
+	if d is Dictionary:
+		d["id"] = id
+		return d
+	return {}
+
+
+## Liefert eine Liste von Fehlern. Leer bedeutet: die Daten sind in Ordnung.
+static func validate(level: Dictionary, towers: Dictionary, enemies: Dictionary) -> Array[String]:
+	var errors: Array[String] = []
+	if towers.is_empty():
+		errors.append("Keine Türme definiert")
+	if enemies.is_empty():
+		errors.append("Keine Gegner definiert")
+	for id in towers:
+		for f in TOWER_FIELDS:
+			if not towers[id].has(f):
+				errors.append("Turm %s: Feld %s fehlt" % [id, f])
+		if towers[id].get("cooldown", 1.0) <= 0.0:
+			errors.append("Turm %s: cooldown muss größer als 0 sein" % id)
+		if towers[id].get("cost", 1) <= 0:
+			errors.append("Turm %s: cost muss größer als 0 sein" % id)
+	for id in enemies:
+		for f in ENEMY_FIELDS:
+			if not enemies[id].has(f):
+				errors.append("Gegner %s: Feld %s fehlt" % [id, f])
+		if enemies[id].get("speed", 1.0) <= 0.0:
+			errors.append("Gegner %s: speed muss größer als 0 sein" % id)
+		if enemies[id].get("hp", 1.0) <= 0.0:
+			errors.append("Gegner %s: hp muss größer als 0 sein" % id)
+	for f in ["grid", "start_gold", "lives", "waves", "wave_pause", "towers"]:
+		if not level.has(f):
+			errors.append("Level: Feld %s fehlt" % f)
+	if not errors.is_empty():
+		return errors
+	var grid := MineGrid.from_rows(level["grid"])
+	if grid.error != "":
+		errors.append("Level-Raster: %s" % grid.error)
+		return errors
+	if grid.cells_of_type(MineGrid.Cell.BUILD).is_empty():
+		errors.append("Level hat keine Bauplätze")
+	for id in level["towers"]:
+		if not towers.has(id):
+			errors.append("Level erlaubt unbekannten Turm %s" % id)
+	if level["waves"].is_empty():
+		errors.append("Level hat keine Wellen")
+	for w in level["waves"].size():
+		var wave: Dictionary = level["waves"][w]
+		if wave.get("groups", []).is_empty():
+			errors.append("Welle %d hat keine Gruppen" % (w + 1))
+		for g in wave.get("groups", []):
+			if not enemies.has(g.get("enemy", "")):
+				errors.append("Welle %d: unbekannter Gegner %s" % [w + 1, g.get("enemy", "")])
+			if int(g.get("count", 0)) <= 0:
+				errors.append("Welle %d: count muss größer als 0 sein" % (w + 1))
+			if int(g.get("entrance", 0)) >= grid.entrances.size():
+				errors.append("Welle %d: Eingang %d gibt es nicht" % [w + 1, int(g.get("entrance", 0))])
+	return errors

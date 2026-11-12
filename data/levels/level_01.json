@@ -1,0 +1,63 @@
+{
+  "name_key": "LEVEL_01_NAME",
+  "start_gold": 110,
+  "lives": 20,
+  "wave_pause": 8.0,
+  "towers": [
+    "crossbow",
+    "sling"
+  ],
+  "grid": [
+    "##################",
+    "E......::::::::::#",
+    "#:o:o:.o::o::o:::#",
+    "#:::::.........::#",
+    "#:::::::o::o::.o:#",
+    "#::::o:::o:::o.::#",
+    "#:.............::#",
+    "#o.:o:::o:::o::::#",
+    "#:.............H:#",
+    "##################"
+  ],
+  "waves": [
+    {
+      "reward": 20,
+      "groups": [
+        {"enemy": "skeleton_minion", "count": 8, "interval": 1.0}
+      ]
+    },
+    {
+      "reward": 25,
+      "groups": [
+        {"enemy": "skeleton_minion", "count": 14, "interval": 0.7}
+      ]
+    },
+    {
+      "reward": 30,
+      "groups": [
+        {"enemy": "skeleton_warrior", "count": 6, "interval": 1.6},
+        {"enemy": "skeleton_minion", "count": 8, "interval": 0.6, "delay": 4.0}
+      ]
+    },
+    {
+      "reward": 35,
+      "groups": [
+        {"enemy": "skeleton_minion", "count": 24, "interval": 0.4},
+        {"enemy": "skeleton_warrior", "count": 6, "interval": 1.5, "delay": 3.0}
+      ]
+    },
+    {
+      "reward": 40,
+      "groups": [
+        {"enemy": "skeleton_warrior", "count": 16, "interval": 1.0}
+      ]
+    },
+    {
+      "reward": 0,
+      "groups": [
+        {"enemy": "skeleton_warrior", "count": 18, "interval": 0.8},
+        {"enemy": "skeleton_minion", "count": 36, "interval": 0.35, "delay": 2.0}
+      ]
+    }
+  ]
+}

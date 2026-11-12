@@ -1,6 +1,6 @@
 extends SceneTree
 ## Bild-Test-Werkzeug: startet eine Szene, wartet einige Bilder und speichert einen Screenshot.
-## Aufruf: godot --resolution 2340x1080 --path . -s tools/screenshot.gd -- <szene> <ausgabe.png> [sprache]
+## Aufruf: godot --resolution 2340x1080 --path . -s tools/screenshot.gd -- <szene> <ausgabe.png> [sprache] [demo]
 ## Ohne Bildschirm (Server, CI): mit xvfb-run und --rendering-method gl_compatibility starten.
 
 func _initialize() -> void:
@@ -26,6 +26,10 @@ func _run(args: PackedStringArray) -> void:
 			settings.language = args[2]
 		TranslationServer.set_locale(args[2])
 	root.add_child(packed.instantiate())
+	var node := root.get_child(root.get_child_count() - 1)
+	# Optional: die Szene bereitet selbst einen sehenswerten Zustand vor.
+	if args.size() >= 4 and node.has_method("demo"):
+		node.demo(args[3])
 	for i in 10:
 		await process_frame
 	await RenderingServer.frame_post_draw

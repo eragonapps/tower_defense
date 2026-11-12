@@ -57,8 +57,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
-disabled = true
-text = "MENU_PLAY_SOON"
+text = "MENU_PLAY"
 
 [node name="LanguageLabel" type="Label" parent="Center/Box"]
 layout_mode = 2

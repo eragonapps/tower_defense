@@ -66,3 +66,27 @@ func test_keys_used_in_scenes_exist() -> void:
 			checked += 1
 			assert_true(keys.has(m.get_string(1)), "%s nutzt unbekannten Schlüssel %s" % [file, m.get_string(1)])
 	assert_gt(checked, 0, "keine Schlüssel in Szenen gefunden")
+
+
+func test_keys_used_in_scripts_exist() -> void:
+	var keys := {}
+	for row in _read_rows():
+		keys[row[0]] = true
+	var re := RegEx.new()
+	re.compile("\"((?:HUD|END|MENU|LANG|GAME|TOWER|ENEMY|LEVEL)_[A-Z0-9_]+)\"")
+	var checked := 0
+	for dir in ["res://scripts/ui", "res://scripts/view", "res://scripts/core"]:
+		for file in DirAccess.get_files_at(dir):
+			if not file.ends_with(".gd"):
+				continue
+			for m in re.search_all(FileAccess.get_file_as_string(dir + "/" + file)):
+				checked += 1
+				assert_true(keys.has(m.get_string(1)), "%s nutzt unbekannten Schlüssel %s" % [file, m.get_string(1)])
+	assert_gt(checked, 10)
+
+
+func test_placeholders_match_in_both_languages() -> void:
+	var re := RegEx.new()
+	re.compile("%[ds]")
+	for row in _read_rows():
+		assert_eq(re.search_all(row[1]).size(), re.search_all(row[2]).size(), "Platzhalter unterschiedlich: %s" % row[0])
