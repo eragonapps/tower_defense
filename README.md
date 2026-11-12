@@ -26,8 +26,8 @@ godot --headless --import
 godot --headless -s addons/gut/gut_cmdln.gd -gexit
 ```
 
-Screenshot einer Szene erzeugen (Szene, Ausgabedatei, Sprache, Breite, Höhe):
+Screenshot einer Szene erzeugen (Szene, Ausgabedatei, Sprache):
 
 ```bash
-godot --path . -s tools/screenshot.gd -- res://scenes/main_menu.tscn menu.png de 2340 1080
+godot --resolution 2340x1080 --path . -s tools/screenshot.gd -- res://scenes/main_menu.tscn menu.png de
 ```
