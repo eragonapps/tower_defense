@@ -1,6 +1,6 @@
 # Assets: Quellen und Lizenzen
 
-Stand: 12.11.2026 · Status: **Kandidatenliste, noch kein Asset im Repo**
+Stand: 12.11.2026 · Status: **Kandidatenliste, noch kein Asset im Repo.** Drei KayKit-Pakete sind heruntergeladen und geprüft.
 
 Diese Datei nennt für jedes verwendete Asset die Quelle und die Lizenz. Sie wird bei jedem neuen oder getauschten Asset aktualisiert.
 
@@ -9,7 +9,8 @@ Diese Datei nennt für jedes verwendete Asset die Quelle und die Lizenz. Sie wir
 Die drei geplanten Hauptquellen veröffentlichen ihre Pakete unter **CC0 1.0 (Public Domain)**. CC0 erlaubt die Nutzung in kommerziellen Projekten, auch im Play Store. Eine Namensnennung ist nicht nötig, wird aber von den Autoren gern gesehen. Wir nennen sie trotzdem im Spiel unter „Credits".
 
 **Grenzen dieser Prüfung:**
-- Die Prüfung lief über eine Websuche. Die Seiten der Anbieter selbst konnte die Cloud-Sitzung nicht direkt öffnen, weil sie vom Netzwerk der Umgebung gesperrt sind.
+- Für die drei KayKit-Pakete in Abschnitt 3a wurde die Lizenzdatei im Paket selbst gelesen.
+- Für alle anderen Pakete lief die Prüfung nur über eine Websuche. Die Seiten der Anbieter konnte die Cloud-Sitzung nicht direkt öffnen, weil sie vom Netzwerk der Umgebung gesperrt sind.
 - Verbindlich ist die Lizenzdatei, die in jedem heruntergeladenen Paket liegt. Sie wird beim Import geprüft und mit ins Repo gelegt.
 - Das ist keine Rechtsberatung.
 - CC0 gilt je Paket, nicht automatisch für alles von einem Autor. Kostenpflichtige Zusatzpakete und Pakete auf anderen Plattformen können andere Bedingungen haben.
@@ -24,18 +25,30 @@ Die drei geplanten Hauptquellen veröffentlichen ihre Pakete unter **CC0 1.0 (Pu
 
 ## 3. Kandidaten-Pakete
 
-| Zweck | Paket | Quelle | Lizenz | Geprüft |
+### 3a. Aus der Cloud-Sitzung abrufbar und geprüft (12.11.2026)
+
+Diese Pakete liegen offiziell auf GitHub. Sie wurden testweise heruntergeladen, die Lizenzdatei im Paket wurde gelesen. Sie sind noch **nicht im Repo**, weil sie zusammen etwa 345 MB groß sind. Ins Repo kommen ab Meilenstein 3 nur die Dateien, die das Spiel wirklich nutzt.
+
+| Zweck | Paket | Quelle | Stand (Commit) | Lizenz laut `LICENSE.txt` im Paket | Inhalt (geprüft) |
+|---|---|---|---|---|---|
+| Stollen, Wände, Böden, Fackeln, Fässer, Truhen, Münzen | KayKit Dungeon Remastered 1.0 | [GitHub](https://github.com/KayKit-Game-Assets/KayKit-Dungeon-Remastered-1.0) | `b0ca9bd` | CC0, „free to use in personal, educational and commercial projects" | über 200 Modelle |
+| Vorlage für Zwerge, Waffen, Schilde | KayKit Adventurers 1.0 | [GitHub](https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0) | `672074b` | CC0, gleicher Wortlaut | 5 Figuren (Barbar, Ritter, Magier, Schurke, Schurke mit Kapuze), je 76 Animationen, dazu Armbrust, Äxte, Schilde, Krug |
+| Gegner Kapitel 1 | KayKit Skeletons 1.0 | [GitHub](https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0) | `15b62b9` | CC0, gleicher Wortlaut | 4 Skelette (Scherge, Krieger, Schurke, Magier), je 95 Animationen, dazu Waffen |
+
+Alle Figuren haben dasselbe Skelett mit 41 Gelenken. Animationen für Laufen, Angreifen, Schießen, Treffer und Sterben sind enthalten.
+
+### 3b. Aus der Cloud-Sitzung nicht erreichbar
+
+Die Seiten sind vom Netzwerk der Umgebung gesperrt. Die Lizenz ist nur über die Websuche geprüft. Wenn du ein Paket herunterlädst, lege die ZIP-Datei unverändert in einen Ordner `assets_incoming/` im Repo. Auspacken, Lizenzprüfung und Einsortieren übernimmt Claude.
+
+| Zweck | Paket | Download | Lizenz (laut Suche) | Dringlichkeit |
 |---|---|---|---|---|
-| Türme, Projektile, Wegteile | Tower Defense Kit | [Kenney](https://kenney.nl/assets/tower-defense-kit) | CC0 | über Suche |
-| Stollen, Wände, Fackeln, Fässer | KayKit Dungeon Remastered | [KayKit](https://kaylousberg.itch.io/kaykit-dungeon) | CC0 | über Suche, Inhalt der neuen Fassung noch offen |
-| Skelett-Gegner, animiert | KayKit Skeletons | [KayKit](https://kaylousberg.itch.io/kaykit-skeletons) | CC0 | über Suche |
-| Spielfiguren, animiert | KayKit Adventurers | [KayKit](https://kaylousberg.itch.io/kaykit-adventurers) | CC0 | über Suche |
-| Animationen für KayKit-Figuren | KayKit Character Animations | [OpenGameArt](https://opengameart.org/content/kaykit-character-animations) | CC0 | über Suche |
-| Monster (Goblins, Spinnen u. a.) | Ultimate Monsters | [Quaternius](https://sketchfab.com/3d-models/ultimate-monsters-pack-fd72e114d119488da71fe3a16f216c4f) | CC0 | über Suche, genaue Monsterliste noch offen |
-| Schienen, Loren, Stützbalken, Lampen | Free Mine Assets Pack | [OpenGameArt](https://opengameart.org/content/free-mine-assets-pack) | CC0 | über Suche, Stil und Qualität noch offen |
-| Geräusche | Kenney Audio (z. B. RPG Audio, Impact Sounds) | [Kenney](https://kenney.nl/assets) | CC0 | **noch nicht geprüft** |
-| Musik | noch offen | – | – | – |
-| Schrift | noch offen (geplant: Schrift unter SIL Open Font License) | – | – | – |
+| Monster (Goblins, Spinnen u. a.) | Quaternius Ultimate Monsters | [quaternius.com](https://quaternius.com/packs/ultimatemonsters.html) | CC0 | ab M4, für Gegner neben den Skeletten |
+| Schienen, Loren, Stützbalken, Lampen | Free Mine Assets Pack | [OpenGameArt](https://opengameart.org/content/free-mine-assets-pack) | CC0 | ab M3, für das Minen-Gefühl |
+| Türme, Projektile | Kenney Tower Defense Kit | [kenney.nl](https://kenney.nl/assets/tower-defense-kit) | CC0 | optional, Stil ist eher bunt und passt vielleicht nicht zum düsteren Spiel |
+| Geräusche | Kenney RPG Audio, Impact Sounds | [RPG Audio](https://kenney.nl/assets/rpg-audio), [Impact Sounds](https://kenney.nl/assets/impact-sounds) | laut Kenney-FAQ CC0, Paketseiten noch nicht geprüft | ab M3 |
+| Musik | noch offen | – | – | ab M3 |
+| Schrift | noch offen (geplant: Schrift unter SIL Open Font License) | – | – | ab M3 |
 
 ## 4. Offener Punkt: Zwergen-Modelle
 
@@ -46,7 +59,9 @@ Optionen:
 2. **Zwergen-Paket kaufen:** etwa 15 bis 30 Euro. Die Lizenz muss den Einsatz in einem veröffentlichten Spiel erlauben und wird vor dem Kauf geprüft.
 3. **Eigene Modelle** in Blender oder von einem Künstler. Beste Wiedererkennung, höchster Aufwand.
 
-Empfehlung: Mit Option 1 starten und vor der Veröffentlichung auf Option 2 oder 3 wechseln.
+**Entschieden am 12.11.2026:** Start mit Option 1. Ein Wechsel ist später möglich, sobald passende Modelle gefunden sind.
+
+Umsetzung: Barbar und Ritter als Grundfiguren, in der Höhe gestaucht und in der Breite gestreckt, mit Axt, Armbrust, Schild und Krug aus demselben Paket. Bärte sind im Paket nicht enthalten und müssen als einfaches Zusatzmodell entstehen. Wie gut das aussieht, zeigt erst ein Versuch in Meilenstein 3.
 
 ## 5. Sind die Assets später austauschbar?
 

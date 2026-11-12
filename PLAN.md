@@ -11,7 +11,11 @@ Stand: 12.11.2026 · Status: **Planung, noch kein Code**
 | Spielfeld | Mix: fest vorgegebene Hauptwege, dazu Stollen graben und zuschütten |
 | Grafik | Low-Poly mit kostenlosen CC0-Paketen. Alle Quellen stehen in [`ASSETS.md`](ASSETS.md). Assets sind später austauschbar. |
 | Ziel | Veröffentlichung im Google Play Store. Monetarisierung ist noch offen. |
-| Testgeräte | Samsung Galaxy S24 und Amazon Fire HD 10 |
+| Testgeräte | Samsung Galaxy S24 und Amazon Fire HD 10 (generalüberholt, gekauft Oktober 2023, Generation noch zu bestätigen) |
+| Stil | düster: dunkle Stollen, Fackellicht, gedeckte Farben |
+| Format | Querformat |
+| Zwerge | zunächst angepasste KayKit-Figuren, später austauschbar |
+| Name | noch offen, Vorschläge in Abschnitt 8 |
 | Sprachen | Deutsch und Englisch, im Spiel umschaltbar |
 
 ## 2. Spielkonzept
@@ -48,14 +52,19 @@ Ein Zwergenclan verteidigt seine Mine. Gegner kommen in Wellen durch die Stollen
 Jeder Turm hat 3 Stufen und am Ende eine von zwei Spezialisierungen.
 
 ### Gegner (erste Ausbaustufe)
+Kapitel 1 nutzt Untote, weil die Skelett-Modelle schon vorliegen und zum düsteren Stil passen. Goblins, Trolle und Spinnen folgen, sobald passende Modelle im Repo sind.
+
 | Gegner | Eigenschaft |
 |---|---|
-| Goblin | schwach, schnell, kommt in Gruppen |
-| Ork | Standardgegner |
+| Skelett-Scherge | schwach, schnell, kommt in Gruppen |
+| Skelett-Krieger | Standardgegner |
+| Skelett-Schurke | greift Arbeiter an und stiehlt Erz |
+| Skelett-Magier | heilt oder schützt andere Gegner |
+| Goblin | schwach, schnell, kommt in Gruppen (später) |
+| Ork | Standardgegner (später) |
 | Troll | viel Leben, langsam |
 | Höhlenspinne | sehr schnell, wenig Leben |
 | Skelett-Schildträger | gepanzert, widersteht Pfeilen |
-| Goblin-Dieb | greift Arbeiter an und stiehlt Erz |
 | Boss (z. B. Höhlentroll-König, später Drache) | Abschluss eines Kapitels |
 
 ### Meta-Fortschritt
@@ -67,6 +76,8 @@ Jeder Turm hat 3 Stufen und am Ende eine von zwei Spezialisierungen.
 
 ### Rendering und Geräte
 - **Renderer:** „Mobile" (Vulkan) als Standard, „Compatibility" (OpenGL ES 3) als Rückfallebene. Welcher auf dem Fire HD 10 besser läuft, zeigt der erste Gerätetest in Meilenstein 1.
+- **Düsterer Stil und Leistung:** Dunkelheit entsteht über dunkle Materialien, Nebel und wenige farbige Lichter. Viele echte Lichtquellen mit Schatten wären für das Fire-Tablet zu teuer. Fackeln leuchten deshalb meist nur als Effekt, ohne Schattenwurf.
+- **Fire HD 10:** Bei Kauf im Oktober 2023 als generalüberholtes Gerät ist es vermutlich die 11. Generation von 2021 (3 GB Arbeitsspeicher, Fire OS auf Basis von Android 9 oder 11). Das ist eine Annahme. Die Generation steht unter Einstellungen → Geräteoptionen → Info zum Fire-Tablet.
 - **Ziel:** 60 Bilder pro Sekunde auf dem S24, stabile 30 auf dem Fire HD 10. Das Fire-Tablet ist das schwächere Gerät und setzt damit die Grenze für Polygonzahl, Lichter und Effekte.
 - **Fire HD 10:** Es hat keinen Play Store. Test-APKs werden per Sideload installiert. Eine spätere Veröffentlichung im Amazon Appstore ist möglich, aber kein Ziel dieses Plans.
 - **Formate:** Querformat, Seitenverhältnisse von 16:10 (Tablet) bis 19,5:9 (S24). Die Oberfläche hält Abstand zu Kamera-Aussparung und Rändern.
@@ -214,11 +225,27 @@ Zu jedem Meilenstein gibt es eine kurze Checkliste. Feste Punkte:
 | Umfang wächst | Meilensteine mit festen Abnahmekriterien, M3 als erster vorzeigbarer Stand |
 | Bild-Tests in der Cloud nicht möglich | Rückfall auf Logik-Tests plus Screenshots von deinen Geräten |
 
-## 8. Offene Fragen
+## 8. Namensvorschläge
 
-1. **Name:** Bleibt „Zwergenminen" als Arbeitstitel, oder hast du einen Wunschnamen? Der Paketname hängt daran.
-2. **Fire HD 10:** Welche Generation bzw. welches Kaufjahr? Das bestimmt die Leistungsgrenze.
-3. **Zwergen-Modelle:** siehe `ASSETS.md` Abschnitt 4. Welche der drei Optionen bevorzugst du?
-4. **Asset-Download:** Die Cloud-Sitzung erreicht die Asset-Seiten nicht. Sollen die Seiten für die Umgebung freigegeben werden, oder lädst du die Pakete herunter und legst sie ins Repo?
-5. **Ton der Darstellung:** eher comichaft und humorvoll oder düsterer?
-6. **Hochformat oder Querformat:** Der Plan nimmt Querformat an. Einverstanden?
+Der Name soll auf Deutsch und Englisch funktionieren. Begriffe aus bekannten Fantasy-Welten (z. B. Moria, Khazad, Erebor) sind bewusst vermieden.
+
+| Name | Idee |
+|---|---|
+| **Grimmstollen** | düster, klar zwergisch, auf Englisch als „Grimstollen" lesbar |
+| **Durnhal: Wacht der Tiefe** / *Watch of the Deep* | erfundener Name der Zwergenfeste, Untertitel je Sprache |
+| **Tiefenwacht** / *Deepwatch* | schlicht, beschreibt das Spiel |
+| **Glutherz** / *Emberheart* | das „Herz der Mine" als glühender Kern |
+| **Eisenbart: Die letzte Mine** / *Ironbeard: The Last Mine* | Clanname als Marke, ausbaufähig für Nachfolger |
+| **Runenfels** / *Runestone Deep* | betont die Runenmagie |
+| **Schattenschacht** / *Shadowshaft* | betont den düsteren Stil |
+| **Barak Dûm** | reiner Fantasy-Name ohne Bedeutung, braucht einen Untertitel |
+
+Empfehlung: **Durnhal: Wacht der Tiefe**. Ein erfundener Eigenname ist am ehesten frei und einzigartig, der Untertitel erklärt das Spiel.
+
+Noch nicht geprüft: ob ein Name schon im Play Store oder als Marke vergeben ist. Das wird vor der Festlegung des Paketnamens geprüft.
+
+## 9. Offene Fragen
+
+1. **Name:** Welcher Vorschlag gefällt dir, oder hast du einen eigenen?
+2. **Fire HD 10:** Welche Generation zeigt das Tablet in den Einstellungen an?
+3. **Fehlende Pakete:** Vier Pakete sind aus der Cloud-Sitzung nicht erreichbar, siehe `ASSETS.md` Abschnitt 3. Sie werden erst ab Meilenstein 3 gebraucht.
