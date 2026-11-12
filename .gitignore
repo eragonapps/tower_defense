@@ -1,0 +1,13 @@
+# Godot
+.godot/
+*.translation
+# Builds
+build/
+android/
+*.apk
+*.aab
+# Signierschlüssel für Veröffentlichungen gehören nie ins Repo
+*.jks
+release.keystore
+# Eingehende Asset-Pakete werden nach dem Einsortieren entfernt
+.DS_Store

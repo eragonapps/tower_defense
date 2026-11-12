@@ -1,12 +1,12 @@
-# Plan: „Zwergenminen" (Arbeitstitel) – 3D Tower Defense für Android
+# Plan: Durnhal: Wacht der Tiefe – 3D Tower Defense für Android
 
-Stand: 12.11.2026 · Status: **Planung, noch kein Code**
+Stand: 12.11.2026 · Status: **Meilenstein 0 in Arbeit**
 
 ## 1. Festgelegte Entscheidungen
 
 | Thema | Entscheidung |
 |---|---|
-| Engine | Godot 4 (GDScript). Version wird beim Setup festgelegt und fixiert, voraussichtlich 4.6.x. |
+| Engine | Godot 4.7.2 (GDScript), Version fest. Tests mit GUT 9.7.1. |
 | Rollen | Claude schreibt den Großteil des Codes. Du testest auf den Geräten, entscheidest und lieferst Ideen. |
 | Spielfeld | Mix: fest vorgegebene Hauptwege, dazu Stollen graben und zuschütten |
 | Grafik | Low-Poly mit kostenlosen CC0-Paketen. Alle Quellen stehen in [`ASSETS.md`](ASSETS.md). Assets sind später austauschbar. |
@@ -15,7 +15,9 @@ Stand: 12.11.2026 · Status: **Planung, noch kein Code**
 | Stil | düster: dunkle Stollen, Fackellicht, gedeckte Farben |
 | Format | Querformat |
 | Zwerge | zunächst angepasste KayKit-Figuren, später austauschbar |
-| Name | noch offen, Vorschläge in Abschnitt 8 |
+| Name | **Durnhal: Wacht der Tiefe** (englisch: *Durnhal: Watch of the Deep*) |
+| Paketname | `com.eragonapps.durnhal` (bis zur ersten Veröffentlichung noch änderbar) |
+| Leistungsmaßstab | Samsung Galaxy S24. Das Fire HD 10 wird mitgetestet, begrenzt aber nicht die Grafik. |
 | Sprachen | Deutsch und Englisch, im Spiel umschaltbar |
 
 ## 2. Spielkonzept
@@ -75,11 +77,10 @@ Kapitel 1 nutzt Untote, weil die Skelett-Modelle schon vorliegen und zum düster
 ## 3. Technik
 
 ### Rendering und Geräte
-- **Renderer:** „Mobile" (Vulkan) als Standard, „Compatibility" (OpenGL ES 3) als Rückfallebene. Welcher auf dem Fire HD 10 besser läuft, zeigt der erste Gerätetest in Meilenstein 1.
-- **Düsterer Stil und Leistung:** Dunkelheit entsteht über dunkle Materialien, Nebel und wenige farbige Lichter. Viele echte Lichtquellen mit Schatten wären für das Fire-Tablet zu teuer. Fackeln leuchten deshalb meist nur als Effekt, ohne Schattenwurf.
-- **Fire HD 10:** Bei Kauf im Oktober 2023 als generalüberholtes Gerät ist es vermutlich die 11. Generation von 2021 (3 GB Arbeitsspeicher, Fire OS auf Basis von Android 9 oder 11). Das ist eine Annahme. Die Generation steht unter Einstellungen → Geräteoptionen → Info zum Fire-Tablet.
-- **Ziel:** 60 Bilder pro Sekunde auf dem S24, stabile 30 auf dem Fire HD 10. Das Fire-Tablet ist das schwächere Gerät und setzt damit die Grenze für Polygonzahl, Lichter und Effekte.
-- **Fire HD 10:** Es hat keinen Play Store. Test-APKs werden per Sideload installiert. Eine spätere Veröffentlichung im Amazon Appstore ist möglich, aber kein Ziel dieses Plans.
+- **Renderer:** „Mobile" (Vulkan). „Compatibility" (OpenGL ES 3) bleibt als Rückfallebene für ältere Geräte.
+- **Ziel:** stabile 60 Bilder pro Sekunde auf dem Samsung Galaxy S24. Es ist der Maßstab für Grafik und Effekte.
+- **Düsterer Stil:** dunkle Materialien, Nebel, Fackellicht mit Schatten, soweit das S24 es flüssig darstellt.
+- **Fire HD 10:** Es wird mitgetestet. Eine Grafikstufe „Niedrig" (weniger Lichter, keine Schatten) soll es spielbar halten, ohne die Darstellung auf dem S24 einzuschränken. Es hat keinen Play Store, Test-APKs werden per Sideload installiert.
 - **Formate:** Querformat, Seitenverhältnisse von 16:10 (Tablet) bis 19,5:9 (S24). Die Oberfläche hält Abstand zu Kamera-Aussparung und Rändern.
 - **Kamera:** schräg von oben. Wischen verschiebt, zwei Finger zoomen, Drehung in festen Schritten.
 
@@ -144,7 +145,7 @@ Geprüft am 12.11.2026: Godot für Linux lässt sich in der Sitzung herunterlade
 | A. Unit-Tests | einzelne Regeln | Godot ohne Fenster (`--headless`) mit Testrahmen GUT oder gdUnit4 |
 | B. Simulations-Tests | ganze Wellen und Levels ohne Grafik | Simulation im Schnelldurchlauf mit festem Zufalls-Startwert |
 | C. Bot-Durchläufe | Balancing und Spielbarkeit | Skript-Spieler mit festen Strategien spielt jedes Level viele Male |
-| D. Bild-Tests | Darstellung und Oberfläche | Godot mit virtuellem Bildschirm oder Web-Export im eingebauten Chromium, Screenshots auswerten. **Machbarkeit wird in M0 geprüft.** |
+| D. Bild-Tests | Darstellung und Oberfläche | Godot mit virtuellem Bildschirm, Screenshots über `tools/screenshot.gd`. In M0 geprüft: funktioniert für die Oberfläche. Für 3D-Szenen wird es in M1 geprüft. Das Bild entsteht mit Software-Rendering, es zeigt also nicht die Leistung und nicht exakt die Darstellung des Vulkan-Renderers. |
 | E. Build-Test | APK entsteht | GitHub Actions baut bei jedem Push |
 
 ### Testszenarien
@@ -219,33 +220,14 @@ Zu jedem Meilenstein gibt es eine kurze Checkliste. Feste Punkte:
 
 | Risiko | Gegenmaßnahme |
 |---|---|
-| Fire HD 10 zu schwach für 3D-Effekte | Gerätetest schon in M1, Grafikstufen, Fire-Tablet als Maßstab |
+| Fire HD 10 zu schwach für 3D-Effekte | Grafikstufe „Niedrig". Das Tablet ist kein Maßstab, schlechte Leistung dort blockiert nichts. |
 | Kein freies Zwergen-Modell mit CC0 gefunden | siehe `ASSETS.md` Abschnitt 4, Entscheidung vor M3 |
 | Stollen-Mechanik macht Levels zu leicht | Grabungen begrenzen, Granit im Leveldesign, Bot-Tests |
 | Umfang wächst | Meilensteine mit festen Abnahmekriterien, M3 als erster vorzeigbarer Stand |
-| Bild-Tests in der Cloud nicht möglich | Rückfall auf Logik-Tests plus Screenshots von deinen Geräten |
+| Bild-Tests zeigen 3D anders als das Gerät | Screenshots von deinen Geräten als Ergänzung |
 
-## 8. Namensvorschläge
+## 8. Offene Fragen
 
-Der Name soll auf Deutsch und Englisch funktionieren. Begriffe aus bekannten Fantasy-Welten (z. B. Moria, Khazad, Erebor) sind bewusst vermieden.
-
-| Name | Idee |
-|---|---|
-| **Grimmstollen** | düster, klar zwergisch, auf Englisch als „Grimstollen" lesbar |
-| **Durnhal: Wacht der Tiefe** / *Watch of the Deep* | erfundener Name der Zwergenfeste, Untertitel je Sprache |
-| **Tiefenwacht** / *Deepwatch* | schlicht, beschreibt das Spiel |
-| **Glutherz** / *Emberheart* | das „Herz der Mine" als glühender Kern |
-| **Eisenbart: Die letzte Mine** / *Ironbeard: The Last Mine* | Clanname als Marke, ausbaufähig für Nachfolger |
-| **Runenfels** / *Runestone Deep* | betont die Runenmagie |
-| **Schattenschacht** / *Shadowshaft* | betont den düsteren Stil |
-| **Barak Dûm** | reiner Fantasy-Name ohne Bedeutung, braucht einen Untertitel |
-
-Empfehlung: **Durnhal: Wacht der Tiefe**. Ein erfundener Eigenname ist am ehesten frei und einzigartig, der Untertitel erklärt das Spiel.
-
-Noch nicht geprüft: ob ein Name schon im Play Store oder als Marke vergeben ist. Das wird vor der Festlegung des Paketnamens geprüft.
-
-## 9. Offene Fragen
-
-1. **Name:** Welcher Vorschlag gefällt dir, oder hast du einen eigenen?
-2. **Fire HD 10:** Welche Generation zeigt das Tablet in den Einstellungen an?
-3. **Fehlende Pakete:** Vier Pakete sind aus der Cloud-Sitzung nicht erreichbar, siehe `ASSETS.md` Abschnitt 3. Sie werden erst ab Meilenstein 3 gebraucht.
+1. **Fire HD 10:** Welche Generation zeigt das Tablet in den Einstellungen an? Nur zur Einordnung, nicht dringend.
+2. **Fehlende Pakete:** Vier Pakete sind aus der Cloud-Sitzung nicht erreichbar, siehe `ASSETS.md` Abschnitt 3b. Sie werden ab Meilenstein 3 gebraucht.
+3. **Name:** Ob „Durnhal" im Play Store oder als Marke vergeben ist, ist noch nicht geprüft. Das steht vor Meilenstein 6 an.

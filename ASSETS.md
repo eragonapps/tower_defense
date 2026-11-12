@@ -84,3 +84,10 @@ Noch keine. Die Tabelle wird ab Meilenstein 3 gefüllt.
 | Datei oder Ordner im Repo | Verwendet für | Paket | Autor | Quelle (URL) | Lizenz | Heruntergeladen am | Verändert? |
 |---|---|---|---|---|---|---|---|
 | – | – | – | – | – | – | – | – |
+
+## 8. Verwendete Software von Dritten
+
+| Ordner im Repo | Was | Autor | Quelle | Lizenz | Im fertigen Spiel enthalten? |
+|---|---|---|---|---|---|
+| `addons/gut/` | GUT 9.7.1, Testrahmen | Butch Wesley | [github.com/bitwes/Gut](https://github.com/bitwes/Gut) | MIT, siehe `addons/gut/LICENSE.md` | nein, nur für Tests |
+| – | Godot Engine 4.7.2 | Godot-Mitwirkende | [godotengine.org](https://godotengine.org/) | MIT | ja, Lizenzhinweis im Spiel nötig (kommt mit dem Credits-Bildschirm) |
