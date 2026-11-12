@@ -1,6 +1,6 @@
 # Assets: Quellen und Lizenzen
 
-Stand: 12.11.2026 · Status: **Kandidatenliste, noch kein Asset im Repo.** Drei KayKit-Pakete sind heruntergeladen und geprüft.
+Stand: 12.11.2026 · Status: **Kandidatenliste, noch kein Asset im Spiel verwendet.** Drei KayKit-Pakete und fünf hochgeladene Pakete sind geprüft.
 
 Diese Datei nennt für jedes verwendete Asset die Quelle und die Lizenz. Sie wird bei jedem neuen oder getauschten Asset aktualisiert.
 
@@ -10,7 +10,8 @@ Die drei geplanten Hauptquellen veröffentlichen ihre Pakete unter **CC0 1.0 (Pu
 
 **Grenzen dieser Prüfung:**
 - Für die drei KayKit-Pakete in Abschnitt 3a wurde die Lizenzdatei im Paket selbst gelesen.
-- Für alle anderen Pakete lief die Prüfung nur über eine Websuche. Die Seiten der Anbieter konnte die Cloud-Sitzung nicht direkt öffnen, weil sie vom Netzwerk der Umgebung gesperrt sind.
+- Für die drei Kenney-Pakete in Abschnitt 3b wurde ebenfalls die Lizenzdatei im Paket gelesen.
+- Für Quaternius und das Free Mine Assets Pack liegt keine Lizenzdatei in den Archiven. Dort stützt sich die Angabe nur auf die Websuche, weil die Seiten der Anbieter aus der Cloud-Sitzung gesperrt sind.
 - Verbindlich ist die Lizenzdatei, die in jedem heruntergeladenen Paket liegt. Sie wird beim Import geprüft und mit ins Repo gelegt.
 - Das ist keine Rechtsberatung.
 - CC0 gilt je Paket, nicht automatisch für alles von einem Autor. Kostenpflichtige Zusatzpakete und Pakete auf anderen Plattformen können andere Bedingungen haben.
@@ -37,18 +38,22 @@ Diese Pakete liegen offiziell auf GitHub. Sie wurden testweise heruntergeladen, 
 
 Alle Figuren haben dasselbe Skelett mit 41 Gelenken. Animationen für Laufen, Angreifen, Schießen, Treffer und Sterben sind enthalten.
 
-### 3b. Aus der Cloud-Sitzung nicht erreichbar
+### 3b. Von dir hochgeladen (Branch `main`, Stand 12.11.2026)
 
-Die Seiten sind vom Netzwerk der Umgebung gesperrt. Die Lizenz ist nur über die Websuche geprüft. Wenn du ein Paket herunterlädst, lege die ZIP-Datei unverändert in einen Ordner `assets_incoming/` im Repo. Auspacken, Lizenzprüfung und Einsortieren übernimmt Claude.
+Die Archive liegen als ZIP-Dateien im Hauptordner von `main`. Sie wurden ausgepackt und geprüft, aber noch **nicht ins Projekt übernommen**. Ins Projekt kommen ab Meilenstein 3 nur die Dateien, die das Spiel wirklich nutzt.
 
-| Zweck | Paket | Download | Lizenz (laut Suche) | Dringlichkeit |
+| Zweck | Paket | Archiv in `main` | Lizenz | Inhalt (geprüft) |
 |---|---|---|---|---|
-| Monster (Goblins, Spinnen u. a.) | Quaternius Ultimate Monsters | [quaternius.com](https://quaternius.com/packs/ultimatemonsters.html) | CC0 | ab M4, für Gegner neben den Skeletten |
-| Schienen, Loren, Stützbalken, Lampen | Free Mine Assets Pack | [OpenGameArt](https://opengameart.org/content/free-mine-assets-pack) | CC0 | ab M3, für das Minen-Gefühl |
-| Türme, Projektile | Kenney Tower Defense Kit | [kenney.nl](https://kenney.nl/assets/tower-defense-kit) | CC0 | optional, Stil ist eher bunt und passt vielleicht nicht zum düsteren Spiel |
-| Geräusche | Kenney RPG Audio, Impact Sounds | [RPG Audio](https://kenney.nl/assets/rpg-audio), [Impact Sounds](https://kenney.nl/assets/impact-sounds) | laut Kenney-FAQ CC0, Paketseiten noch nicht geprüft | ab M3 |
-| Musik | noch offen | – | – | ab M3 |
-| Schrift | noch offen (geplant: Schrift unter SIL Open Font License) | – | – | ab M3 |
+| Geräusche | Kenney Impact Sounds 1.0 | `kenney_impact-sounds.zip` | CC0, `License.txt` im Paket gelesen | 130 Geräusche (Einschläge auf Holz, Metall, Stein, Schritte) |
+| Geräusche | Kenney RPG Audio | `kenney_rpg-audio.zip` | CC0, `License.txt` im Paket gelesen | 52 Geräusche (Klingen, Türen, Schritte, Münzen) |
+| Türme, Wegteile | Kenney Tower Defense Kit 2.1 | `kenney_tower-defense-kit.zip` | CC0, `License.txt` im Paket gelesen | 160 Modelle: Turmteile zum Stapeln, Bodenteile, UFO-Gegner. Stil bunt, Eignung für das düstere Spiel offen. |
+| Monster | Quaternius Ultimate Monsters | `Big-….zip`, `Blob-….zip`, `Flying-….zip` | **keine Lizenzdatei in den Archiven.** Laut Autor CC0 (nur über Websuche belegt). | 50 animierte Monster. Brauchbar für das Thema: Orc, Orc_Skull, Demon, Yeti, Ghost, Ghost_Skull, Dragon, Goleling. Kein Goblin, keine Spinne. |
+| Schienen, Loren, Stützbalken | Free Mine Assets Pack | `free_mine_assets.zip` | **keine Lizenzdatei im Archiv.** Laut OpenGameArt-Seite CC0 (nur über Websuche belegt). | 2 Blender-Dateien und 7 Texturen. Die Modelle müssen erst mit Blender in ein Format für Godot umgewandelt werden. |
+
+Offen zu diesen Paketen:
+- **Quaternius:** Im Download-Ordner des Pakets liegt neben `Big`, `Blob` und `Flying` üblicherweise eine Lizenzdatei. Bitte diese nachreichen, damit die Lizenz im Repo belegt ist.
+- **Free Mine Assets Pack:** Als Beleg dient die Paketseite. Ein Bildschirmfoto der Seite mit der Lizenzangabe im Repo wäre der sauberste Nachweis.
+- **Musik und Schrift** sind weiterhin offen.
 
 ## 4. Offener Punkt: Zwergen-Modelle
 
