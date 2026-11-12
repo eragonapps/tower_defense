@@ -47,6 +47,8 @@ jobs:
     name: Android-Test-APK
     needs: test
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
@@ -115,3 +117,16 @@ jobs:
           name: durnhal-debug-apk
           path: build/durnhal-debug.apk
           retention-days: 30
+
+      # Fester Download-Link für Tester: die Veröffentlichung "test-latest" enthält immer die neueste Test-APK.
+      - name: Test-APK als Release veröffentlichen
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete test-latest --cleanup-tag --yes || true
+          gh release create test-latest build/durnhal-debug.apk \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "Durnhal Test-Build" \
+            --notes "Neueste Test-APK, automatisch gebaut am $(date -u +'%d.%m.%Y %H:%M') UTC aus Commit ${GITHUB_SHA::7} (${GITHUB_REF_NAME}). Nur zum Testen, mit Test-Schlüssel signiert."

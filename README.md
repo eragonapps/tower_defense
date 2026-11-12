@@ -15,9 +15,11 @@ Meilenstein 1: ein spielbares Level mit Platzhalter-Grafik. 2 Türme, 2 Gegner, 
 - Oben rechts: Ansicht drehen, Tempo, Pause, Menü.
 
 ## Test-APK aufs Gerät bringen
-1. Auf GitHub den Reiter **Actions** öffnen und den neuesten grünen Lauf von „CI" wählen.
-2. Unten unter **Artifacts** `durnhal-debug-apk` herunterladen und entpacken.
-3. Die Datei `durnhal-debug.apk` auf dem Gerät öffnen und die Installation aus unbekannter Quelle erlauben.
+Die neueste Test-APK liegt immer unter diesem Link, ohne Anmeldung:
+
+https://github.com/eragonapps/tower_defense/releases/download/test-latest/durnhal-debug.apk
+
+Datei auf dem Gerät öffnen und die Installation aus unbekannter Quelle erlauben. Neue Versionen lassen sich über die alte installieren.
 
 ## Entwicklung
 Benötigt Godot 4.7.2.
