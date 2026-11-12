@@ -1,0 +1,224 @@
+# Plan: „Zwergenminen" (Arbeitstitel) – 3D Tower Defense für Android
+
+Stand: 12.11.2026 · Status: **Planung, noch kein Code**
+
+## 1. Festgelegte Entscheidungen
+
+| Thema | Entscheidung |
+|---|---|
+| Engine | Godot 4 (GDScript). Version wird beim Setup festgelegt und fixiert, voraussichtlich 4.6.x. |
+| Rollen | Claude schreibt den Großteil des Codes. Du testest auf den Geräten, entscheidest und lieferst Ideen. |
+| Spielfeld | Mix: fest vorgegebene Hauptwege, dazu Stollen graben und zuschütten |
+| Grafik | Low-Poly mit kostenlosen CC0-Paketen. Alle Quellen stehen in [`ASSETS.md`](ASSETS.md). Assets sind später austauschbar. |
+| Ziel | Veröffentlichung im Google Play Store. Monetarisierung ist noch offen. |
+| Testgeräte | Samsung Galaxy S24 und Amazon Fire HD 10 |
+| Sprachen | Deutsch und Englisch, im Spiel umschaltbar |
+
+## 2. Spielkonzept
+
+Ein Zwergenclan verteidigt seine Mine. Gegner kommen in Wellen durch die Stollen und wollen zum **Herz der Mine** (Schatzkammer). Erreicht ein Gegner das Herz, verliert der Spieler Leben. Bei 0 Leben ist das Level verloren.
+
+### Kernschleife
+1. **Bauphase:** Türme setzen, Stollen graben, Arbeiter zuteilen.
+2. **Welle:** Gegner laufen den kürzesten Weg zum Herz. Türme schießen automatisch.
+3. **Belohnung:** Gold für besiegte Gegner, Erz von den Arbeitern. Damit werden Türme gebaut und verbessert.
+4. Das wiederholt sich bis zur letzten Welle, bei manchen Levels mit Boss. Am Ende gibt es eine Wertung mit 1 bis 3 Sternen.
+
+### Zwei Währungen
+- **Gold:** kommt von besiegten Gegnern. Bezahlt Türme und Stollen.
+- **Erz:** wird von Bergarbeiter-Zwergen an Erzadern abgebaut. Bezahlt Upgrades. Arbeiter können von Gegnern angegriffen werden und brauchen deshalb Schutz.
+
+### Stollen-Mechanik
+- Das Level ist ein Raster. Es gibt Fels (grabbar), Granit (nicht grabbar), Stollen (begehbar), Bauplätze und Erzadern.
+- Der Spieler kann Fels sprengen und so einen neuen Weg öffnen. Er kann Stollen auch zuschütten.
+- **Regel:** Es muss immer ein Weg vom Eingang zum Herz bestehen. Ein Bau, der den letzten Weg versperrt, wird abgelehnt.
+- Nach jeder Änderung wird der Weg der Gegner neu berechnet (A* auf dem Raster).
+- Graben kostet Gold und dauert Zeit. Die Zahl der Grabungen pro Level kann begrenzt sein.
+
+### Türme (erste Ausbaustufe)
+| Turm | Rolle |
+|---|---|
+| Armbrustschütze | schnell, ein Ziel, günstig |
+| Steinschleuder | Flächenschaden, langsam |
+| Bombenwerfer | hoher Flächenschaden, sehr langsam, teuer |
+| Runenstein | verlangsamt Gegner im Umkreis |
+| Schmiedefeuer | Schaden über Zeit (Brennen) |
+| Schildwall | Axtkämpfer blockieren Gegner im Stollen |
+
+Jeder Turm hat 3 Stufen und am Ende eine von zwei Spezialisierungen.
+
+### Gegner (erste Ausbaustufe)
+| Gegner | Eigenschaft |
+|---|---|
+| Goblin | schwach, schnell, kommt in Gruppen |
+| Ork | Standardgegner |
+| Troll | viel Leben, langsam |
+| Höhlenspinne | sehr schnell, wenig Leben |
+| Skelett-Schildträger | gepanzert, widersteht Pfeilen |
+| Goblin-Dieb | greift Arbeiter an und stiehlt Erz |
+| Boss (z. B. Höhlentroll-König, später Drache) | Abschluss eines Kapitels |
+
+### Meta-Fortschritt
+- Levelkarte mit Kapiteln, je Level 1 bis 3 Sterne.
+- **Zwergenhalle:** Sterne schalten dauerhafte Verbesserungen frei (Tech-Tree).
+- Drei Schwierigkeitsgrade.
+
+## 3. Technik
+
+### Rendering und Geräte
+- **Renderer:** „Mobile" (Vulkan) als Standard, „Compatibility" (OpenGL ES 3) als Rückfallebene. Welcher auf dem Fire HD 10 besser läuft, zeigt der erste Gerätetest in Meilenstein 1.
+- **Ziel:** 60 Bilder pro Sekunde auf dem S24, stabile 30 auf dem Fire HD 10. Das Fire-Tablet ist das schwächere Gerät und setzt damit die Grenze für Polygonzahl, Lichter und Effekte.
+- **Fire HD 10:** Es hat keinen Play Store. Test-APKs werden per Sideload installiert. Eine spätere Veröffentlichung im Amazon Appstore ist möglich, aber kein Ziel dieses Plans.
+- **Formate:** Querformat, Seitenverhältnisse von 16:10 (Tablet) bis 19,5:9 (S24). Die Oberfläche hält Abstand zu Kamera-Aussparung und Rändern.
+- **Kamera:** schräg von oben. Wischen verschiebt, zwei Finger zoomen, Drehung in festen Schritten.
+
+### Projektstruktur
+```
+project.godot
+scenes/        main_menu, level_select, level, hud, towers/*, enemies/*
+scripts/
+  core/        GameManager, WaveManager, Economy, GridMap, Pathfinder, SaveSystem
+  towers/      BaseTower, Zielauswahl, Projektile
+  enemies/     BaseEnemy, Bewegung, Statuseffekte
+  ui/          HUD, Menüs, Sprachauswahl
+data/          Türme, Gegner, Wellen, Levels als Resource-Dateien
+assets/        Modelle, Texturen, Töne (je Paket ein Ordner mit Lizenzdatei)
+locale/        Übersetzungen de/en (CSV)
+tests/         automatische Tests
+.github/workflows/   CI: Tests und Android-Build
+```
+
+### Architektur-Grundsätze
+- **Logik getrennt von Darstellung:** Raster, Wegfindung, Wirtschaft, Schaden und Wellen sind reine Skripte ohne 3D-Abhängigkeit. Dadurch laufen sie in Tests ohne Grafik.
+- **Datengetrieben:** Alle Werte (Schaden, Kosten, Wellen) stehen in Resource-Dateien. Balancing braucht keine Code-Änderung.
+- **Austauschbare Assets:** Jede Turm- und Gegner-Szene bindet ihr Modell über einen einzigen Knoten ein. Ein Tausch ändert nur diese Szene und den Eintrag in `ASSETS.md`.
+- **Feste Zeitschritte:** Die Simulation rechnet in festen Schritten und mit festem Zufalls-Startwert. Ein Lauf ist damit exakt wiederholbar. Das ist die Grundlage für die Tests und für die Vorspul-Taste (2×, 3×).
+- **Wiederverwendung:** Gegner und Projektile werden wiederverwendet statt neu erzeugt (Object Pooling).
+- **Sprache:** Alle Texte laufen über Übersetzungsschlüssel. Die Sprache folgt beim ersten Start dem Gerät und ist in den Einstellungen wählbar.
+- **Speichern:** Fortschritt und Einstellungen liegen lokal als Datei mit Versionsnummer, damit spätere Updates alte Spielstände lesen können.
+
+## 4. Meilensteine
+
+### M0 – Grundgerüst
+Godot-Projekt, Ordnerstruktur, Testrahmen, CI auf GitHub Actions (Tests und Debug-APK), Sprachumschaltung als Gerüst.
+**Fertig, wenn:** eine leere App auf beiden Geräten startet und die CI grün ist.
+
+### M1 – Spielbarer Prototyp (Platzhalter-Grafik)
+Ein Level mit Raster, Wegfindung, 1 Gegner, 2 Türme, Gold, Leben, Wellen, Sieg und Niederlage, Touch-Kamera.
+**Fertig, wenn:** das Level auf beiden Geräten von Anfang bis Ende spielbar ist.
+
+### M2 – Stollen und Wirtschaft
+Graben und Zuschütten mit Wegprüfung, Erzadern, Arbeiter, zweite Währung, Upgrades in 3 Stufen.
+
+### M3 – Vertical Slice
+Echte Low-Poly-Modelle, Animationen, 4 Türme, 4 Gegner, HUD, Ton, Effekte, 1 fertiges Level, Deutsch und Englisch vollständig.
+**Fertig, wenn:** jemand ohne Erklärung das Level spielen kann.
+
+### M4 – Inhalt
+Alle 6 Türme mit Spezialisierungen, alle Gegner, Boss, 8 bis 10 Levels, Levelkarte, Speichern, Schwierigkeitsgrade.
+
+### M5 – Meta und Feinschliff
+Zwergenhalle, Tutorial, Balancing, Optimierung für das Fire HD 10, Einstellungen (Ton, Sprache, Grafikqualität).
+
+### M6 – Veröffentlichung
+Signierter App-Bundle-Build, Store-Eintrag (Texte de/en, Bilder, Datenschutzerklärung, Alterseinstufung), geschlossener Test, Produktion.
+
+## 5. Teststrategie
+
+### Was Claude in der Cloud-Sitzung selbst testen kann
+Geprüft am 12.11.2026: Godot für Linux lässt sich in der Sitzung herunterladen. Das Android-SDK ist dort nicht erreichbar, deshalb entstehen APKs in GitHub Actions.
+
+| Ebene | Was | Wie |
+|---|---|---|
+| A. Unit-Tests | einzelne Regeln | Godot ohne Fenster (`--headless`) mit Testrahmen GUT oder gdUnit4 |
+| B. Simulations-Tests | ganze Wellen und Levels ohne Grafik | Simulation im Schnelldurchlauf mit festem Zufalls-Startwert |
+| C. Bot-Durchläufe | Balancing und Spielbarkeit | Skript-Spieler mit festen Strategien spielt jedes Level viele Male |
+| D. Bild-Tests | Darstellung und Oberfläche | Godot mit virtuellem Bildschirm oder Web-Export im eingebauten Chromium, Screenshots auswerten. **Machbarkeit wird in M0 geprüft.** |
+| E. Build-Test | APK entsteht | GitHub Actions baut bei jedem Push |
+
+### Testszenarien
+
+**Raster und Wegfindung**
+- Der Weg vom Eingang zum Herz ist der kürzeste.
+- Graben eines Felsfelds öffnet eine Abkürzung, Gegner nehmen sie ab sofort.
+- Zuschütten des einzigen Wegs wird abgelehnt, das Gold bleibt erhalten.
+- Granit lässt sich nicht graben.
+- Gegner, die schon unterwegs sind, bekommen nach einer Änderung einen gültigen neuen Weg und bleiben nie in einer Wand stecken.
+- Zufallstest: 1000 zufällige Folgen von Graben und Zuschütten, danach existiert immer ein Weg.
+
+**Türme und Kampf**
+- Ein Turm schießt nur auf Gegner in Reichweite.
+- Zielauswahl „am weitesten vorn" wählt den Gegner mit dem kürzesten Restweg.
+- Flächenschaden trifft alle Gegner im Radius und keinen außerhalb.
+- Verlangsamung wirkt für die angegebene Dauer und stapelt sich nicht über die Obergrenze.
+- Brennen verursacht genau den Gesamtschaden aus den Daten.
+- Panzerung senkt Pfeilschaden, aber nicht Bombenschaden.
+- Schildwall hält höchstens die angegebene Zahl Gegner auf.
+
+**Wirtschaft**
+- Bau zieht die Kosten ab, zu wenig Gold verhindert den Bau.
+- Verkauf erstattet den festgelegten Anteil.
+- Arbeiter liefern Erz im erwarteten Takt, ein angegriffener Arbeiter liefert nichts.
+- Gold und Erz werden nie negativ.
+
+**Wellen und Spielablauf**
+- Jede Welle erzeugt genau die Gegner aus den Daten, in der richtigen Reihenfolge und Zeit.
+- Ein Gegner am Herz kostet die richtige Zahl Leben.
+- 0 Leben führt zur Niederlage, die letzte Welle ohne überlebende Gegner zum Sieg.
+- Pause hält die Simulation an. Vorspulen liefert dasselbe Ergebnis wie Normaltempo.
+- Derselbe Startwert und dieselben Eingaben ergeben immer denselben Endstand.
+
+**Balancing mit Bots**
+- Bot „baut nichts" verliert jedes Level.
+- Bot „baut sinnvoll" gewinnt jedes Level auf „Normal".
+- Bot „nur ein Turmtyp" gewinnt nicht jedes Level, damit keine Strategie alles dominiert.
+- Die Auswertung zeigt Siegquote und verbleibende Leben je Level. So fallen zu leichte und zu schwere Levels auf.
+
+**Speichern und Sprache**
+- Speichern und Laden ergibt denselben Fortschritt.
+- Eine beschädigte oder alte Speicherdatei führt nicht zum Absturz.
+- Jeder Übersetzungsschlüssel hat einen deutschen und einen englischen Text.
+- Umschalten der Sprache ändert alle sichtbaren Texte sofort.
+- Kein Text läuft in der längeren Sprache aus seinem Feld (Bild-Test).
+
+**Leistung**
+- Belastungslauf mit 300 Gegnern und 40 Türmen ohne Grafik: Rechenzeit pro Schritt bleibt unter dem Grenzwert.
+- Nach 20 Wellen wächst der Speicherverbrauch nicht weiter.
+
+### Was nur auf den Geräten geprüft werden kann (durch dich)
+Zu jedem Meilenstein gibt es eine kurze Checkliste. Feste Punkte:
+- Installation und Start auf S24 und Fire HD 10
+- Bildrate (eingeblendete Anzeige) in der größten Welle
+- Touch: Wischen, Zoomen, Turm setzen, Fehlbedienungen
+- Lesbarkeit und Größe der Schaltflächen auf beiden Bildschirmen
+- App in den Hintergrund und zurück, Anruf während des Spiels, Bildschirm aus
+- Ton, Lautstärke, Stummschaltung
+- Erwärmung und Akkuverbrauch nach 20 Minuten
+
+## 6. Veröffentlichung im Play Store – was früh zu wissen ist
+
+- **Entwicklerkonto:** einmalig 25 US-Dollar, mit Identitätsprüfung.
+- **Geschlossener Test:** Neue private Konten müssen vor der Freigabe einen geschlossenen Test mit mindestens 12 Testern über 14 Tage durchführen. Firmenkonten sind ausgenommen. Das braucht Vorlauf.
+- **Signierschlüssel:** wird einmal erzeugt und sicher aufbewahrt. Er kommt nie ins Repo. Für die CI liegt er als GitHub-Secret vor.
+- **Paketname:** z. B. `com.eragonapps.zwergenminen`. Er ist nach der ersten Veröffentlichung nicht mehr änderbar.
+- **Pflichtangaben:** Datenschutzerklärung, Angaben zur Datensicherheit, Alterseinstufung, Ziel-API-Level nach aktueller Google-Vorgabe. Die genaue Vorgabe wird in M6 geprüft.
+- **Lizenzen:** Godot verlangt einen Lizenzhinweis im Spiel. Dafür gibt es einen Bildschirm „Credits und Lizenzen", der auch die Asset-Quellen nennt.
+
+## 7. Risiken
+
+| Risiko | Gegenmaßnahme |
+|---|---|
+| Fire HD 10 zu schwach für 3D-Effekte | Gerätetest schon in M1, Grafikstufen, Fire-Tablet als Maßstab |
+| Kein freies Zwergen-Modell mit CC0 gefunden | siehe `ASSETS.md` Abschnitt 4, Entscheidung vor M3 |
+| Stollen-Mechanik macht Levels zu leicht | Grabungen begrenzen, Granit im Leveldesign, Bot-Tests |
+| Umfang wächst | Meilensteine mit festen Abnahmekriterien, M3 als erster vorzeigbarer Stand |
+| Bild-Tests in der Cloud nicht möglich | Rückfall auf Logik-Tests plus Screenshots von deinen Geräten |
+
+## 8. Offene Fragen
+
+1. **Name:** Bleibt „Zwergenminen" als Arbeitstitel, oder hast du einen Wunschnamen? Der Paketname hängt daran.
+2. **Fire HD 10:** Welche Generation bzw. welches Kaufjahr? Das bestimmt die Leistungsgrenze.
+3. **Zwergen-Modelle:** siehe `ASSETS.md` Abschnitt 4. Welche der drei Optionen bevorzugst du?
+4. **Asset-Download:** Die Cloud-Sitzung erreicht die Asset-Seiten nicht. Sollen die Seiten für die Umgebung freigegeben werden, oder lädst du die Pakete herunter und legst sie ins Repo?
+5. **Ton der Darstellung:** eher comichaft und humorvoll oder düsterer?
+6. **Hochformat oder Querformat:** Der Plan nimmt Querformat an. Einverstanden?
