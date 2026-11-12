@@ -9,6 +9,12 @@ signal enemy_spawned(enemy: Enemy)
 signal enemy_removed(enemy: Enemy, reason: String)
 signal tower_built(tower: Tower)
 signal tower_sold(tower: Tower)
+signal tower_upgraded(tower: Tower)
+signal dig_started(job: DigJob)
+## Eine Zelle wurde zu Stollen oder zu Fels. Die Wege sind schon neu berechnet.
+signal grid_changed(cell: Vector2i)
+signal worker_placed(worker: Worker)
+signal ore_mined(worker: Worker, amount: int)
 signal projectile_fired(projectile: Projectile)
 signal projectile_hit(projectile: Projectile)
 signal wave_started(index: int)
@@ -16,7 +22,20 @@ signal wave_cleared(index: int)
 signal finished(won: bool)
 
 enum Status { RUNNING, WON, LOST }
-enum BuildResult { OK, NOT_BUILDABLE, OCCUPIED, UNKNOWN_TOWER, NOT_ENOUGH_GOLD, GAME_OVER }
+## Ergebnis eines Spielerbefehls. Alles außer OK bedeutet: nichts ist passiert, nichts wurde bezahlt.
+enum Result {
+	OK, NOT_BUILDABLE, OCCUPIED, UNKNOWN_TOWER, NOT_ENOUGH_GOLD, GAME_OVER,
+	## Der Befehl passt nicht zu dieser Zelle oder ist in diesem Level abgeschaltet.
+	NOT_ALLOWED,
+	NOT_ENOUGH_ORE,
+	## Zuschütten würde einem Eingang oder einem Gegner den Weg zum Herz nehmen.
+	BLOCKS_PATH,
+	ENEMY_IN_THE_WAY,
+	LIMIT_REACHED,
+	MAX_LEVEL,
+	## Die Zelle grenzt an keinen Stollen.
+	NOT_CONNECTED,
+}
 
 const TICK_RATE := 60
 const DT := 1.0 / TICK_RATE
@@ -24,6 +43,18 @@ const DT := 1.0 / TICK_RATE
 const SELL_REFUND := 0.7
 ## So nah am Ziel gilt ein Geschoss als angekommen.
 const HIT_DISTANCE := 0.05
+## Regeln, die für alle Levels gelten. data/rules.json und das Level können sie überschreiben.
+const DEFAULT_RULES := {
+	"digging": true,
+	"dig_cost": 30,
+	"dig_time": 3.0,
+	"fill_cost": 20,
+	"max_digs": -1,
+	"worker_cost": 40,
+	"ore_interval": 2.0,
+	"ore_amount": 1,
+	"worker_threat_radius": 1.6,
+}
 
 
 class Enemy extends RefCounted:
@@ -48,6 +79,26 @@ class Tower extends RefCounted:
 	var pos := Vector2.ZERO
 	var cooldown_left := 0.0
 	var shots := 0
+	var level := 1
+	## Die aktuell gültigen Werte: Grundwerte plus alle Ausbaustufen bis level.
+	var stats := {}
+
+
+class DigJob extends RefCounted:
+	var cell := Vector2i.ZERO
+	var time_left := 0.0
+	var total := 0.0
+
+
+class Worker extends RefCounted:
+	var id := 0
+	## Die Erzader, an der der Arbeiter steht.
+	var cell := Vector2i.ZERO
+	var pos := Vector2.ZERO
+	## Falsch, solange Gegner in der Nähe sind oder die Ader keinen Stollen mehr berührt.
+	var active := true
+	var progress := 0.0
+	var mined := 0
 
 
 class Projectile extends RefCounted:
@@ -63,6 +114,7 @@ class Projectile extends RefCounted:
 var grid: MineGrid
 var status := Status.RUNNING
 var gold := 0
+var ore := 0
 var lives := 0
 var tick := 0
 var kills := 0
@@ -70,6 +122,10 @@ var kills := 0
 var enemies: Array[Enemy] = []
 var towers: Array[Tower] = []
 var projectiles: Array[Projectile] = []
+var dig_jobs: Array[DigJob] = []
+var workers: Array[Worker] = []
+var digs_started := 0
+var rules := {}
 
 ## Index der laufenden oder zuletzt gelaufenen Welle. -1 vor der ersten.
 var wave_index := -1
@@ -82,13 +138,18 @@ var _level := {}
 var _tower_defs := {}
 var _enemy_defs := {}
 var _towers_by_cell := {}
+var _workers_by_cell := {}
 var _spawn_queue: Array[Dictionary] = []
 var _wave_time := 0.0
 var _next_id := 1
 
 
-func _init(level: Dictionary, tower_defs: Dictionary, enemy_defs: Dictionary) -> void:
+func _init(level: Dictionary, tower_defs: Dictionary, enemy_defs: Dictionary, global_rules := {}) -> void:
 	_level = level
+	rules = DEFAULT_RULES.duplicate()
+	rules.merge(global_rules, true)
+	rules.merge(level.get("rules", {}), true)
+	ore = int(level.get("start_ore", 0))
 	_tower_defs = tower_defs
 	_enemy_defs = enemy_defs
 	grid = MineGrid.from_rows(level["grid"])
@@ -111,28 +172,29 @@ func tower_at(cell: Vector2i) -> Tower:
 	return _towers_by_cell.get(cell)
 
 
-func can_build(cell: Vector2i, type: String) -> BuildResult:
+func can_build(cell: Vector2i, type: String) -> Result:
 	if status != Status.RUNNING:
-		return BuildResult.GAME_OVER
+		return Result.GAME_OVER
 	if not _tower_defs.has(type) or type not in _level["towers"]:
-		return BuildResult.UNKNOWN_TOWER
+		return Result.UNKNOWN_TOWER
 	if grid.get_cell(cell) != MineGrid.Cell.BUILD:
-		return BuildResult.NOT_BUILDABLE
+		return Result.NOT_BUILDABLE
 	if _towers_by_cell.has(cell):
-		return BuildResult.OCCUPIED
+		return Result.OCCUPIED
 	if gold < int(_tower_defs[type]["cost"]):
-		return BuildResult.NOT_ENOUGH_GOLD
-	return BuildResult.OK
+		return Result.NOT_ENOUGH_GOLD
+	return Result.OK
 
 
-func build_tower(cell: Vector2i, type: String) -> BuildResult:
+func build_tower(cell: Vector2i, type: String) -> Result:
 	var result := can_build(cell, type)
-	if result != BuildResult.OK:
+	if result != Result.OK:
 		return result
 	var t := Tower.new()
 	t.id = _take_id()
 	t.type = type
 	t.def = _tower_defs[type]
+	t.stats = _stats_for(t.def, 1)
 	t.cell = cell
 	t.pos = MineGrid.center(cell)
 	gold -= int(t.def["cost"])
@@ -155,6 +217,174 @@ func sell_tower(cell: Vector2i) -> bool:
 	_towers_by_cell.erase(cell)
 	tower_sold.emit(t)
 	return true
+
+
+# --- Ausbau ---------------------------------------------------------------
+
+static func _stats_for(def: Dictionary, level: int) -> Dictionary:
+	var stats := def.duplicate()
+	var upgrades: Array = def.get("upgrades", [])
+	for i in mini(level - 1, upgrades.size()):
+		stats.merge(upgrades[i], true)
+	return stats
+
+
+func max_level(tower: Tower) -> int:
+	return 1 + tower.def.get("upgrades", []).size()
+
+
+## Erzkosten der nächsten Stufe, oder -1 auf der höchsten Stufe.
+func upgrade_cost(tower: Tower) -> int:
+	if tower.level >= max_level(tower):
+		return -1
+	return int(tower.def["upgrades"][tower.level - 1]["ore"])
+
+
+## Die Werte, die der Turm nach dem nächsten Ausbau hätte. Leer auf der höchsten Stufe.
+func next_stats(tower: Tower) -> Dictionary:
+	if tower.level >= max_level(tower):
+		return {}
+	return _stats_for(tower.def, tower.level + 1)
+
+
+func can_upgrade(cell: Vector2i) -> Result:
+	if status != Status.RUNNING:
+		return Result.GAME_OVER
+	var t: Tower = _towers_by_cell.get(cell)
+	if t == null:
+		return Result.NOT_ALLOWED
+	if t.level >= max_level(t):
+		return Result.MAX_LEVEL
+	if ore < upgrade_cost(t):
+		return Result.NOT_ENOUGH_ORE
+	return Result.OK
+
+
+func upgrade_tower(cell: Vector2i) -> Result:
+	var result := can_upgrade(cell)
+	if result != Result.OK:
+		return result
+	var t: Tower = _towers_by_cell[cell]
+	ore -= upgrade_cost(t)
+	t.level += 1
+	t.stats = _stats_for(t.def, t.level)
+	tower_upgraded.emit(t)
+	return result
+
+
+# --- Stollen --------------------------------------------------------------
+
+func dig_job_at(cell: Vector2i) -> DigJob:
+	for j in dig_jobs:
+		if j.cell == cell:
+			return j
+	return null
+
+
+func can_dig(cell: Vector2i) -> Result:
+	if status != Status.RUNNING:
+		return Result.GAME_OVER
+	if not rules["digging"] or grid.get_cell(cell) != MineGrid.Cell.ROCK:
+		return Result.NOT_ALLOWED
+	if dig_job_at(cell) != null:
+		return Result.OCCUPIED
+	if not grid.touches_walkable(cell):
+		return Result.NOT_CONNECTED
+	if int(rules["max_digs"]) >= 0 and digs_started >= int(rules["max_digs"]):
+		return Result.LIMIT_REACHED
+	if gold < int(rules["dig_cost"]):
+		return Result.NOT_ENOUGH_GOLD
+	return Result.OK
+
+
+## Beginnt, ein Felsfeld zum Stollen zu graben. Das Feld wird nach dig_time Sekunden begehbar.
+func dig(cell: Vector2i) -> Result:
+	var result := can_dig(cell)
+	if result != Result.OK:
+		return result
+	gold -= int(rules["dig_cost"])
+	digs_started += 1
+	var job := DigJob.new()
+	job.cell = cell
+	job.total = float(rules["dig_time"])
+	job.time_left = job.total
+	dig_jobs.append(job)
+	dig_started.emit(job)
+	return result
+
+
+func can_fill(cell: Vector2i) -> Result:
+	if status != Status.RUNNING:
+		return Result.GAME_OVER
+	if not rules["digging"] or grid.get_cell(cell) != MineGrid.Cell.TUNNEL:
+		return Result.NOT_ALLOWED
+	for e in enemies:
+		if e.alive and (e.target_cell == cell or MineGrid.cell_at(e.pos) == cell):
+			return Result.ENEMY_IN_THE_WAY
+	# Probeweise zuschütten und prüfen, ob jeder Eingang und jeder Gegner noch ans Ziel kommt.
+	grid.set_cell(cell, MineGrid.Cell.ROCK)
+	var ok := grid.has_path()
+	if ok:
+		for e in enemies:
+			if e.alive and grid.distance(e.target_cell) == MineGrid.UNREACHABLE:
+				ok = false
+				break
+	grid.set_cell(cell, MineGrid.Cell.TUNNEL)
+	if not ok:
+		return Result.BLOCKS_PATH
+	if gold < int(rules["fill_cost"]):
+		return Result.NOT_ENOUGH_GOLD
+	return Result.OK
+
+
+## Schüttet ein Stollenfeld sofort zu. Es wird wieder zu Fels.
+func fill(cell: Vector2i) -> Result:
+	var result := can_fill(cell)
+	if result != Result.OK:
+		return result
+	gold -= int(rules["fill_cost"])
+	grid.set_cell(cell, MineGrid.Cell.ROCK)
+	for e in enemies:
+		if e.alive:
+			_update_remaining(e)
+	grid_changed.emit(cell)
+	return result
+
+
+# --- Arbeiter -------------------------------------------------------------
+
+func worker_at(cell: Vector2i) -> Worker:
+	return _workers_by_cell.get(cell)
+
+
+func can_place_worker(cell: Vector2i) -> Result:
+	if status != Status.RUNNING:
+		return Result.GAME_OVER
+	if grid.get_cell(cell) != MineGrid.Cell.ORE:
+		return Result.NOT_ALLOWED
+	if _workers_by_cell.has(cell):
+		return Result.OCCUPIED
+	if not grid.touches_walkable(cell):
+		return Result.NOT_CONNECTED
+	if gold < int(rules["worker_cost"]):
+		return Result.NOT_ENOUGH_GOLD
+	return Result.OK
+
+
+## Setzt einen Arbeiter an eine Erzader. Er baut Erz ab, solange keine Gegner in der Nähe sind.
+func place_worker(cell: Vector2i) -> Result:
+	var result := can_place_worker(cell)
+	if result != Result.OK:
+		return result
+	gold -= int(rules["worker_cost"])
+	var w := Worker.new()
+	w.id = _take_id()
+	w.cell = cell
+	w.pos = MineGrid.center(cell)
+	workers.append(w)
+	_workers_by_cell[cell] = w
+	worker_placed.emit(w)
+	return result
 
 
 func can_start_wave() -> bool:
@@ -188,12 +418,54 @@ func step() -> void:
 	if status != Status.RUNNING:
 		return
 	tick += 1
+	_step_digs()
 	_step_waves()
 	_step_enemies()
+	_step_workers()
 	_step_towers()
 	_step_projectiles()
 	_cleanup()
 	_check_end()
+
+
+func _step_digs() -> void:
+	if dig_jobs.is_empty():
+		return
+	var finished_jobs: Array[DigJob] = []
+	for job in dig_jobs:
+		job.time_left -= DT
+		if job.time_left <= 0.0:
+			finished_jobs.append(job)
+	for job in finished_jobs:
+		dig_jobs.erase(job)
+		grid.set_cell(job.cell, MineGrid.Cell.TUNNEL)
+		for e in enemies:
+			if e.alive:
+				_update_remaining(e)
+		grid_changed.emit(job.cell)
+
+
+func _step_workers() -> void:
+	if workers.is_empty():
+		return
+	var threat_sq := float(rules["worker_threat_radius"]) ** 2
+	var interval := float(rules["ore_interval"])
+	for w in workers:
+		w.active = grid.touches_walkable(w.cell)
+		if w.active:
+			for e in enemies:
+				if e.alive and e.pos.distance_squared_to(w.pos) <= threat_sq:
+					w.active = false
+					break
+		if not w.active:
+			continue
+		w.progress += DT
+		while w.progress >= interval:
+			w.progress -= interval
+			var amount := int(rules["ore_amount"])
+			ore += amount
+			w.mined += amount
+			ore_mined.emit(w, amount)
 
 
 func _step_waves() -> void:
@@ -266,11 +538,11 @@ func _step_towers() -> void:
 		var target := _pick_target(t)
 		if target == null:
 			continue
-		t.cooldown_left = float(t.def["cooldown"])
+		t.cooldown_left = float(t.stats["cooldown"])
 		t.shots += 1
 		var p := Projectile.new()
 		p.id = _take_id()
-		p.def = t.def
+		p.def = t.stats
 		p.pos = t.pos
 		p.prev_pos = t.pos
 		p.target = target
@@ -282,7 +554,7 @@ func _step_towers() -> void:
 ## Zielwahl "am weitesten vorn": der Gegner in Reichweite mit dem kürzesten Restweg.
 func _pick_target(t: Tower) -> Enemy:
 	var best: Enemy = null
-	var range_sq := float(t.def["range"]) ** 2
+	var range_sq := float(t.stats["range"]) ** 2
 	for e in enemies:
 		if e.alive and t.pos.distance_squared_to(e.pos) <= range_sq:
 			if best == null or e.remaining < best.remaining:
@@ -361,6 +633,6 @@ func snapshot() -> Dictionary:
 	for e in enemies:
 		es.append([e.id, e.type, e.hp, e.pos])
 	return {
-		"tick": tick, "status": status, "gold": gold, "lives": lives, "kills": kills,
+		"tick": tick, "status": status, "gold": gold, "ore": ore, "lives": lives, "kills": kills,
 		"wave": wave_index, "enemies": es, "towers": towers.size(), "projectiles": projectiles.size(),
 	}

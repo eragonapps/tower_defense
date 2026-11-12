@@ -1,0 +1,11 @@
+{
+  "digging": true,
+  "dig_cost": 30,
+  "dig_time": 3.0,
+  "fill_cost": 20,
+  "max_digs": -1,
+  "worker_cost": 40,
+  "ore_interval": 1.0,
+  "ore_amount": 1,
+  "worker_threat_radius": 1.6
+}

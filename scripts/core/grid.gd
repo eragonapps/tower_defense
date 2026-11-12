@@ -8,7 +8,7 @@ extends RefCounted
 ## mit dem kleinsten Abstand. Ändert sich das Raster, wird das Feld neu berechnet
 ## und alle Gegner haben sofort einen gültigen Weg.
 
-enum Cell { GRANITE, ROCK, TUNNEL, BUILD, ENTRANCE, HEART }
+enum Cell { GRANITE, ROCK, TUNNEL, BUILD, ENTRANCE, HEART, ORE }
 
 const CHARS := {
 	"#": Cell.GRANITE,
@@ -17,6 +17,7 @@ const CHARS := {
 	"o": Cell.BUILD,
 	"E": Cell.ENTRANCE,
 	"H": Cell.HEART,
+	"*": Cell.ORE,
 }
 const UNREACHABLE := -1
 ## Feste Reihenfolge, damit gleich lange Wege immer gleich entschieden werden.
@@ -78,6 +79,22 @@ func in_bounds(c: Vector2i) -> bool:
 
 func get_cell(c: Vector2i) -> int:
 	return _cells[c.y * width + c.x] if in_bounds(c) else Cell.GRANITE
+
+
+## Ändert eine Zelle und berechnet die Wege neu. Für Graben und Zuschütten.
+func set_cell(c: Vector2i, type: int) -> void:
+	if not in_bounds(c):
+		return
+	_cells[c.y * width + c.x] = type
+	_rebuild_distances()
+
+
+## Wahr, wenn eine der vier Nachbarzellen begehbar ist.
+func touches_walkable(c: Vector2i) -> bool:
+	for d in DIRS:
+		if is_walkable(c + d):
+			return true
+	return false
 
 
 func is_walkable(c: Vector2i) -> bool:

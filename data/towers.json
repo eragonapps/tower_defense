@@ -7,7 +7,20 @@
     "damage": 10,
     "splash": 0.0,
     "projectile_speed": 12.0,
-    "color": "#b9782f"
+    "color": "#b9782f",
+    "upgrades": [
+      {
+        "ore": 15,
+        "damage": 17,
+        "range": 2.8
+      },
+      {
+        "ore": 30,
+        "damage": 28,
+        "cooldown": 0.5,
+        "range": 3.0
+      }
+    ]
   },
   "sling": {
     "name_key": "TOWER_SLING",
@@ -17,6 +30,19 @@
     "damage": 22,
     "splash": 1.1,
     "projectile_speed": 7.0,
-    "color": "#7d8a94"
+    "color": "#7d8a94",
+    "upgrades": [
+      {
+        "ore": 20,
+        "damage": 36,
+        "splash": 1.25
+      },
+      {
+        "ore": 40,
+        "damage": 58,
+        "splash": 1.4,
+        "range": 3.5
+      }
+    ]
   }
 }

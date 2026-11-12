@@ -6,12 +6,13 @@
 - Quellen und Lizenzen der Assets: [`ASSETS.md`](ASSETS.md)
 
 ## Stand
-Meilenstein 1: ein spielbares Level mit Platzhalter-Grafik. 2 Türme, 2 Gegner, 6 Wellen, Gold, Leben, Sieg und Niederlage, Touch-Kamera, Deutsch und Englisch.
+Meilenstein 2: zwei spielbare Levels mit Platzhalter-Grafik. Türme bauen und ausbauen, Stollen graben und zuschütten, Arbeiter an Erzadern, Gold und Erz, Deutsch und Englisch.
 
 ## Bedienung
 - Ein Finger ziehen: Karte verschieben. Zwei Finger: zoomen.
-- Leuchtenden Bauplatz antippen: Turm wählen und bauen.
-- Gebauten Turm antippen: Reichweite sehen, verkaufen.
+- Leuchtenden Bauplatz antippen: Turm bauen. Gebauten Turm antippen: ausbauen oder verkaufen.
+- Fels antippen: Stollen graben. Stollen antippen: zuschütten.
+- Blaue Erzader antippen: Arbeiter einsetzen.
 - Oben rechts: Ansicht drehen, Tempo, Pause, Menü.
 
 ## Test-APK aufs Gerät bringen
@@ -46,4 +47,4 @@ Balancing-Bericht (Bots spielen jedes Level):
 godot --headless -s tools/balance_report.gd
 ```
 
-Die Spielwerte stehen in `data/towers.json`, `data/enemies.json` und `data/levels/`.
+Die Spielwerte stehen in `data/towers.json`, `data/enemies.json`, `data/rules.json` und `data/levels/`.

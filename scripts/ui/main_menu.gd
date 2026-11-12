@@ -1,7 +1,7 @@
 extends Control
-## Hauptmenü: Titel, Sprachauswahl, Versionsanzeige.
+## Hauptmenü: Titel, Levelauswahl, Sprachauswahl, Versionsanzeige.
 
-@onready var _btn_play: Button = %Play
+@onready var _levels: VBoxContainer = %Levels
 @onready var _btn_de: Button = %LangDe
 @onready var _btn_en: Button = %LangEn
 @onready var _btn_quit: Button = %Quit
@@ -10,21 +10,37 @@ extends Control
 
 func _ready() -> void:
 	_version.text = "v%s" % ProjectSettings.get_setting("application/config/version", "?")
-	_btn_play.pressed.connect(_start_game)
 	_btn_de.pressed.connect(Settings.set_language.bind("de"))
 	_btn_en.pressed.connect(Settings.set_language.bind("en"))
 	_btn_quit.pressed.connect(get_tree().quit)
-	Settings.language_changed.connect(_update_language_buttons)
-	_update_language_buttons(Settings.language)
+	Settings.language_changed.connect(_on_language_changed)
+	_on_language_changed(Settings.language)
 
 
-func _update_language_buttons(locale: String) -> void:
+func _on_language_changed(locale: String) -> void:
 	_btn_de.set_pressed_no_signal(locale == "de")
 	_btn_en.set_pressed_no_signal(locale == "en")
+	_build_level_buttons()
 
 
-func _start_game() -> void:
-	LevelView.level_id = GameData.LEVEL_ORDER[0]
+## Ein Knopf je Level. Die Namen hängen von der Sprache ab und werden deshalb neu erzeugt.
+func _build_level_buttons() -> void:
+	for c in _levels.get_children():
+		_levels.remove_child(c)
+		c.queue_free()
+	for i in GameData.LEVEL_ORDER.size():
+		var id := GameData.LEVEL_ORDER[i]
+		var b := Button.new()
+		b.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		b.text = tr("MENU_LEVEL") % [i + 1, tr(GameData.load_level(id).get("name_key", id))]
+		b.custom_minimum_size = Vector2(0, 72)
+		b.add_theme_font_size_override("font_size", 26)
+		b.pressed.connect(_start_level.bind(id))
+		_levels.add_child(b)
+
+
+func _start_level(id: String) -> void:
+	LevelView.level_id = id
 	get_tree().change_scene_to_file("res://scenes/level.tscn")
 
 

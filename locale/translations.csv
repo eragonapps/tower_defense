@@ -1,6 +1,5 @@
 keys,de,en
 GAME_SUBTITLE,Wacht der Tiefe,Watch of the Deep
-MENU_PLAY,Spielen,Play
 MENU_LANGUAGE,Sprache,Language
 MENU_QUIT,Beenden,Quit
 LANG_DE,Deutsch,Deutsch
@@ -29,3 +28,30 @@ END_LIVES_LEFT,Verbleibende Leben: %d,Lives left: %d
 END_DEFEAT_TEXT,Das Herz der Mine ist gefallen.,The heart of the mine has fallen.
 END_RETRY,Nochmal,Try again
 END_MENU,Hauptmenü,Main menu
+LEVEL_02_NAME,Die Erzader,The Ore Vein
+HINT_LEVEL_02,"Tippe auf Fels, um zu graben. Setze Arbeiter an die blauen Erzadern und baue mit dem Erz deine Türme aus.","Tap rock to dig. Place workers at the blue ore veins and use the ore to upgrade your towers."
+HUD_ORE,Erz: %d,Ore: %d
+HUD_COST_ORE,%d Erz,%d ore
+HUD_UPGRADE,Ausbauen,Upgrade
+HUD_TOWER_LEVEL,Stufe %d/%d,Level %d/%d
+HUD_STAT_DAMAGE,Schaden,Damage
+HUD_STAT_RANGE,Reichweite,Range
+HUD_STAT_COOLDOWN,Nachladen,Reload
+HUD_STAT_SPLASH,Fläche,Splash
+HUD_ROCK,Fels,Rock
+HUD_TUNNEL,Stollen,Tunnel
+HUD_ORE_VEIN,Erzader,Ore vein
+HUD_DIG,Stollen graben,Dig tunnel
+HUD_DIGGING,Hier wird gegraben …,Digging in progress …
+HUD_FILL,Zuschütten,Fill in
+HUD_PLACE_WORKER,Arbeiter einsetzen,Place worker
+HUD_WORKER_MINING,Ein Arbeiter baut hier Erz ab.,A worker is mining ore here.
+HUD_WORKER_HIDING,Der Arbeiter versteckt sich vor Gegnern.,The worker is hiding from enemies.
+REASON_GOLD,Zu wenig Gold.,Not enough gold.
+REASON_ORE,Zu wenig Erz.,Not enough ore.
+REASON_BLOCKS_PATH,Das würde den Weg zum Herz versperren.,That would block the way to the heart.
+REASON_ENEMY,Hier steht gerade ein Gegner.,An enemy is standing here.
+REASON_NOT_CONNECTED,Kein Stollen daneben. Grabe dich zuerst heran.,No tunnel next to it. Dig your way there first.
+REASON_LIMIT,In diesem Level darfst du nicht weiter graben.,You cannot dig any further in this level.
+END_NEXT,Nächstes Level,Next level
+MENU_LEVEL,Level %d: %s,Level %d: %s

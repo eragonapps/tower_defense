@@ -49,15 +49,13 @@ text = "GAME_SUBTITLE"
 horizontal_alignment = 1
 
 [node name="Spacer" type="Control" parent="Center/Box"]
-custom_minimum_size = Vector2(0, 24)
+custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
 
-[node name="Play" type="Button" parent="Center/Box"]
+[node name="Levels" type="VBoxContainer" parent="Center/Box"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
-text = "MENU_PLAY"
+theme_override_constants/separation = 12
 
 [node name="LanguageLabel" type="Label" parent="Center/Box"]
 layout_mode = 2

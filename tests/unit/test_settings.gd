@@ -33,10 +33,10 @@ func test_set_language_switches_translation_and_emits() -> void:
 	watch_signals(_s)
 	_s.set_language("de")
 	assert_eq(TranslationServer.get_locale(), "de")
-	assert_eq(tr("MENU_PLAY"), "Spielen")
+	assert_eq(tr("MENU_QUIT"), "Beenden")
 	assert_signal_emitted_with_parameters(_s, "language_changed", ["de"])
 	_s.set_language("en")
-	assert_eq(tr("MENU_PLAY"), "Play")
+	assert_eq(tr("MENU_QUIT"), "Quit")
 
 
 func test_unsupported_language_is_ignored() -> void:

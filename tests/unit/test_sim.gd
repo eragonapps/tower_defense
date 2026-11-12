@@ -44,7 +44,7 @@ func _run(sim: GameSim, seconds: float) -> void:
 func test_building_costs_gold_and_places_tower() -> void:
 	var sim := _sim([{"enemy": "walker", "count": 1}])
 	watch_signals(sim)
-	assert_eq(sim.build_tower(Vector2i(1, 2), "bow"), GameSim.BuildResult.OK)
+	assert_eq(sim.build_tower(Vector2i(1, 2), "bow"), GameSim.Result.OK)
 	assert_eq(sim.gold, 50)
 	assert_eq(sim.towers.size(), 1)
 	assert_not_null(sim.tower_at(Vector2i(1, 2)))
@@ -53,19 +53,19 @@ func test_building_costs_gold_and_places_tower() -> void:
 
 func test_build_is_rejected_with_reason() -> void:
 	var sim := _sim([{"enemy": "walker", "count": 1}])
-	assert_eq(sim.build_tower(Vector2i(2, 2), "bow"), GameSim.BuildResult.NOT_BUILDABLE, "Fels")
-	assert_eq(sim.build_tower(Vector2i(3, 1), "bow"), GameSim.BuildResult.NOT_BUILDABLE, "Stollen")
-	assert_eq(sim.build_tower(Vector2i(1, 2), "laser"), GameSim.BuildResult.UNKNOWN_TOWER)
-	assert_eq(sim.build_tower(Vector2i(1, 2), "bow"), GameSim.BuildResult.OK)
-	assert_eq(sim.build_tower(Vector2i(1, 2), "bow"), GameSim.BuildResult.OCCUPIED)
-	assert_eq(sim.build_tower(Vector2i(5, 2), "bomb"), GameSim.BuildResult.NOT_ENOUGH_GOLD)
+	assert_eq(sim.build_tower(Vector2i(2, 2), "bow"), GameSim.Result.NOT_BUILDABLE, "Fels")
+	assert_eq(sim.build_tower(Vector2i(3, 1), "bow"), GameSim.Result.NOT_BUILDABLE, "Stollen")
+	assert_eq(sim.build_tower(Vector2i(1, 2), "laser"), GameSim.Result.UNKNOWN_TOWER)
+	assert_eq(sim.build_tower(Vector2i(1, 2), "bow"), GameSim.Result.OK)
+	assert_eq(sim.build_tower(Vector2i(1, 2), "bow"), GameSim.Result.OCCUPIED)
+	assert_eq(sim.build_tower(Vector2i(5, 2), "bomb"), GameSim.Result.NOT_ENOUGH_GOLD)
 	assert_eq(sim.gold, 50, "abgelehnte Bauten kosten nichts")
 	assert_eq(sim.towers.size(), 1)
 
 
 func test_tower_not_allowed_in_level_is_rejected() -> void:
 	var sim := _sim([{"enemy": "walker", "count": 1}], {"towers": ["bow"]})
-	assert_eq(sim.build_tower(Vector2i(1, 2), "bomb"), GameSim.BuildResult.UNKNOWN_TOWER)
+	assert_eq(sim.build_tower(Vector2i(1, 2), "bomb"), GameSim.Result.UNKNOWN_TOWER)
 
 
 func test_selling_refunds_the_fixed_share() -> void:
@@ -76,7 +76,7 @@ func test_selling_refunds_the_fixed_share() -> void:
 	assert_eq(sim.towers.size(), 0)
 	assert_null(sim.tower_at(Vector2i(1, 2)))
 	assert_false(sim.sell_tower(Vector2i(1, 2)), "leerer Platz")
-	assert_eq(sim.build_tower(Vector2i(1, 2), "bow"), GameSim.BuildResult.OK, "Platz ist wieder frei")
+	assert_eq(sim.build_tower(Vector2i(1, 2), "bow"), GameSim.Result.OK, "Platz ist wieder frei")
 
 
 func test_kill_pays_bounty_and_wave_pays_reward() -> void:
@@ -234,7 +234,7 @@ func test_leak_costs_lives_and_zero_lives_is_defeat() -> void:
 	var tick := sim.tick
 	sim.step()
 	assert_eq(sim.tick, tick, "nach dem Ende läuft nichts weiter")
-	assert_eq(sim.build_tower(Vector2i(1, 2), "bow"), GameSim.BuildResult.GAME_OVER)
+	assert_eq(sim.build_tower(Vector2i(1, 2), "bow"), GameSim.Result.GAME_OVER)
 
 
 func test_last_wave_cleared_is_victory() -> void:

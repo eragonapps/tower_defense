@@ -1,13 +1,18 @@
 extends GutTest
 ## Prüft die echten Spieldaten und lässt Bots jedes Level spielen.
 
+## Zugang zu den sicheren Erzadern in Level 2. In Levels ohne Graben werden die Felder übersprungen.
+const MINE_DIGS := [Vector2i(4, 3), Vector2i(4, 2), Vector2i(12, 3)]
+
 var towers: Dictionary
 var enemies: Dictionary
+var rules: Dictionary
 
 
 func before_all() -> void:
 	towers = GameData.load_towers()
 	enemies = GameData.load_enemies()
+	rules = GameData.load_rules()
 
 
 func test_all_levels_are_valid() -> void:
@@ -41,33 +46,64 @@ func test_every_data_name_has_a_translation() -> void:
 	TranslationServer.set_locale(before)
 
 
-func test_every_build_slot_can_reach_the_path() -> void:
+func test_every_build_slot_can_reach_a_tunnel() -> void:
+	# Auch Sackgassen zählen: sie können durch Graben zum Weg der Gegner werden.
 	var min_range := 999.0
 	for t in towers.values():
 		min_range = minf(min_range, t["range"])
 	for id in GameData.LEVEL_ORDER:
 		var grid := MineGrid.from_rows(GameData.load_level(id)["grid"])
-		var path := grid.path_cells()
+		var tunnels := grid.cells_of_type(MineGrid.Cell.TUNNEL)
 		for slot in grid.cells_of_type(MineGrid.Cell.BUILD):
 			var reachable := false
-			for p in path:
+			for p in tunnels:
 				if MineGrid.center(slot).distance_to(MineGrid.center(p)) <= min_range:
 					reachable = true
 					break
-			assert_true(reachable, "%s: Bauplatz %s erreicht den Weg nicht" % [id, slot])
+			assert_true(reachable, "%s: Bauplatz %s erreicht keinen Stollen" % [id, slot])
+
+
+func _play(id: String, bot: Object) -> GameSim:
+	return Bots.run(GameData.load_level(id), towers, enemies, bot, 1800.0, rules)
+
+
+func test_rules_file_only_uses_known_rules() -> void:
+	assert_gt(rules.size(), 0)
+	for key in rules:
+		assert_true(GameSim.DEFAULT_RULES.has(key), "unbekannte Regel %s" % key)
 
 
 func test_building_nothing_loses_every_level() -> void:
 	for id in GameData.LEVEL_ORDER:
-		var sim := Bots.run(GameData.load_level(id), towers, enemies, Bots.NoneBot.new())
-		assert_eq(sim.status, GameSim.Status.LOST, id)
+		assert_eq(_play(id, Bots.NoneBot.new()).status, GameSim.Status.LOST, id)
 
 
 func test_sensible_play_wins_every_level() -> void:
 	for id in GameData.LEVEL_ORDER:
-		var sim := Bots.run(GameData.load_level(id), towers, enemies, Bots.BuilderBot.new(["crossbow", "crossbow", "sling"]))
+		var sim := _play(id, Bots.MinerBot.new(["crossbow", "crossbow", "sling"], MINE_DIGS))
 		assert_eq(sim.status, GameSim.Status.WON, id)
-		assert_gt(sim.lives, int(GameData.load_level(id)["lives"]) / 2, "%s: zu knapp für das Einstiegsniveau" % id)
+		assert_gt(sim.lives, int(GameData.load_level(id)["lives"]) / 2, "%s: zu knapp" % id)
+
+
+func test_level_two_cannot_be_won_without_the_mine() -> void:
+	for pattern in [["crossbow"], ["sling"], ["crossbow", "crossbow", "sling"]]:
+		var sim := _play("level_02", Bots.BuilderBot.new(pattern))
+		assert_eq(sim.status, GameSim.Status.LOST, str(pattern))
+
+
+func test_level_two_ore_pays_for_upgrades() -> void:
+	var sim := _play("level_02", Bots.MinerBot.new(["crossbow", "crossbow", "sling"], MINE_DIGS))
+	var upgraded := 0
+	var mined := 0
+	for t in sim.towers:
+		if t.level > 1:
+			upgraded += 1
+	for w in sim.workers:
+		mined += w.mined
+		assert_gt(w.mined, 0, "Arbeiter an %s hat nichts abgebaut" % w.cell)
+	assert_eq(sim.workers.size(), 3)
+	assert_gt(upgraded, 5)
+	assert_gt(mined, 100)
 
 
 func test_stress_300_enemies_40_towers_stays_fast() -> void:
@@ -82,7 +118,7 @@ func test_stress_300_enemies_40_towers_stays_fast() -> void:
 	var sim := GameSim.new(level, towers, {"big": big})
 	var types := towers.keys()
 	for x in 40:
-		assert_eq(sim.build_tower(Vector2i(x + 1, 2), types[x % types.size()]), GameSim.BuildResult.OK)
+		assert_eq(sim.build_tower(Vector2i(x + 1, 2), types[x % types.size()]), GameSim.Result.OK)
 	sim.start_next_wave()
 	for i in 600:
 		sim.step()

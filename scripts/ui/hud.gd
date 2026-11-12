@@ -3,13 +3,14 @@ extends CanvasLayer
 ## Bedienoberfläche im Level: Anzeigen oben, Baumenü unten, Ende-Bildschirm.
 ## Die Oberfläche kennt die Spielregeln nicht. Sie zeigt den Zustand an und meldet Wünsche per Signal.
 
-signal build_requested(type: String)
-signal sell_requested
+## Ein Knopf im Auswahlmenü wurde gedrückt. id ist die Kennung aus show_menu.
+signal action_requested(id: String)
 signal wave_requested
 signal speed_requested
 signal pause_requested
 signal rotate_requested
 signal retry_requested
+signal next_requested
 signal menu_requested
 
 const BUTTON_HEIGHT := 76.0
@@ -19,24 +20,26 @@ const COLOR_PANEL := Color(0.09, 0.08, 0.07, 0.88)
 const COLOR_TEXT := Color(0.9, 0.86, 0.78)
 const COLOR_GOLD := Color(0.95, 0.74, 0.3)
 const COLOR_LIVES := Color(0.9, 0.42, 0.36)
+const COLOR_ORE := Color(0.45, 0.8, 0.95)
 
 var _margin: MarginContainer
 var _lives: Label
 var _gold: Label
+var _ore: Label
 var _wave: Label
 var _pause: Button
 var _speed: Button
 var _wave_button: Button
 var _context: PanelContainer
 var _context_title: Label
+var _context_info: Label
 var _context_buttons: HBoxContainer
 var _hint: Label
 var _end: Control
 var _end_title: Label
 var _end_text: Label
-
-var _build_buttons := {}
-var _sell_button: Button
+var _end_next: Button
+var _hint_key := "HUD_HINT_BUILD"
 
 
 func _ready() -> void:
@@ -47,9 +50,11 @@ func _ready() -> void:
 
 # --- Aktualisieren --------------------------------------------------------
 
-func show_state(sim: GameSim, paused: bool, speed: float) -> void:
+func show_state(sim: GameSim, paused: bool, speed: float, show_ore: bool) -> void:
 	_lives.text = tr("HUD_LIVES") % sim.lives
 	_gold.text = tr("HUD_GOLD") % sim.gold
+	_ore.visible = show_ore
+	_ore.text = tr("HUD_ORE") % sim.ore
 	_wave.text = tr("HUD_WAVE") % [maxi(sim.wave_index + 1, 0), sim.wave_count]
 	_pause.text = tr("HUD_RESUME") if paused else tr("HUD_PAUSE")
 	_speed.text = "%d×" % int(speed)
@@ -59,33 +64,30 @@ func show_state(sim: GameSim, paused: bool, speed: float) -> void:
 			_wave_button.text = tr("HUD_START_WAVE")
 		else:
 			_wave_button.text = tr("HUD_NEXT_WAVE") % ceili(sim.next_wave_in)
-	for type in _build_buttons:
-		_build_buttons[type].disabled = sim.gold < int(sim.tower_def(type)["cost"])
-	_hint.visible = sim.towers.is_empty() and not _context.visible and sim.status == GameSim.Status.RUNNING
+	_hint.visible = sim.wave_index < 0 and not _context.visible and sim.status == GameSim.Status.RUNNING
 
 
-## Zeigt das Baumenü für einen freien Bauplatz.
-func show_build_menu(sim: GameSim) -> void:
+## Legt den Hinweistext fest, der vor der ersten Welle unten links steht.
+func set_hint(key: String) -> void:
+	_hint_key = key
+	if _hint:
+		_hint.text = tr(key)
+
+
+## Zeigt das Auswahlmenü unten links.
+## buttons: Liste aus {"id": Kennung, "text": Beschriftung, "disabled": bool}.
+func show_menu(title: String, info: String, buttons: Array) -> void:
 	_clear_context()
-	_context_title.text = tr("HUD_BUILD_TITLE")
-	for type in sim.allowed_towers():
-		var def := sim.tower_def(type)
-		var b := _button("%s\n%s" % [tr(def["name_key"]), tr("HUD_COST") % int(def["cost"])])
-		b.custom_minimum_size = Vector2(210, BUTTON_HEIGHT + 12)
-		b.pressed.connect(build_requested.emit.bind(type))
+	_context_title.text = title
+	_context_info.text = info
+	_context_info.visible = info != ""
+	for def in buttons:
+		var b := _button(def["text"])
+		b.custom_minimum_size = Vector2(200, BUTTON_HEIGHT + 12)
+		b.disabled = def.get("disabled", false)
+		b.pressed.connect(action_requested.emit.bind(def["id"]))
 		_context_buttons.add_child(b)
-		_build_buttons[type] = b
-	_context.visible = true
-
-
-## Zeigt die Auswahl für einen gebauten Turm.
-func show_tower_menu(sim: GameSim, tower: GameSim.Tower) -> void:
-	_clear_context()
-	_context_title.text = tr(tower.def["name_key"])
-	_sell_button = _button(tr("HUD_SELL") % sim.sell_value(tower))
-	_sell_button.custom_minimum_size = Vector2(210, BUTTON_HEIGHT)
-	_sell_button.pressed.connect(sell_requested.emit)
-	_context_buttons.add_child(_sell_button)
+	_context_buttons.visible = not buttons.is_empty()
 	_context.visible = true
 
 
@@ -94,8 +96,9 @@ func hide_context() -> void:
 	_context.visible = false
 
 
-func show_end(won: bool, lives: int) -> void:
+func show_end(won: bool, lives: int, has_next: bool) -> void:
 	hide_context()
+	_end_next.visible = won and has_next
 	_end_title.text = tr("END_VICTORY") if won else tr("END_DEFEAT")
 	_end_title.add_theme_color_override("font_color", COLOR_GOLD if won else COLOR_LIVES)
 	_end_text.text = (tr("END_LIVES_LEFT") % lives) if won else tr("END_DEFEAT_TEXT")
@@ -111,8 +114,6 @@ func is_context_visible() -> bool:
 
 
 func _clear_context() -> void:
-	_build_buttons.clear()
-	_sell_button = null
 	for c in _context_buttons.get_children():
 		_context_buttons.remove_child(c)
 		c.queue_free()
@@ -138,8 +139,9 @@ func _build() -> void:
 	stats_panel.add_child(stats)
 	_lives = _label("", COLOR_LIVES)
 	_gold = _label("", COLOR_GOLD)
+	_ore = _label("", COLOR_ORE)
 	_wave = _label("", COLOR_TEXT)
-	for l in [_lives, _gold, _wave]:
+	for l in [_lives, _gold, _ore, _wave]:
 		stats.add_child(l)
 
 	# Oben rechts: Drehen, Tempo, Pause, Menü.
@@ -173,11 +175,18 @@ func _build() -> void:
 	_context.add_child(box)
 	_context_title = _label("", COLOR_TEXT)
 	box.add_child(_context_title)
+	_context_info = _label("", COLOR_TEXT.darkened(0.2))
+	_context_info.add_theme_font_size_override("font_size", 20)
+	box.add_child(_context_info)
 	_context_buttons = HBoxContainer.new()
 	_context_buttons.add_theme_constant_override("separation", 12)
 	box.add_child(_context_buttons)
 
-	_hint = _label(tr("HUD_HINT_BUILD"), COLOR_TEXT)
+	_hint = _label(tr(_hint_key), COLOR_TEXT)
+	# Feste Breite mit Umbruch, damit lange Hinweise nicht unter den Wellen-Knopf laufen.
+	_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_hint.custom_minimum_size.x = 780
+	_hint.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 	area.add_child(_hint)
 	_hint.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
 	_hint.grow_vertical = Control.GROW_DIRECTION_BEGIN
@@ -212,11 +221,13 @@ func _build_end_screen() -> void:
 	_end_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_end_text = _label("", COLOR_TEXT)
 	_end_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_end_next = _button(tr("END_NEXT"))
+	_end_next.pressed.connect(next_requested.emit)
 	var retry := _button(tr("END_RETRY"))
 	retry.pressed.connect(retry_requested.emit)
 	var menu := _button(tr("END_MENU"))
 	menu.pressed.connect(menu_requested.emit)
-	for c in [_end_title, _end_text, retry, menu]:
+	for c in [_end_title, _end_text, _end_next, retry, menu]:
 		box.add_child(c)
 
 

@@ -73,7 +73,7 @@ func test_keys_used_in_scripts_exist() -> void:
 	for row in _read_rows():
 		keys[row[0]] = true
 	var re := RegEx.new()
-	re.compile("\"((?:HUD|END|MENU|LANG|GAME|TOWER|ENEMY|LEVEL)_[A-Z0-9_]+)\"")
+	re.compile("\"((?:HUD|END|MENU|LANG|GAME|TOWER|ENEMY|LEVEL|REASON|HINT)_[A-Z0-9_]+)\"")
 	var checked := 0
 	for dir in ["res://scripts/ui", "res://scripts/view", "res://scripts/core"]:
 		for file in DirAccess.get_files_at(dir):

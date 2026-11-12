@@ -6,7 +6,8 @@ extends RefCounted
 const TOWERS_PATH := "res://data/towers.json"
 const ENEMIES_PATH := "res://data/enemies.json"
 const LEVEL_PATH := "res://data/levels/%s.json"
-const LEVEL_ORDER: Array[String] = ["level_01"]
+const RULES_PATH := "res://data/rules.json"
+const LEVEL_ORDER: Array[String] = ["level_01", "level_02"]
 
 const TOWER_FIELDS := ["name_key", "cost", "range", "cooldown", "damage", "splash", "projectile_speed", "color"]
 const ENEMY_FIELDS := ["name_key", "hp", "speed", "bounty", "lives", "color", "size"]
@@ -33,6 +34,16 @@ static func load_enemies() -> Dictionary:
 	return d if d is Dictionary else {}
 
 
+static func load_rules() -> Dictionary:
+	var d: Variant = load_json(RULES_PATH)
+	return d if d is Dictionary else {}
+
+
+## Erzeugt die Simulation für ein Level mit allen Daten aus data/.
+static func create_sim(level_id: String) -> GameSim:
+	return GameSim.new(load_level(level_id), load_towers(), load_enemies(), load_rules())
+
+
 static func load_level(id: String) -> Dictionary:
 	var d: Variant = load_json(LEVEL_PATH % id)
 	if d is Dictionary:
@@ -56,6 +67,12 @@ static func validate(level: Dictionary, towers: Dictionary, enemies: Dictionary)
 			errors.append("Turm %s: cooldown muss größer als 0 sein" % id)
 		if towers[id].get("cost", 1) <= 0:
 			errors.append("Turm %s: cost muss größer als 0 sein" % id)
+		for u in towers[id].get("upgrades", []):
+			if int(u.get("ore", 0)) <= 0:
+				errors.append("Turm %s: jede Ausbaustufe braucht Erzkosten (ore) größer als 0" % id)
+			for key in u:
+				if key != "ore" and key not in TOWER_FIELDS:
+					errors.append("Turm %s: Ausbaustufe ändert unbekannten Wert %s" % [id, key])
 	for id in enemies:
 		for f in ENEMY_FIELDS:
 			if not enemies[id].has(f):
@@ -75,6 +92,9 @@ static func validate(level: Dictionary, towers: Dictionary, enemies: Dictionary)
 		return errors
 	if grid.cells_of_type(MineGrid.Cell.BUILD).is_empty():
 		errors.append("Level hat keine Bauplätze")
+	for key in level.get("rules", {}):
+		if not GameSim.DEFAULT_RULES.has(key):
+			errors.append("Level setzt unbekannte Regel %s" % key)
 	for id in level["towers"]:
 		if not towers.has(id):
 			errors.append("Level erlaubt unbekannten Turm %s" % id)

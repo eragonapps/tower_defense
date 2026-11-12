@@ -1,6 +1,6 @@
 # Plan: Durnhal: Wacht der Tiefe – 3D Tower Defense für Android
 
-Stand: 12.11.2026 · Status: **Meilenstein 0 abgeschlossen, Meilenstein 1 umgesetzt und wartet auf den Gerätetest**
+Stand: 12.11.2026 · Status: **Meilensteine 0 und 1 abgeschlossen, Meilenstein 2 umgesetzt und wartet auf den Gerätetest**
 
 ## 1. Festgelegte Entscheidungen
 
@@ -119,11 +119,25 @@ Godot-Projekt, Ordnerstruktur, Testrahmen, CI auf GitHub Actions (Tests und Debu
 ### M1 – Spielbarer Prototyp (Platzhalter-Grafik)
 Ein Level mit Raster, Wegfindung, 1 Gegner, 2 Türme, Gold, Leben, Wellen, Sieg und Niederlage, Touch-Kamera.
 **Fertig, wenn:** das Level auf beiden Geräten von Anfang bis Ende spielbar ist.
-**Stand:** umgesetzt am 12.11.2026, Gerätetest offen. Enthalten sind 2 Gegner (Skelett-Scherge, Skelett-Krieger), 2 Türme (Armbrustschütze, Steinschleuder), 6 Wellen, Verkauf mit 70 % Erstattung, Tempo 1× bis 3× und Pause.
+**Stand:** abgeschlossen am 12.11.2026, auf dem S24 getestet. Enthalten sind 2 Gegner (Skelett-Scherge, Skelett-Krieger), 2 Türme (Armbrustschütze, Steinschleuder), 6 Wellen, Verkauf mit 70 % Erstattung, Tempo 1× bis 3× und Pause.
 **Abweichung vom Plan:** Gegner und Geschosse werden noch neu erzeugt statt wiederverwendet. Das wird erst nachgezogen, wenn eine Messung auf dem Gerät es nötig macht.
 
 ### M2 – Stollen und Wirtschaft
 Graben und Zuschütten mit Wegprüfung, Erzadern, Arbeiter, zweite Währung, Upgrades in 3 Stufen.
+**Stand:** umgesetzt am 12.11.2026, Gerätetest offen. Dazu ein zweites Level „Die Erzader", das ohne Mine nicht zu gewinnen ist, und eine Levelauswahl im Hauptmenü.
+
+So ist es umgesetzt:
+- **Graben:** Fels neben einem Stollen antippen. Kostet 30 Gold und dauert 3 Sekunden. Gegner nutzen einen neuen Weg sofort.
+- **Zuschütten:** Stollen antippen. Kostet 20 Gold und wirkt sofort. Es wird abgelehnt, wenn ein Eingang oder ein Gegner dadurch keinen Weg mehr hätte oder ein Gegner auf dem Feld steht.
+- **Arbeiter:** Erzader antippen, die an einen Stollen grenzt. Kostet 40 Gold, liefert 1 Erz pro Sekunde. Sind Gegner näher als 1,6 Felder, versteckt sich der Arbeiter und liefert nichts.
+- **Ausbau:** Turm antippen. Jede Stufe kostet Erz und verbessert Schaden, Reichweite, Nachladezeit oder Fläche. Das Menü zeigt die Werte vorher und nachher.
+- **Regeln als Daten:** Alle diese Werte stehen in `data/rules.json`. Ein Level kann sie überschreiben, Level 1 schaltet das Graben ab.
+
+Abweichungen und bekannte Schwächen:
+- Arbeiter können nicht sterben und nicht bestohlen werden. Sie verstecken sich nur. Der Dieb-Gegner kommt in Meilenstein 4.
+- Ein Verkauf erstattet nur Gold, kein Erz.
+- Zuschütten wirkt sofort. Damit könnte man Gegner durch wiederholtes Öffnen und Schließen im Kreis schicken. Das ist noch nicht begrenzt und wird beim Gerätetest beobachtet.
+- Der Umweg in Level 2 lohnt sich für den Bot nicht: Er gewinnt mit Umweg knapper als ohne.
 
 ### M3 – Vertical Slice
 Echte Low-Poly-Modelle, Animationen, 4 Türme, 4 Gegner, HUD, Ton, Effekte, 1 fertiges Level, Deutsch und Englisch vollständig.
