@@ -1,0 +1,94 @@
+{
+  "name_key": "LEVEL_05_NAME",
+  "hint_key": "HINT_LEVEL_05",
+  "start_gold": 380,
+  "lives": 20,
+  "wave_pause": 10.0,
+  "towers": [
+    "crossbow",
+    "sling",
+    "runestone",
+    "forge",
+    "bomb",
+    "shieldwall"
+  ],
+  "waves": [
+    {
+      "reward": 40,
+      "groups": [
+        {"enemy": "skeleton_minion", "count": 10, "interval": 0.9},
+        {"enemy": "skeleton_minion", "count": 10, "interval": 0.9, "delay": 4.0, "entrance": 1}
+      ]
+    },
+    {
+      "reward": 45,
+      "groups": [
+        {"enemy": "skeleton_warrior", "count": 6, "interval": 1.5},
+        {"enemy": "skeleton_rogue", "count": 8, "interval": 0.7, "delay": 3.0, "entrance": 1}
+      ]
+    },
+    {
+      "reward": 50,
+      "groups": [
+        {"enemy": "skeleton_guard", "count": 4, "interval": 2.2},
+        {"enemy": "skeleton_warrior", "count": 8, "interval": 1.2, "entrance": 1},
+        {"enemy": "skeleton_mage", "count": 1, "interval": 1.0, "delay": 6.0, "entrance": 1}
+      ]
+    },
+    {
+      "reward": 55,
+      "groups": [
+        {"enemy": "skeleton_rogue", "count": 14, "interval": 0.5},
+        {"enemy": "skeleton_guard", "count": 6, "interval": 1.8, "delay": 2.0, "entrance": 1},
+        {"enemy": "skeleton_minion", "count": 20, "interval": 0.4, "delay": 8.0}
+      ]
+    },
+    {
+      "reward": 60,
+      "groups": [
+        {"enemy": "skeleton_warrior", "count": 14, "interval": 0.9},
+        {"enemy": "skeleton_warrior", "count": 14, "interval": 0.9, "entrance": 1},
+        {"enemy": "skeleton_mage", "count": 2, "interval": 4.0, "delay": 3.0},
+        {"enemy": "skeleton_mage", "count": 2, "interval": 4.0, "delay": 5.0, "entrance": 1}
+      ]
+    },
+    {
+      "reward": 65,
+      "groups": [
+        {"enemy": "skeleton_guard", "count": 10, "interval": 1.3},
+        {"enemy": "skeleton_guard", "count": 10, "interval": 1.3, "entrance": 1},
+        {"enemy": "skeleton_rogue", "count": 16, "interval": 0.4, "delay": 6.0}
+      ]
+    },
+    {
+      "reward": 70,
+      "groups": [
+        {"enemy": "skeleton_warrior", "count": 24, "interval": 0.6},
+        {"enemy": "skeleton_minion", "count": 40, "interval": 0.3, "entrance": 1},
+        {"enemy": "skeleton_mage", "count": 4, "interval": 3.0, "delay": 4.0},
+        {"enemy": "skeleton_guard", "count": 8, "interval": 1.5, "delay": 8.0, "entrance": 1}
+      ]
+    },
+    {
+      "reward": 0,
+      "groups": [
+        {"enemy": "skeleton_guard", "count": 16, "interval": 1.0},
+        {"enemy": "skeleton_guard", "count": 16, "interval": 1.0, "entrance": 1},
+        {"enemy": "skeleton_mage", "count": 5, "interval": 2.5, "delay": 3.0},
+        {"enemy": "skeleton_rogue", "count": 24, "interval": 0.35, "delay": 8.0, "entrance": 1}
+      ]
+    }
+  ],
+  "grid": [
+    "##################",
+    "E........::::::::#",
+    "#:o::o:o.o::*::::#",
+    "#:::*:::.ooo:o:o:#",
+    "#::::::o........H#",
+    "#::::::o.o:o:o:o:#",
+    "#:::*:::.o::*::::#",
+    "#:o::o:o.o:::::::#",
+    "E........::::::::#",
+    "##################"
+  ]
+}

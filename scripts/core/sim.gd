@@ -150,6 +150,8 @@ var lives := 0
 var max_lives := 0
 var tick := 0
 var kills := 0
+## Die meisten Gegner, die je gleichzeitig unterwegs waren. Ein Maß für die Last auf dem Gerät.
+var peak_enemies := 0
 
 var enemies: Array[Enemy] = []
 var towers: Array[Tower] = []
@@ -569,7 +571,8 @@ func _spawn_at(type: String, pos: Vector2, target_cell: Vector2i) -> void:
 	e.id = _take_id()
 	e.type = type
 	e.def = _enemy_defs[type]
-	e.max_hp = float(e.def["hp"]) * float(rules["enemy_hp_factor"])
+	# Lebenspunkte: Grundwert, mal Faktor des Levels, mal Faktor des Schwierigkeitsgrads.
+	e.max_hp = float(e.def["hp"]) * float(_level.get("enemy_hp_scale", 1.0)) * float(rules["enemy_hp_factor"])
 	e.hp = e.max_hp
 	e.pos = pos
 	e.prev_pos = e.pos
@@ -831,6 +834,7 @@ func _damage(e: Enemy, amount: float, type := "") -> void:
 
 
 func _cleanup() -> void:
+	peak_enemies = maxi(peak_enemies, enemies.size())
 	enemies = enemies.filter(func(e: Enemy) -> bool: return e.alive)
 	projectiles = projectiles.filter(func(p: Projectile) -> bool: return not p.done)
 

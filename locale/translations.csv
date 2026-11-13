@@ -98,3 +98,11 @@ SPEC_BULWARK,Bollwerk,Bulwark
 SPEC_BULWARK_DESC,hält viel mehr Gegner viel länger,holds many more enemies much longer
 SPEC_BERSERKER,Berserker,Berserker
 SPEC_BERSERKER_DESC,"schlägt hart und schnell zu","strikes hard and fast"
+LEVEL_05_NAME,Die Kreuzung,The Crossroads
+HINT_LEVEL_05,"Zwei Tore, ein kurzer gemeinsamer Weg. Sichere die Kreuzung, bevor du in die Mine investierst.","Two gates, one short shared path. Secure the crossroads before investing in the mine."
+LEVEL_06_NAME,Tiefe Adern,Deep Veins
+HINT_LEVEL_06,"Viel Erz, aber viele Diebe. Du darfst nur siebenmal graben, also wähle deine Stollen mit Bedacht.","Plenty of ore, but plenty of thieves. You may dig only seven times, so choose your tunnels wisely."
+LEVEL_07_NAME,Belagerung,Siege
+HINT_LEVEL_07,"Die Gegner kommen durch drei Tore, auch von Norden.","Enemies come through three gates, including from the north."
+LEVEL_08_NAME,Der Thronsaal,The Throne Room
+HINT_LEVEL_08,"Die letzte Schlacht. Die Gegner sind hier zäher als je zuvor, und der Knochenkönig kommt nicht allein.","The final battle. Enemies are tougher here than ever, and the Bone King does not come alone."

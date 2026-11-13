@@ -9,7 +9,9 @@ const LEVEL_PATH := "res://data/levels/%s.json"
 const RULES_PATH := "res://data/rules.json"
 const DIFFICULTIES_PATH := "res://data/difficulties.json"
 const DIFFICULTY_ORDER: Array[String] = ["easy", "normal", "hard"]
-const LEVEL_ORDER: Array[String] = ["level_01", "level_02", "level_03", "level_04"]
+const LEVEL_ORDER: Array[String] = [
+	"level_01", "level_02", "level_03", "level_04", "level_05", "level_06", "level_07", "level_08",
+]
 
 const TOWER_FIELDS := ["name_key", "cost", "range", "cooldown", "damage", "splash", "projectile_speed", "color"]
 ## Zusatzwirkungen eines Turms: kind (projectile oder aura), slow {factor, duration}, burn {dps, duration}.

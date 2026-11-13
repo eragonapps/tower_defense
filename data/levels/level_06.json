@@ -1,0 +1,91 @@
+{
+  "name_key": "LEVEL_06_NAME",
+  "hint_key": "HINT_LEVEL_06",
+  "start_gold": 340,
+  "lives": 20,
+  "wave_pause": 12.0,
+  "towers": [
+    "crossbow",
+    "sling",
+    "runestone",
+    "forge",
+    "bomb",
+    "shieldwall"
+  ],
+  "rules": {
+    "max_digs": 7
+  },
+  "waves": [
+    {
+      "reward": 40,
+      "groups": [
+        {"enemy": "skeleton_minion", "count": 14, "interval": 0.8}
+      ]
+    },
+    {
+      "reward": 45,
+      "groups": [
+        {"enemy": "skeleton_rogue", "count": 10, "interval": 0.8},
+        {"enemy": "skeleton_warrior", "count": 6, "interval": 1.5, "delay": 4.0}
+      ]
+    },
+    {
+      "reward": 50,
+      "groups": [
+        {"enemy": "skeleton_rogue", "count": 16, "interval": 0.5},
+        {"enemy": "skeleton_guard", "count": 4, "interval": 2.0, "delay": 3.0}
+      ]
+    },
+    {
+      "reward": 55,
+      "groups": [
+        {"enemy": "skeleton_warrior", "count": 16, "interval": 0.8},
+        {"enemy": "skeleton_mage", "count": 3, "interval": 3.0, "delay": 4.0},
+        {"enemy": "skeleton_rogue", "count": 12, "interval": 0.5, "delay": 10.0}
+      ]
+    },
+    {
+      "reward": 60,
+      "groups": [
+        {"enemy": "skeleton_guard", "count": 12, "interval": 1.2},
+        {"enemy": "skeleton_rogue", "count": 20, "interval": 0.4, "delay": 5.0}
+      ]
+    },
+    {
+      "reward": 65,
+      "groups": [
+        {"enemy": "skeleton_warrior", "count": 30, "interval": 0.5},
+        {"enemy": "skeleton_mage", "count": 5, "interval": 2.5, "delay": 5.0},
+        {"enemy": "skeleton_rogue", "count": 20, "interval": 0.4, "delay": 12.0}
+      ]
+    },
+    {
+      "reward": 70,
+      "groups": [
+        {"enemy": "skeleton_guard", "count": 20, "interval": 0.9},
+        {"enemy": "skeleton_mage", "count": 5, "interval": 2.5, "delay": 4.0},
+        {"enemy": "skeleton_rogue", "count": 30, "interval": 0.3, "delay": 10.0}
+      ]
+    },
+    {
+      "reward": 0,
+      "groups": [
+        {"enemy": "bone_king", "count": 1, "interval": 1.0},
+        {"enemy": "skeleton_guard", "count": 14, "interval": 1.8, "delay": 6.0},
+        {"enemy": "skeleton_rogue", "count": 30, "interval": 0.5, "delay": 10.0}
+      ]
+    }
+  ],
+  "grid": [
+    "##################",
+    "#::o::o:o::::::::#",
+    "#:::......::o:o::#",
+    "#:*:.oo:o.o::...H#",
+    "#o:o.::*:.::o.o::#",
+    "E....o::o.o*:.:*:#",
+    "#:o:::::o.::o.o::#",
+    "#:::::*::.....:::#",
+    "#:::::::::o:o::::#",
+    "##################"
+  ]
+}

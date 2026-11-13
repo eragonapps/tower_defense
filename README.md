@@ -6,11 +6,11 @@
 - Quellen und Lizenzen der Assets: [`ASSETS.md`](ASSETS.md)
 
 ## Stand
-Meilenstein 4 (in Arbeit): vier Levels, sechs Türme, sechs Gegner samt Boss, Spielstand mit Sternen, Levelkarte und drei Schwierigkeitsgrade.
+Meilenstein 4: acht Levels, sechs Türme mit je drei Stufen und zwei Spezialisierungen, sechs Gegner samt Boss, Spielstand mit Sternen, Levelkarte und drei Schwierigkeitsgrade.
 
 ## Bedienung
 - Ein Finger ziehen: Karte verschieben. Zwei Finger: zoomen.
-- Leuchtenden Bauplatz antippen: Turm bauen. Gebauten Turm antippen: ausbauen oder verkaufen.
+- Leuchtenden Bauplatz antippen: Turm bauen. Gebauten Turm antippen: ausbauen, spezialisieren oder verkaufen.
 - Fels antippen: Stollen graben. Stollen antippen: zuschütten.
 - Blaue Erzader antippen: Arbeiter einsetzen.
 - Oben rechts: Ansicht drehen, Tempo, Pause, Menü.

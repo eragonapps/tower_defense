@@ -30,10 +30,10 @@ func _initialize() -> void:
 			"alle mit Mine": func(): return Bots.MinerBot.new(mixed, digs),
 		}
 		print("\n== %s ==" % id)
-		print("%-16s %-10s %6s %6s %7s %6s %5s %8s" % ["Bot", "Ergebnis", "Leben", "Welle", "Türme", "Gold", "Erz", "Dauer"])
+		print("%-16s %-10s %6s %6s %7s %6s %5s %8s %7s" % ["Bot", "Ergebnis", "Leben", "Welle", "Türme", "Gold", "Erz", "Dauer", "Gegner"])
 		for name in bots:
 			var t0 := Time.get_ticks_msec()
 			var sim := Bots.run(level, towers, enemies, bots[name].call(), 1800.0, rules)
 			var result := "Sieg" if sim.status == GameSim.Status.WON else ("Niederlage" if sim.status == GameSim.Status.LOST else "offen")
-			print("%-16s %-10s %6d %3d/%-2d %7d %6d %5d %6.0f s  (%d ms)" % [name, result, sim.lives, sim.wave_index + 1, sim.wave_count, sim.towers.size(), sim.gold, sim.ore, sim.tick * GameSim.DT, Time.get_ticks_msec() - t0])
+			print("%-16s %-10s %6d %3d/%-2d %7d %6d %5d %6.0f s %7d  (%d ms)" % [name, result, sim.lives, sim.wave_index + 1, sim.wave_count, sim.towers.size(), sim.gold, sim.ore, sim.tick * GameSim.DT, sim.peak_enemies, Time.get_ticks_msec() - t0])
 	quit()

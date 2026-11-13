@@ -117,6 +117,25 @@ func test_sensible_play_wins_every_level() -> void:
 		assert_gt(sim.lives, int(GameData.load_level(id)["lives"]) / 3, "%s: zu knapp" % id)
 
 
+func test_sensible_play_never_floods_the_screen() -> void:
+	# Viele animierte Figuren zugleich kosten auf dem Handy Bildrate. Diese Grenze hält die Levels im Rahmen.
+	for id in GameData.LEVEL_ORDER:
+		var sim := _play(id, Bots.MinerBot.new(_pattern(id), MINE_DIGS.get(id, [])))
+		gut.p("%s: höchstens %d Gegner gleichzeitig" % [id, sim.peak_enemies])
+		assert_lt(sim.peak_enemies, 80, id)
+
+
+func test_level_can_make_its_enemies_tougher() -> void:
+	var normal := GameSim.new(GameData.load_level("level_01"), towers, enemies, GameData.rules_for("hard"))
+	var level := GameData.load_level("level_01")
+	level["enemy_hp_scale"] = 2.0
+	var tough := GameSim.new(level, towers, enemies, GameData.rules_for("hard"))
+	for sim in [normal, tough]:
+		sim.start_next_wave()
+		sim.step()
+	assert_almost_eq(tough.enemies[0].max_hp, normal.enemies[0].max_hp * 2.0, 0.001, "wirkt zusätzlich zum Schwierigkeitsgrad")
+
+
 func test_using_the_mine_pays_off() -> void:
 	for id in MINE_DIGS:
 		for pattern in [["crossbow", "crossbow", "sling"], _pattern(id)]:

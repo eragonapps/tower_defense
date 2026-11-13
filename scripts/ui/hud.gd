@@ -33,7 +33,7 @@ var _wave_button: Button
 var _context: PanelContainer
 var _context_title: Label
 var _context_info: Label
-var _context_buttons: HBoxContainer
+var _context_buttons: GridContainer
 var _hint: Label
 var _end: Control
 var _end_title: Label
@@ -91,6 +91,9 @@ func show_menu(title: String, info: String, buttons: Array) -> void:
 		b.disabled = def.get("disabled", false)
 		b.pressed.connect(action_requested.emit.bind(def["id"]))
 		_context_buttons.add_child(b)
+	# Bis zu vier Knöpfe in einer Reihe. Mehr werden auf zwei Reihen verteilt, damit das Menü
+	# nicht unter den Wellen-Knopf am rechten Rand läuft.
+	_context_buttons.columns = maxi(1, buttons.size() if buttons.size() <= 4 else ceili(buttons.size() / 2.0))
 	_context_buttons.visible = not buttons.is_empty()
 	_context.visible = true
 
@@ -186,8 +189,9 @@ func _build() -> void:
 	_context_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_context_info.custom_minimum_size.x = 640
 	box.add_child(_context_info)
-	_context_buttons = HBoxContainer.new()
-	_context_buttons.add_theme_constant_override("separation", 12)
+	_context_buttons = GridContainer.new()
+	_context_buttons.add_theme_constant_override("h_separation", 12)
+	_context_buttons.add_theme_constant_override("v_separation", 10)
 	box.add_child(_context_buttons)
 
 	_hint = _label(tr(_hint_key), COLOR_TEXT)

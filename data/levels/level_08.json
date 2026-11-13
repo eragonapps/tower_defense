@@ -1,0 +1,92 @@
+{
+  "name_key": "LEVEL_08_NAME",
+  "hint_key": "HINT_LEVEL_08",
+  "start_gold": 560,
+  "enemy_hp_scale": 1.0,
+  "lives": 20,
+  "wave_pause": 12.0,
+  "towers": [
+    "crossbow",
+    "sling",
+    "runestone",
+    "forge",
+    "bomb",
+    "shieldwall"
+  ],
+  "waves": [
+    {
+      "reward": 50,
+      "groups": [
+        {"enemy": "skeleton_minion", "count": 24, "interval": 0.5},
+        {"enemy": "skeleton_warrior", "count": 8, "interval": 1.2, "delay": 6.0}
+      ]
+    },
+    {
+      "reward": 55,
+      "groups": [
+        {"enemy": "skeleton_rogue", "count": 20, "interval": 0.5},
+        {"enemy": "skeleton_guard", "count": 6, "interval": 1.8, "delay": 4.0}
+      ]
+    },
+    {
+      "reward": 60,
+      "groups": [
+        {"enemy": "skeleton_warrior", "count": 24, "interval": 0.6},
+        {"enemy": "skeleton_mage", "count": 4, "interval": 3.0, "delay": 4.0}
+      ]
+    },
+    {
+      "reward": 65,
+      "groups": [
+        {"enemy": "skeleton_guard", "count": 16, "interval": 1.0},
+        {"enemy": "skeleton_rogue", "count": 24, "interval": 0.4, "delay": 6.0},
+        {"enemy": "skeleton_mage", "count": 4, "interval": 3.0, "delay": 8.0}
+      ]
+    },
+    {
+      "reward": 70,
+      "groups": [
+        {"enemy": "bone_king", "count": 1, "interval": 1.0},
+        {"enemy": "skeleton_warrior", "count": 30, "interval": 0.7, "delay": 4.0}
+      ]
+    },
+    {
+      "reward": 75,
+      "groups": [
+        {"enemy": "skeleton_guard", "count": 24, "interval": 0.8},
+        {"enemy": "skeleton_mage", "count": 8, "interval": 2.0, "delay": 4.0},
+        {"enemy": "skeleton_minion", "count": 60, "interval": 0.2, "delay": 10.0}
+      ]
+    },
+    {
+      "reward": 80,
+      "groups": [
+        {"enemy": "skeleton_warrior", "count": 50, "interval": 0.4},
+        {"enemy": "skeleton_guard", "count": 20, "interval": 0.9, "delay": 5.0},
+        {"enemy": "skeleton_rogue", "count": 40, "interval": 0.3, "delay": 12.0},
+        {"enemy": "skeleton_mage", "count": 8, "interval": 2.0, "delay": 6.0}
+      ]
+    },
+    {
+      "reward": 0,
+      "groups": [
+        {"enemy": "bone_king", "count": 2, "interval": 14.0},
+        {"enemy": "skeleton_guard", "count": 30, "interval": 1.0, "delay": 4.0},
+        {"enemy": "skeleton_mage", "count": 10, "interval": 2.5, "delay": 6.0},
+        {"enemy": "skeleton_warrior", "count": 40, "interval": 0.6, "delay": 10.0}
+      ]
+    }
+  ],
+  "grid": [
+    "##################",
+    "E................#",
+    "#:o:o:::o:o::o:o.#",
+    "#:::::*::::*:::o.#",
+    "#:o:o:o:o:o:o:oo.#",
+    "#::H.............#",
+    "#:o:o:o:::o:o::oo#",
+    "#:::::::*::::*:::#",
+    "#::::::::::::::::#",
+    "##################"
+  ]
+}

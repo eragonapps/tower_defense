@@ -1,6 +1,6 @@
 # Plan: Durnhal: Wacht der Tiefe – 3D Tower Defense für Android
 
-Stand: 12.11.2026 · Status: **Meilensteine 0 bis 3 abgeschlossen, Meilenstein 4 zum Teil umgesetzt**
+Stand: 12.11.2026 · Status: **Meilensteine 0 bis 3 abgeschlossen, Meilenstein 4 umgesetzt und wartet auf den Gerätetest**
 
 ## 1. Festgelegte Entscheidungen
 
@@ -162,7 +162,7 @@ Abweichungen und offene Punkte:
 
 ### M4 – Inhalt
 Alle 6 Türme mit Spezialisierungen, alle Gegner, Boss, 8 bis 10 Levels, Levelkarte, Speichern, Schwierigkeitsgrade.
-**Stand:** zum Teil umgesetzt am 13.11.2026, Gerätetest offen.
+**Stand:** umgesetzt am 13.11.2026. Der erste Teil ist auf dem S24 getestet, Spezialisierungen und die Levels 5 bis 8 noch nicht.
 
 Fertig:
 - **Spielstand:** Sterne je Level und Schwierigkeit, gespeichert als Datei mit Versionsnummer. Beschädigte Dateien führen nicht zum Absturz.
@@ -174,11 +174,17 @@ Fertig:
 - **Gegner:** Skelett-Wächter (gegen Bolzen gepanzert), Knochenkönig (Boss: ruft Schergen, lässt sich kaum bremsen und nicht aufhalten). Skelett-Schurken stehlen jetzt Erz, wenn sie an einem Arbeiter vorbeikommen.
 - **Level 4 „Der Knochenkönig"** mit allen Türmen und dem Boss.
 
-Noch offen in diesem Meilenstein:
-- Spezialisierungen der Türme nach Stufe 3.
-- Levels 5 bis 8.
+- **Spezialisierungen:** Auf Stufe 3 wählt jeder Turm eine von zwei Spezialisierungen, bezahlt mit Erz. Die Wahl ist endgültig. Beispiele: Scharfschütze oder Schnellfeuer, Frostrune oder Sturmrune, Bollwerk oder Berserker.
+- **Levels 5 bis 8:** Die Kreuzung (zwei Tore, kurzer gemeinsamer Weg), Tiefe Adern (viel Erz, viele Diebe, nur sieben Grabungen), Belagerung (drei Tore), Der Thronsaal (Abschluss mit zwei Knochenkönigen).
+- **Nach Rückmeldung vom Gerät:** Der Bombenwerfer kostet 165 statt 130 Gold. Der Armbrustschütze hat nur noch einen Ton.
+
+Abweichungen und bekannte Schwächen:
 - Wächter und Knochenkönig haben kein eigenes Modell. Sie sind umgefärbte, anders skalierte Skelette.
-- Der Boss ist für den Minen-Bot zu leicht: Er gewinnt Level 4 ohne Verlust. Ohne Mine verlieren alle Bots an ihm.
+- Level 8 ist für den Minen-Bot zu leicht: Er gewinnt ohne Verlust. Schon 8 % zähere Gegner lassen ihn aber am Boss scheitern. Der Boss macht das Ergebnis sprunghaft, weil er allein alle Leben kostet.
+- In Level 7 lohnt sich frühes Investieren in die Mine nicht, weil drei kurze Wege zuerst gesichert werden müssen.
+- Nur Steinschleudern gewinnen laut Bot weiterhin die Levels 1, 2, 3 und 5.
+- Die Levels 5 bis 8 sind nur mit Bots eingestellt.
+- Höchstens 79 Gegner sind laut Bot gleichzeitig unterwegs (Level 2). Ein Test hält alle Levels unter 80.
 
 ### M5 – Meta und Feinschliff
 Zwergenhalle, Tutorial, Balancing, Optimierung für das Fire HD 10, Einstellungen (Ton, Sprache, Grafikqualität).
