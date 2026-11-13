@@ -1,6 +1,6 @@
 # Plan: Durnhal: Wacht der Tiefe – 3D Tower Defense für Android
 
-Stand: 12.11.2026 · Status: **Meilensteine 0 und 1 abgeschlossen, Meilenstein 2 umgesetzt und wartet auf den Gerätetest**
+Stand: 12.11.2026 · Status: **Meilensteine 0 bis 2 abgeschlossen, Meilenstein 3 umgesetzt und wartet auf den Gerätetest**
 
 ## 1. Festgelegte Entscheidungen
 
@@ -60,7 +60,7 @@ Kapitel 1 nutzt Untote, weil die Skelett-Modelle schon vorliegen und zum düster
 |---|---|
 | Skelett-Scherge | schwach, schnell, kommt in Gruppen |
 | Skelett-Krieger | Standardgegner |
-| Skelett-Schurke | greift Arbeiter an und stiehlt Erz |
+| Skelett-Schurke | sehr schnell, wenig Leben. Angriffe auf Arbeiter folgen in M4. |
 | Skelett-Magier | heilt oder schützt andere Gegner |
 | Goblin | schwach, schnell, kommt in Gruppen (später) |
 | Ork | Standardgegner (später) |
@@ -124,7 +124,7 @@ Ein Level mit Raster, Wegfindung, 1 Gegner, 2 Türme, Gold, Leben, Wellen, Sieg 
 
 ### M2 – Stollen und Wirtschaft
 Graben und Zuschütten mit Wegprüfung, Erzadern, Arbeiter, zweite Währung, Upgrades in 3 Stufen.
-**Stand:** umgesetzt am 12.11.2026, Gerätetest offen. Dazu ein zweites Level „Die Erzader", das ohne Mine nicht zu gewinnen ist, und eine Levelauswahl im Hauptmenü.
+**Stand:** abgeschlossen am 12.11.2026, auf dem S24 getestet. Dazu ein zweites Level „Die Erzader", das ohne Mine nicht zu gewinnen ist, und eine Levelauswahl im Hauptmenü.
 
 So ist es umgesetzt:
 - **Graben:** Fels neben einem Stollen antippen. Kostet 30 Gold und dauert 3 Sekunden. Gegner nutzen einen neuen Weg sofort.
@@ -142,6 +142,23 @@ Abweichungen und bekannte Schwächen:
 ### M3 – Vertical Slice
 Echte Low-Poly-Modelle, Animationen, 4 Türme, 4 Gegner, HUD, Ton, Effekte, 1 fertiges Level, Deutsch und Englisch vollständig.
 **Fertig, wenn:** jemand ohne Erklärung das Level spielen kann.
+**Stand:** umgesetzt am 13.11.2026, Gerätetest offen.
+
+Was drin ist:
+- **Modelle:** Zwerge auf den Türmen und an den Erzadern, vier Skelett-Gegner, Bodenplatten, Fackeln mit Licht, Fässer und Kisten, Truhe am Herz, Tor am Eingang. Alle mit Animationen für Laufen, Schießen, Zaubern, Arbeiten und Sterben.
+- **Türme:** Armbrustschütze, Steinschleuder, Runenstein (bremst alle Gegner im Umkreis), Schmiedefeuer (setzt in Brand).
+- **Gegner:** Skelett-Scherge, Skelett-Krieger, Skelett-Schurke (schnell), Skelett-Magier (heilt andere Gegner).
+- **Level 3 „Zwei Tore":** zwei Eingänge, alle Türme und Gegner.
+- **Ton:** 17 Geräusche, im Hauptmenü abschaltbar.
+- **Effekte:** Staub und Funken, Ringe für Flächenschaden, Runenstein und Heilung, Anzeigen für verlangsamte und brennende Gegner.
+- **Bildrate:** In Test-Builds steht sie oben in der Mitte.
+
+Abweichungen und offene Punkte:
+- Keine Musik und keine eigene Schrift. Dafür fehlen noch Quellen mit geklärter Lizenz.
+- Die Zwerge sind gestauchte Abenteurer-Figuren ohne Bart.
+- Fels und Granit sind weiter einfache Blöcke, jetzt mit Steintextur. Das Minen-Paket mit Schienen und Stützbalken ist nicht verwendet, weil es nur als Blender-Datei vorliegt.
+- Die Leistung mit vielen animierten Figuren ist auf dem Gerät noch nicht gemessen. Gegner-Figuren werden wiederverwendet, Geschosse und Effekte noch nicht.
+- Balancing: Nur Steinschleudern gewinnen alle drei Levels. Runenstein und Schmiedefeuer bringen dem Bot weniger als Armbrust und Schleuder.
 
 ### M4 – Inhalt
 Alle 6 Türme mit Spezialisierungen, alle Gegner, Boss, 8 bis 10 Levels, Levelkarte, Speichern, Schwierigkeitsgrade.

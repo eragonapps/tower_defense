@@ -6,19 +6,8 @@
   "wave_pause": 10.0,
   "towers": [
     "crossbow",
-    "sling"
-  ],
-  "grid": [
-    "##################",
-    "#:::*:::o::o:::::#",
-    "#::::::::......::#",
-    "#:o::o:o:.o::o:::#",
-    "E.........::*::::#",
-    "#::o::*:o.o::::o:#",
-    "#::::::::.:o:o:::#",
-    "#::::::::.......H#",
-    "#:::::::o::o::o::#",
-    "##################"
+    "sling",
+    "runestone"
   ],
   "waves": [
     {
@@ -37,7 +26,7 @@
       "reward": 35,
       "groups": [
         {"enemy": "skeleton_warrior", "count": 6, "interval": 1.8},
-        {"enemy": "skeleton_minion", "count": 10, "interval": 0.6, "delay": 4.0}
+        {"enemy": "skeleton_rogue", "count": 5, "interval": 1.0, "delay": 4.0}
       ]
     },
     {
@@ -50,7 +39,7 @@
       "reward": 45,
       "groups": [
         {"enemy": "skeleton_warrior", "count": 16, "interval": 0.9},
-        {"enemy": "skeleton_minion", "count": 24, "interval": 0.4, "delay": 2.0}
+        {"enemy": "skeleton_rogue", "count": 12, "interval": 0.6, "delay": 2.0}
       ]
     },
     {
@@ -62,9 +51,22 @@
     {
       "reward": 0,
       "groups": [
-        {"enemy": "skeleton_warrior", "count": 44, "interval": 0.45},
-        {"enemy": "skeleton_minion", "count": 50, "interval": 0.25, "delay": 3.0}
+        {"enemy": "skeleton_warrior", "count": 50, "interval": 0.42},
+        {"enemy": "skeleton_rogue", "count": 24, "interval": 0.3, "delay": 3.0},
+        {"enemy": "skeleton_minion", "count": 40, "interval": 0.25, "delay": 6.0}
       ]
     }
+  ],
+  "grid": [
+    "##################",
+    "#:::*:::o::o:::::#",
+    "#::::::::......::#",
+    "#:o::o:o:.o::o:::#",
+    "E.........::*::::#",
+    "#::o::*:o.o::::o:#",
+    "#::::::::.:o:o:::#",
+    "#::::::::.......H#",
+    "#:::::::o::o::o::#",
+    "##################"
   ]
 }

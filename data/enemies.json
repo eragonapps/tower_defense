@@ -16,5 +16,28 @@
     "lives": 1,
     "color": "#8f9aa3",
     "size": 1.0
+  },
+  "skeleton_rogue": {
+    "name_key": "ENEMY_SKELETON_ROGUE",
+    "hp": 45,
+    "speed": 2.2,
+    "bounty": 6,
+    "lives": 1,
+    "color": "#9a3d4a",
+    "size": 0.85
+  },
+  "skeleton_mage": {
+    "name_key": "ENEMY_SKELETON_MAGE",
+    "hp": 220,
+    "speed": 0.9,
+    "bounty": 22,
+    "lives": 2,
+    "color": "#8a2f3a",
+    "size": 1.0,
+    "heal": {
+      "amount": 25,
+      "interval": 2.5,
+      "radius": 1.6
+    }
   }
 }

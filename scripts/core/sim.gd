@@ -15,6 +15,10 @@ signal dig_started(job: DigJob)
 signal grid_changed(cell: Vector2i)
 signal worker_placed(worker: Worker)
 signal ore_mined(worker: Worker, amount: int)
+## Ein Turm ohne Geschoss hat gewirkt, zum Beispiel der Runenstein.
+signal aura_pulsed(tower: Tower)
+## Ein Gegner hat andere Gegner geheilt.
+signal enemies_healed(healer: Enemy)
 signal projectile_fired(projectile: Projectile)
 signal projectile_hit(projectile: Projectile)
 signal wave_started(index: int)
@@ -69,6 +73,13 @@ class Enemy extends RefCounted:
 	## Restweg bis zum Herz. Kleiner bedeutet: weiter vorn.
 	var remaining := 0.0
 	var alive := true
+	## Verlangsamung: Restdauer und Tempofaktor (0.5 bedeutet halbes Tempo).
+	var slow_left := 0.0
+	var slow_factor := 1.0
+	## Brennen: Restdauer und Schaden pro Sekunde.
+	var burn_left := 0.0
+	var burn_dps := 0.0
+	var heal_timer := 0.0
 
 
 class Tower extends RefCounted:
@@ -501,7 +512,12 @@ func _step_enemies() -> void:
 		if not e.alive:
 			continue
 		e.prev_pos = e.pos
+		_step_status(e)
+		if not e.alive:
+			continue
 		var budget := float(e.def["speed"]) * DT
+		if e.slow_left > 0.0:
+			budget *= e.slow_factor
 		# Ein schneller Gegner kann in einem Schritt mehrere Zellenmitten passieren.
 		while budget > 0.0:
 			var goal := MineGrid.center(e.target_cell)
@@ -520,6 +536,50 @@ func _step_enemies() -> void:
 			_update_remaining(e)
 
 
+## Laufende Wirkungen auf einem Gegner: Brennen, Verlangsamung, eigene Heilkraft.
+func _step_status(e: Enemy) -> void:
+	if e.burn_left > 0.0:
+		# Der letzte Schritt zählt nur anteilig, damit der Gesamtschaden genau stimmt.
+		var t := minf(DT, e.burn_left)
+		e.burn_left -= t
+		_damage(e, e.burn_dps * t)
+		if not e.alive:
+			return
+	if e.slow_left > 0.0:
+		e.slow_left -= DT
+		if e.slow_left <= 0.0:
+			e.slow_left = 0.0
+			e.slow_factor = 1.0
+	if e.def.has("heal"):
+		var heal: Dictionary = e.def["heal"]
+		e.heal_timer += DT
+		if e.heal_timer >= float(heal["interval"]):
+			e.heal_timer = 0.0
+			var r_sq := float(heal["radius"]) ** 2
+			var healed := false
+			for other in enemies:
+				if other != e and other.alive and other.hp < other.max_hp and other.pos.distance_squared_to(e.pos) <= r_sq:
+					other.hp = minf(other.max_hp, other.hp + float(heal["amount"]))
+					healed = true
+			if healed:
+				enemies_healed.emit(e)
+
+
+## Wendet die Zusatzwirkungen eines Turms auf einen Gegner an.
+## Gleiche Wirkungen stapeln sich nicht: es gilt die stärkere und die längere Restdauer.
+func _apply_effects(e: Enemy, stats: Dictionary) -> void:
+	if not e.alive:
+		return
+	if stats.has("slow"):
+		var slow: Dictionary = stats["slow"]
+		e.slow_factor = minf(e.slow_factor, float(slow["factor"])) if e.slow_left > 0.0 else float(slow["factor"])
+		e.slow_left = maxf(e.slow_left, float(slow["duration"]))
+	if stats.has("burn"):
+		var burn: Dictionary = stats["burn"]
+		e.burn_dps = maxf(e.burn_dps, float(burn["dps"])) if e.burn_left > 0.0 else float(burn["dps"])
+		e.burn_left = maxf(e.burn_left, float(burn["duration"]))
+
+
 func _update_remaining(e: Enemy) -> void:
 	e.remaining = grid.distance(e.target_cell) + e.pos.distance_to(MineGrid.center(e.target_cell))
 
@@ -534,6 +594,9 @@ func _step_towers() -> void:
 	for t in towers:
 		t.cooldown_left = maxf(0.0, t.cooldown_left - DT)
 		if t.cooldown_left > 0.0:
+			continue
+		if t.stats.get("kind", "projectile") == "aura":
+			_pulse_aura(t)
 			continue
 		var target := _pick_target(t)
 		if target == null:
@@ -551,14 +614,35 @@ func _step_towers() -> void:
 		projectile_fired.emit(p)
 
 
+## Ein Turm ohne Geschoss wirkt auf alle Gegner in Reichweite zugleich.
+func _pulse_aura(t: Tower) -> void:
+	var range_sq := float(t.stats["range"]) ** 2
+	var hit := false
+	for e in enemies:
+		if e.alive and t.pos.distance_squared_to(e.pos) <= range_sq:
+			hit = true
+			if float(t.stats["damage"]) > 0.0:
+				_damage(e, float(t.stats["damage"]))
+			_apply_effects(e, t.stats)
+	if hit:
+		t.cooldown_left = float(t.stats["cooldown"])
+		t.shots += 1
+		aura_pulsed.emit(t)
+
+
 ## Zielwahl "am weitesten vorn": der Gegner in Reichweite mit dem kürzesten Restweg.
+## Türme, die in Brand setzen, bevorzugen Gegner, die noch nicht brennen.
 func _pick_target(t: Tower) -> Enemy:
 	var best: Enemy = null
+	var best_fresh := false
+	var prefers_fresh: bool = t.stats.has("burn")
 	var range_sq := float(t.stats["range"]) ** 2
 	for e in enemies:
 		if e.alive and t.pos.distance_squared_to(e.pos) <= range_sq:
-			if best == null or e.remaining < best.remaining:
+			var fresh := prefers_fresh and e.burn_left <= 0.0
+			if best == null or (fresh and not best_fresh) or (fresh == best_fresh and e.remaining < best.remaining):
 				best = e
+				best_fresh = fresh
 	return best
 
 
@@ -587,11 +671,15 @@ func _apply_hit(p: Projectile, splash: float) -> void:
 		for e in enemies:
 			if e.alive and e.pos.distance_squared_to(p.pos) <= r_sq:
 				_damage(e, damage)
+				_apply_effects(e, p.def)
 	elif p.target != null and p.target.alive:
 		_damage(p.target, damage)
+		_apply_effects(p.target, p.def)
 
 
 func _damage(e: Enemy, amount: float) -> void:
+	if not e.alive:
+		return
 	e.hp -= amount
 	if e.hp <= 0.0:
 		e.hp = 0.0

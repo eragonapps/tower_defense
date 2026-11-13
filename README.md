@@ -6,7 +6,7 @@
 - Quellen und Lizenzen der Assets: [`ASSETS.md`](ASSETS.md)
 
 ## Stand
-Meilenstein 2: zwei spielbare Levels mit Platzhalter-Grafik. Türme bauen und ausbauen, Stollen graben und zuschütten, Arbeiter an Erzadern, Gold und Erz, Deutsch und Englisch.
+Meilenstein 3: drei spielbare Levels mit 3D-Modellen, Animationen, Ton und Effekten. Vier Türme, vier Gegner, Stollen graben, Arbeiter an Erzadern, Turm-Ausbau, Deutsch und Englisch.
 
 ## Bedienung
 - Ein Finger ziehen: Karte verschieben. Zwei Finger: zoomen.

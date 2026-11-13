@@ -76,3 +76,37 @@ func test_invalid_stored_value_falls_back() -> void:
 	cfg.save(TMP)
 	_s.load_settings()
 	assert_true(_s.language in SettingsScript.SUPPORTED_LOCALES)
+
+
+func test_sound_setting_survives_save_and_load() -> void:
+	watch_signals(_s)
+	_s.set_sound_enabled(false)
+	assert_signal_emitted_with_parameters(_s, "sound_changed", [false])
+	var other: Node = autofree(SettingsScript.new())
+	other.config_path = TMP
+	other.load_settings()
+	assert_false(other.sound_enabled)
+	_s.set_sound_enabled(true)
+	other.load_settings()
+	assert_true(other.sound_enabled)
+
+
+func test_every_sound_file_exists_and_loads() -> void:
+	for name in Sfx.SOUNDS:
+		assert_gt(Sfx.SOUNDS[name].size(), 0)
+		for file in Sfx.SOUNDS[name]:
+			assert_not_null(load(Sfx.DIR + file + ".ogg"), "%s: %s fehlt" % [name, file])
+
+
+func test_muted_game_plays_nothing() -> void:
+	var before: bool = Settings.sound_enabled
+	Settings.sound_enabled = false
+	var count := int(Sfx.played.get("click", 0))
+	Sfx.play("click")
+	assert_eq(int(Sfx.played.get("click", 0)), count)
+	Settings.sound_enabled = true
+	Sfx._last_played.erase("click")
+	Sfx.play("click")
+	assert_eq(int(Sfx.played.get("click", 0)), count + 1)
+	Sfx.play("gibt_es_nicht")
+	Settings.sound_enabled = before

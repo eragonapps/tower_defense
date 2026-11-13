@@ -186,6 +186,7 @@ func test_mine_actions_work_through_the_menu() -> void:
 	l.hud.action_requested.emit("upgrade")
 	assert_eq(l.sim.towers[0].level, 3)
 	assert_eq(l.sim.ore, 100 - 15 - 30)
+	assert_eq(l.sim.towers[0].stats["damage"], 28)
 
 
 func test_menu_updates_when_gold_arrives() -> void:

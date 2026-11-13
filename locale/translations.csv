@@ -55,3 +55,13 @@ REASON_NOT_CONNECTED,Kein Stollen daneben. Grabe dich zuerst heran.,No tunnel ne
 REASON_LIMIT,In diesem Level darfst du nicht weiter graben.,You cannot dig any further in this level.
 END_NEXT,Nächstes Level,Next level
 MENU_LEVEL,Level %d: %s,Level %d: %s
+LEVEL_03_NAME,Zwei Tore,Two Gates
+HINT_LEVEL_03,"Die Gegner kommen durch zwei Tore. Runensteine bremsen, Schmiedefeuer setzt in Brand.","Enemies come through two gates. Rune stones slow them, forge fire sets them ablaze."
+TOWER_RUNESTONE,Runenstein,Rune Stone
+TOWER_FORGE,Schmiedefeuer,Forge Fire
+ENEMY_SKELETON_ROGUE,Skelett-Schurke,Skeleton Rogue
+ENEMY_SKELETON_MAGE,Skelett-Magier,Skeleton Mage
+HUD_STAT_SLOW,Bremst auf,Slows to
+HUD_STAT_BURN,Brand,Burn
+MENU_SOUND_ON,Ton: an,Sound: on
+MENU_SOUND_OFF,Ton: aus,Sound: off

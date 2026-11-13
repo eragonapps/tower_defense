@@ -15,7 +15,8 @@ func _initialize() -> void:
 func _run(args: PackedStringArray) -> void:
 	# Optional: Level über die Umgebungsvariable LEVEL_ID wählen.
 	if OS.get_environment("LEVEL_ID") != "":
-		LevelView.level_id = OS.get_environment("LEVEL_ID")
+		# Erst zur Laufzeit laden: beim Start dieses Skripts sind die Autoloads noch nicht bereit.
+		load("res://scripts/view/level_view.gd").level_id = OS.get_environment("LEVEL_ID")
 	var packed: PackedScene = load(args[0])
 	if packed == null:
 		printerr("Szene nicht gefunden: %s" % args[0])

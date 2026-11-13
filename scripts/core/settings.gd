@@ -3,6 +3,7 @@ extends Node
 ## Als Autoload "Settings" registriert. Speichert in einer Datei im Nutzerordner.
 
 signal language_changed(locale: String)
+signal sound_changed(enabled: bool)
 
 const SUPPORTED_LOCALES: Array[String] = ["de", "en"]
 const FALLBACK_LOCALE := "en"
@@ -10,6 +11,7 @@ const SAVE_VERSION := 1
 
 var config_path := "user://settings.cfg"
 var language := FALLBACK_LOCALE
+var sound_enabled := true
 
 
 func _ready() -> void:
@@ -32,6 +34,12 @@ func set_language(locale: String) -> void:
 	save_settings()
 
 
+func set_sound_enabled(enabled: bool) -> void:
+	sound_enabled = enabled
+	sound_changed.emit(enabled)
+	save_settings()
+
+
 func load_settings() -> void:
 	var cfg := ConfigFile.new()
 	var chosen := pick_locale(OS.get_locale())
@@ -40,6 +48,8 @@ func load_settings() -> void:
 		var stored: Variant = cfg.get_value("general", "language", chosen)
 		if stored is String and stored in SUPPORTED_LOCALES:
 			chosen = stored
+		var sound: Variant = cfg.get_value("general", "sound", true)
+		sound_enabled = sound if sound is bool else true
 	language = chosen
 	TranslationServer.set_locale(language)
 
@@ -48,6 +58,7 @@ func save_settings() -> void:
 	var cfg := ConfigFile.new()
 	cfg.set_value("meta", "version", SAVE_VERSION)
 	cfg.set_value("general", "language", language)
+	cfg.set_value("general", "sound", sound_enabled)
 	var err := cfg.save(config_path)
 	if err != OK:
 		push_warning("Einstellungen konnten nicht gespeichert werden (Fehler %d)" % err)

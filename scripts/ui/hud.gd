@@ -40,6 +40,7 @@ var _end_title: Label
 var _end_text: Label
 var _end_next: Button
 var _hint_key := "HUD_HINT_BUILD"
+var _fps: Label
 
 
 func _ready() -> void:
@@ -64,6 +65,8 @@ func show_state(sim: GameSim, paused: bool, speed: float, show_ore: bool) -> voi
 			_wave_button.text = tr("HUD_START_WAVE")
 		else:
 			_wave_button.text = tr("HUD_NEXT_WAVE") % ceili(sim.next_wave_in)
+	if _fps:
+		_fps.text = "%d FPS" % Engine.get_frames_per_second()
 	_hint.visible = sim.wave_index < 0 and not _context.visible and sim.status == GameSim.Status.RUNNING
 
 
@@ -200,6 +203,13 @@ func _build() -> void:
 	_wave_button.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	_wave_button.grow_vertical = Control.GROW_DIRECTION_BEGIN
 
+	# Bildrate, nur in Test-Builds sichtbar.
+	if OS.is_debug_build():
+		_fps = _label("", COLOR_TEXT.darkened(0.4))
+		_fps.add_theme_font_size_override("font_size", 16)
+		area.add_child(_fps)
+		_fps.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+
 	_build_end_screen()
 
 
@@ -255,6 +265,7 @@ func _button(text: String) -> Button:
 	b.custom_minimum_size = Vector2(110, BUTTON_HEIGHT)
 	b.add_theme_font_size_override("font_size", FONT)
 	b.focus_mode = Control.FOCUS_NONE
+	b.pressed.connect(Sfx.play.bind("click", -8.0))
 	return b
 
 

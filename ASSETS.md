@@ -1,6 +1,6 @@
 # Assets: Quellen und Lizenzen
 
-Stand: 12.11.2026 · Status: **Kandidatenliste, noch kein Asset im Spiel verwendet.** Drei KayKit-Pakete und fünf hochgeladene Pakete sind geprüft.
+Stand: 12.11.2026 · Status: **Fünf Pakete sind im Spiel verwendet**, siehe Abschnitt 7. Drei weitere sind geprüft, aber noch nicht verwendet.
 
 Diese Datei nennt für jedes verwendete Asset die Quelle und die Lizenz. Sie wird bei jedem neuen oder getauschten Asset aktualisiert.
 
@@ -28,7 +28,7 @@ Die drei geplanten Hauptquellen veröffentlichen ihre Pakete unter **CC0 1.0 (Pu
 
 ### 3a. Aus der Cloud-Sitzung abrufbar und geprüft (12.11.2026)
 
-Diese Pakete liegen offiziell auf GitHub. Sie wurden testweise heruntergeladen, die Lizenzdatei im Paket wurde gelesen. Sie sind noch **nicht im Repo**, weil sie zusammen etwa 345 MB groß sind. Ins Repo kommen ab Meilenstein 3 nur die Dateien, die das Spiel wirklich nutzt.
+Diese Pakete liegen offiziell auf GitHub. Sie wurden testweise heruntergeladen, die Lizenzdatei im Paket wurde gelesen. Im Repo liegen nur die Dateien, die das Spiel wirklich nutzt (zusammen etwa 35 MB), siehe Abschnitt 7.
 
 | Zweck | Paket | Quelle | Stand (Commit) | Lizenz laut `LICENSE.txt` im Paket | Inhalt (geprüft) |
 |---|---|---|---|---|---|
@@ -38,9 +38,9 @@ Diese Pakete liegen offiziell auf GitHub. Sie wurden testweise heruntergeladen, 
 
 Alle Figuren haben dasselbe Skelett mit 41 Gelenken. Animationen für Laufen, Angreifen, Schießen, Treffer und Sterben sind enthalten.
 
-### 3b. Von dir hochgeladen (Branch `main`, Stand 12.11.2026)
+### 3b. Von dir hochgeladen (ursprünglich als ZIP-Dateien im Hauptordner von `main`)
 
-Die Archive liegen als ZIP-Dateien im Hauptordner von `main`. Sie wurden ausgepackt und geprüft, aber noch **nicht ins Projekt übernommen**. Ins Projekt kommen ab Meilenstein 3 nur die Dateien, die das Spiel wirklich nutzt.
+Die Archive wurden ausgepackt und geprüft. Aus den beiden Geräusch-Paketen sind Dateien übernommen, die anderen sind noch nicht verwendet.
 
 | Zweck | Paket | Archiv in `main` | Lizenz | Inhalt (geprüft) |
 |---|---|---|---|---|
@@ -84,11 +84,21 @@ Mehr Aufwand entsteht nur bei animierten Figuren, wenn das neue Modell andere An
 
 ## 7. Verwendete Assets
 
-Noch keine. Die Tabelle wird ab Meilenstein 3 gefüllt.
+Stand 13.11.2026. Alle Dateien sind unverändert übernommen. Die Lizenzdatei des Pakets liegt jeweils im selben Ordner.
 
-| Datei oder Ordner im Repo | Verwendet für | Paket | Autor | Quelle (URL) | Lizenz | Heruntergeladen am | Verändert? |
-|---|---|---|---|---|---|---|---|
-| – | – | – | – | – | – | – | – |
+| Ordner im Repo | Verwendet für | Paket | Autor | Quelle | Lizenz |
+|---|---|---|---|---|---|
+| `assets/kaykit_adventurers/` (4 Figuren) | Zwerge auf den Türmen und Arbeiter: Rogue_Hooded (Armbrustschütze), Barbarian (Steinschleuder, Arbeiter), Mage (Runenstein), Knight (Schmiedefeuer) | KayKit Adventurers 1.0, Stand `672074b` | Kay Lousberg | [GitHub](https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0) | CC0 |
+| `assets/kaykit_skeletons/` (4 Figuren) | Gegner: Skeleton_Minion, Skeleton_Warrior, Skeleton_Rogue, Skeleton_Mage | KayKit Skeletons 1.0, Stand `15b62b9` | Kay Lousberg | [GitHub](https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0) | CC0 |
+| `assets/kaykit_dungeon/` (21 Modelle) | Stollenboden, Fackeln, Fässer, Kisten, Geröll, Truhe und Münzen am Herz, Tor am Eingang | KayKit Dungeon Remastered 1.0, Stand `b0ca9bd` | Kay Lousberg | [GitHub](https://github.com/KayKit-Game-Assets/KayKit-Dungeon-Remastered-1.0) | CC0 |
+| `assets/audio/kenney_impact_sounds/` (14 Töne) | Treffer, Einschläge, Graben, Bauen, Runenstein, Wellenbeginn | Kenney Impact Sounds 1.0 | Kenney | [kenney.nl](https://kenney.nl/assets/impact-sounds) | CC0 |
+| `assets/audio/kenney_rpg_audio/` (11 Töne) | Schüsse, Knöpfe, Verkauf, Ausbau, Sieg, Niederlage | Kenney RPG Audio | Kenney | [kenney.nl](https://kenney.nl/assets/rpg-audio) | CC0 |
+
+Welche Datei wofür steht, legen zwei Tabellen im Code fest: `scripts/view/models.gd` für Modelle und `scripts/core/audio.gd` für Töne.
+
+Nicht aus einem Paket, sondern im Spiel erzeugt: Felsblöcke, Turmsockel, Erzbrocken, Geschosse, Leuchteffekte und die Schrift (Standardschrift von Godot).
+
+Noch nicht verwendet: Kenney Tower Defense Kit, Quaternius Ultimate Monsters, Free Mine Assets Pack. Die Archive wurden am 13.11.2026 aus dem Hauptordner von `main` entfernt und bleiben über die Git-Historie abrufbar (Commit `9bbfd66`).
 
 ## 8. Verwendete Software von Dritten
 

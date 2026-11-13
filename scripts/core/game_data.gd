@@ -7,9 +7,11 @@ const TOWERS_PATH := "res://data/towers.json"
 const ENEMIES_PATH := "res://data/enemies.json"
 const LEVEL_PATH := "res://data/levels/%s.json"
 const RULES_PATH := "res://data/rules.json"
-const LEVEL_ORDER: Array[String] = ["level_01", "level_02"]
+const LEVEL_ORDER: Array[String] = ["level_01", "level_02", "level_03"]
 
 const TOWER_FIELDS := ["name_key", "cost", "range", "cooldown", "damage", "splash", "projectile_speed", "color"]
+## Zusatzwirkungen eines Turms: kind (projectile oder aura), slow {factor, duration}, burn {dps, duration}.
+const TOWER_OPTIONAL := ["kind", "slow", "burn"]
 const ENEMY_FIELDS := ["name_key", "hp", "speed", "bounty", "lives", "color", "size"]
 
 
@@ -67,11 +69,16 @@ static func validate(level: Dictionary, towers: Dictionary, enemies: Dictionary)
 			errors.append("Turm %s: cooldown muss größer als 0 sein" % id)
 		if towers[id].get("cost", 1) <= 0:
 			errors.append("Turm %s: cost muss größer als 0 sein" % id)
+		for stats in [towers[id]] + towers[id].get("upgrades", []):
+			if stats.has("slow") and not (stats["slow"].has("factor") and stats["slow"].has("duration")):
+				errors.append("Turm %s: slow braucht factor und duration" % id)
+			if stats.has("burn") and not (stats["burn"].has("dps") and stats["burn"].has("duration")):
+				errors.append("Turm %s: burn braucht dps und duration" % id)
 		for u in towers[id].get("upgrades", []):
 			if int(u.get("ore", 0)) <= 0:
 				errors.append("Turm %s: jede Ausbaustufe braucht Erzkosten (ore) größer als 0" % id)
 			for key in u:
-				if key != "ore" and key not in TOWER_FIELDS:
+				if key != "ore" and key not in TOWER_FIELDS and key not in TOWER_OPTIONAL:
 					errors.append("Turm %s: Ausbaustufe ändert unbekannten Wert %s" % [id, key])
 	for id in enemies:
 		for f in ENEMY_FIELDS:
@@ -81,6 +88,10 @@ static func validate(level: Dictionary, towers: Dictionary, enemies: Dictionary)
 			errors.append("Gegner %s: speed muss größer als 0 sein" % id)
 		if enemies[id].get("hp", 1.0) <= 0.0:
 			errors.append("Gegner %s: hp muss größer als 0 sein" % id)
+		if enemies[id].has("heal"):
+			for f in ["amount", "interval", "radius"]:
+				if not enemies[id]["heal"].has(f):
+					errors.append("Gegner %s: heal braucht %s" % [id, f])
 	for f in ["grid", "start_gold", "lives", "waves", "wave_pause", "towers"]:
 		if not level.has(f):
 			errors.append("Level: Feld %s fehlt" % f)

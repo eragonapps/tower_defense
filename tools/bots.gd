@@ -55,7 +55,12 @@ class MinerBot extends RefCounted:
 		fills = fill_cells.duplicate()
 
 	func act(sim: GameSim) -> void:
-		# Erst eine Grundverteidigung, dann der Zugang zum Erz, dann Arbeiter, dann weitere Türme.
+		# Ausbau kostet nur Erz und kommt deshalb immer zuerst.
+		if use_upgrades:
+			for t in sim.towers:
+				if sim.upgrade_tower(t.cell) == GameSim.Result.OK:
+					break
+		# Erst eine Grundverteidigung, dann die Mine, dann weitere Türme.
 		if sim.towers.size() < towers_first + maxi(sim.wave_index, 0) * 2:
 			builder.act(sim)
 			return
@@ -70,13 +75,10 @@ class MinerBot extends RefCounted:
 			if r == GameSim.Result.OK or r == GameSim.Result.NOT_ALLOWED:
 				fills.pop_front()
 		for vein in sim.grid.cells_of_type(MineGrid.Cell.ORE):
-			var r := sim.place_worker(vein)
-			if r == GameSim.Result.NOT_ENOUGH_GOLD:
+			if sim.can_place_worker(vein) == GameSim.Result.NOT_ENOUGH_GOLD and digs.is_empty():
+				# Auf den Arbeiter sparen, solange die Verteidigung für diese Welle steht.
 				return
-		if use_upgrades:
-			for t in sim.towers:
-				if sim.upgrade_tower(t.cell) == GameSim.Result.OK:
-					break
+			sim.place_worker(vein)
 		builder.act(sim)
 
 

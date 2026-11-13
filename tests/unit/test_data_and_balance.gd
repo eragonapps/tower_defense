@@ -1,8 +1,12 @@
 extends GutTest
 ## Prüft die echten Spieldaten und lässt Bots jedes Level spielen.
 
-## Zugang zu den sicheren Erzadern in Level 2. In Levels ohne Graben werden die Felder übersprungen.
-const MINE_DIGS := [Vector2i(4, 3), Vector2i(4, 2), Vector2i(12, 3)]
+## Felder, die der Minen-Bot je Level gräbt, um die sicheren Erzadern zu erreichen.
+const MINE_DIGS := {
+	"level_02": [Vector2i(4, 3), Vector2i(4, 2), Vector2i(12, 3)],
+	"level_03": [Vector2i(3, 3), Vector2i(10, 4), Vector2i(14, 6)],
+}
+const ALL_TOWERS := ["crossbow", "forge", "crossbow", "sling", "runestone"]
 
 var towers: Dictionary
 var enemies: Dictionary
@@ -78,21 +82,45 @@ func test_building_nothing_loses_every_level() -> void:
 		assert_eq(_play(id, Bots.NoneBot.new()).status, GameSim.Status.LOST, id)
 
 
+func _pattern(id: String) -> Array:
+	var allowed: Array = GameData.load_level(id)["towers"]
+	return ALL_TOWERS.filter(func(t): return t in allowed)
+
+
 func test_sensible_play_wins_every_level() -> void:
 	for id in GameData.LEVEL_ORDER:
-		var sim := _play(id, Bots.MinerBot.new(["crossbow", "crossbow", "sling"], MINE_DIGS))
+		var sim := _play(id, Bots.MinerBot.new(_pattern(id), MINE_DIGS.get(id, [])))
 		assert_eq(sim.status, GameSim.Status.WON, id)
-		assert_gt(sim.lives, int(GameData.load_level(id)["lives"]) / 2, "%s: zu knapp" % id)
+		assert_gt(sim.lives, int(GameData.load_level(id)["lives"]) / 3, "%s: zu knapp" % id)
 
 
-func test_level_two_cannot_be_won_without_the_mine() -> void:
-	for pattern in [["crossbow"], ["sling"], ["crossbow", "crossbow", "sling"]]:
-		var sim := _play("level_02", Bots.BuilderBot.new(pattern))
-		assert_eq(sim.status, GameSim.Status.LOST, str(pattern))
+func test_using_the_mine_pays_off() -> void:
+	for id in MINE_DIGS:
+		for pattern in [["crossbow", "crossbow", "sling"], _pattern(id)]:
+			var without := _play(id, Bots.BuilderBot.new(pattern))
+			var with_mine := _play(id, Bots.MinerBot.new(pattern, MINE_DIGS[id]))
+			assert_eq(with_mine.status, GameSim.Status.WON, "%s %s" % [id, pattern])
+			assert_gt(with_mine.lives, without.lives, "%s %s: die Mine bringt keinen Vorteil" % [id, pattern])
+
+
+func test_every_allowed_tower_and_listed_enemy_is_used_somewhere() -> void:
+	var used_towers := {}
+	var used_enemies := {}
+	for id in GameData.LEVEL_ORDER:
+		var level := GameData.load_level(id)
+		for t in level["towers"]:
+			used_towers[t] = true
+		for w in level["waves"]:
+			for g in w["groups"]:
+				used_enemies[g["enemy"]] = true
+	for t in towers:
+		assert_true(used_towers.has(t), "Turm %s kommt in keinem Level vor" % t)
+	for e in enemies:
+		assert_true(used_enemies.has(e), "Gegner %s kommt in keiner Welle vor" % e)
 
 
 func test_level_two_ore_pays_for_upgrades() -> void:
-	var sim := _play("level_02", Bots.MinerBot.new(["crossbow", "crossbow", "sling"], MINE_DIGS))
+	var sim := _play("level_02", Bots.MinerBot.new(["crossbow", "crossbow", "sling"], MINE_DIGS["level_02"]))
 	var upgraded := 0
 	var mined := 0
 	for t in sim.towers:

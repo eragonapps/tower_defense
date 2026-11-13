@@ -5,6 +5,7 @@ extends Control
 @onready var _btn_de: Button = %LangDe
 @onready var _btn_en: Button = %LangEn
 @onready var _btn_quit: Button = %Quit
+@onready var _btn_sound: Button = %Sound
 @onready var _version: Label = %Version
 
 
@@ -13,6 +14,7 @@ func _ready() -> void:
 	_btn_de.pressed.connect(Settings.set_language.bind("de"))
 	_btn_en.pressed.connect(Settings.set_language.bind("en"))
 	_btn_quit.pressed.connect(get_tree().quit)
+	_btn_sound.pressed.connect(_toggle_sound)
 	Settings.language_changed.connect(_on_language_changed)
 	_on_language_changed(Settings.language)
 
@@ -20,6 +22,7 @@ func _ready() -> void:
 func _on_language_changed(locale: String) -> void:
 	_btn_de.set_pressed_no_signal(locale == "de")
 	_btn_en.set_pressed_no_signal(locale == "en")
+	_btn_sound.text = tr("MENU_SOUND_ON") if Settings.sound_enabled else tr("MENU_SOUND_OFF")
 	_build_level_buttons()
 
 
@@ -39,7 +42,14 @@ func _build_level_buttons() -> void:
 		_levels.add_child(b)
 
 
+func _toggle_sound() -> void:
+	Settings.set_sound_enabled(not Settings.sound_enabled)
+	_btn_sound.text = tr("MENU_SOUND_ON") if Settings.sound_enabled else tr("MENU_SOUND_OFF")
+	Sfx.play("click")
+
+
 func _start_level(id: String) -> void:
+	Sfx.play("click")
 	LevelView.level_id = id
 	get_tree().change_scene_to_file("res://scenes/level.tscn")
 
