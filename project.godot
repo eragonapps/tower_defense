@@ -17,6 +17,7 @@ config/quit_on_go_back=false
 
 Settings="*res://scripts/core/settings.gd"
 Sfx="*res://scripts/core/audio.gd"
+Progress="*res://scripts/core/progress.gd"
 
 [display]
 

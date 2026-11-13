@@ -1,9 +1,6 @@
 keys,de,en
 GAME_SUBTITLE,Wacht der Tiefe,Watch of the Deep
-MENU_LANGUAGE,Sprache,Language
 MENU_QUIT,Beenden,Quit
-LANG_DE,Deutsch,Deutsch
-LANG_EN,English,English
 LEVEL_01_NAME,Der alte Stollen,The Old Gallery
 TOWER_CROSSBOW,Armbrustschütze,Crossbow Dwarf
 TOWER_SLING,Steinschleuder,Stone Sling
@@ -54,7 +51,6 @@ REASON_ENEMY,Hier steht gerade ein Gegner.,An enemy is standing here.
 REASON_NOT_CONNECTED,Kein Stollen daneben. Grabe dich zuerst heran.,No tunnel next to it. Dig your way there first.
 REASON_LIMIT,In diesem Level darfst du nicht weiter graben.,You cannot dig any further in this level.
 END_NEXT,Nächstes Level,Next level
-MENU_LEVEL,Level %d: %s,Level %d: %s
 LEVEL_03_NAME,Zwei Tore,Two Gates
 HINT_LEVEL_03,"Die Gegner kommen durch zwei Tore. Runensteine bremsen, Schmiedefeuer setzt in Brand.","Enemies come through two gates. Rune stones slow them, forge fire sets them ablaze."
 TOWER_RUNESTONE,Runenstein,Rune Stone
@@ -65,3 +61,8 @@ HUD_STAT_SLOW,Bremst auf,Slows to
 HUD_STAT_BURN,Brand,Burn
 MENU_SOUND_ON,Ton: an,Sound: on
 MENU_SOUND_OFF,Ton: aus,Sound: off
+MENU_DIFFICULTY,Schwierigkeit,Difficulty
+MENU_LOCKED,Gesperrt,Locked
+DIFF_EASY,Leicht,Easy
+DIFF_NORMAL,Normal,Normal
+DIFF_HARD,Schwer,Hard

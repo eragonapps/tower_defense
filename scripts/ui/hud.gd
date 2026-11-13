@@ -39,6 +39,7 @@ var _end: Control
 var _end_title: Label
 var _end_text: Label
 var _end_next: Button
+var _end_stars: StarRow
 var _hint_key := "HUD_HINT_BUILD"
 var _fps: Label
 
@@ -99,8 +100,10 @@ func hide_context() -> void:
 	_context.visible = false
 
 
-func show_end(won: bool, lives: int, has_next: bool) -> void:
+func show_end(won: bool, lives: int, has_next: bool, stars := 0) -> void:
 	hide_context()
+	_end_stars.visible = won
+	_end_stars.earned = stars
 	_end_next.visible = won and has_next
 	_end_title.text = tr("END_VICTORY") if won else tr("END_DEFEAT")
 	_end_title.add_theme_color_override("font_color", COLOR_GOLD if won else COLOR_LIVES)
@@ -231,13 +234,14 @@ func _build_end_screen() -> void:
 	_end_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_end_text = _label("", COLOR_TEXT)
 	_end_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_end_stars = StarRow.new(0, 56.0)
 	_end_next = _button(tr("END_NEXT"))
 	_end_next.pressed.connect(next_requested.emit)
 	var retry := _button(tr("END_RETRY"))
 	retry.pressed.connect(retry_requested.emit)
 	var menu := _button(tr("END_MENU"))
 	menu.pressed.connect(menu_requested.emit)
-	for c in [_end_title, _end_text, _end_next, retry, menu]:
+	for c in [_end_title, _end_stars, _end_text, _end_next, retry, menu]:
 		box.add_child(c)
 
 

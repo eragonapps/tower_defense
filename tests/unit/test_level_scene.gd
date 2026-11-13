@@ -3,6 +3,20 @@ extends GutTest
 ## Läuft ohne Bildschirm. Geprüft wird das Verhalten, nicht das Aussehen.
 
 var level: LevelView
+var _real_save: String
+
+
+## Die Tests gewinnen Levels. Das soll nicht im echten Spielstand landen.
+func before_all() -> void:
+	_real_save = Progress.save_path
+	Progress.save_path = "user://test_level_scene_progress.json"
+	Progress.load_progress()
+
+
+func after_all() -> void:
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(Progress.save_path))
+	Progress.save_path = _real_save
+	Progress.load_progress()
 
 
 func before_each() -> void:

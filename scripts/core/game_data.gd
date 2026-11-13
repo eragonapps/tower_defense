@@ -7,6 +7,8 @@ const TOWERS_PATH := "res://data/towers.json"
 const ENEMIES_PATH := "res://data/enemies.json"
 const LEVEL_PATH := "res://data/levels/%s.json"
 const RULES_PATH := "res://data/rules.json"
+const DIFFICULTIES_PATH := "res://data/difficulties.json"
+const DIFFICULTY_ORDER: Array[String] = ["easy", "normal", "hard"]
 const LEVEL_ORDER: Array[String] = ["level_01", "level_02", "level_03"]
 
 const TOWER_FIELDS := ["name_key", "cost", "range", "cooldown", "damage", "splash", "projectile_speed", "color"]
@@ -41,9 +43,24 @@ static func load_rules() -> Dictionary:
 	return d if d is Dictionary else {}
 
 
+static func load_difficulties() -> Dictionary:
+	var d: Variant = load_json(DIFFICULTIES_PATH)
+	return d if d is Dictionary else {}
+
+
+## Die allgemeinen Regeln mit den Faktoren eines Schwierigkeitsgrads.
+static func rules_for(difficulty: String) -> Dictionary:
+	var rules := load_rules()
+	var diff: Dictionary = load_difficulties().get(difficulty, {})
+	for key in diff:
+		if GameSim.DEFAULT_RULES.has(key):
+			rules[key] = diff[key]
+	return rules
+
+
 ## Erzeugt die Simulation für ein Level mit allen Daten aus data/.
-static func create_sim(level_id: String) -> GameSim:
-	return GameSim.new(load_level(level_id), load_towers(), load_enemies(), load_rules())
+static func create_sim(level_id: String, difficulty := "normal") -> GameSim:
+	return GameSim.new(load_level(level_id), load_towers(), load_enemies(), rules_for(difficulty))
 
 
 static func load_level(id: String) -> Dictionary:

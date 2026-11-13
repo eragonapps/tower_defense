@@ -1,0 +1,5 @@
+{
+  "easy": {"name_key": "DIFF_EASY", "enemy_hp_factor": 0.8, "start_gold_factor": 1.15},
+  "normal": {"name_key": "DIFF_NORMAL", "enemy_hp_factor": 1.0, "start_gold_factor": 1.0},
+  "hard": {"name_key": "DIFF_HARD", "enemy_hp_factor": 1.25, "start_gold_factor": 0.9}
+}

@@ -53,7 +53,7 @@ func _ready() -> void:
 		push_error("Level %s ist fehlerhaft: %s" % [level_id, ", ".join(errors)])
 		get_tree().change_scene_to_file.call_deferred(MENU_SCENE)
 		return
-	sim = GameSim.new(level, towers, enemies, GameData.load_rules())
+	sim = GameSim.new(level, towers, enemies, GameData.rules_for(Settings.difficulty))
 	_has_ore = not sim.grid.cells_of_type(MineGrid.Cell.ORE).is_empty() or sim.ore > 0
 	_build_environment()
 	_torch_cells = _choose_torch_cells()
@@ -329,7 +329,10 @@ func _on_next_level() -> void:
 func _on_finished(won: bool) -> void:
 	select_cell(NO_CELL)
 	Sfx.play("victory" if won else "defeat")
-	hud.show_end(won, sim.lives, _next_level_id() != "")
+	var earned := Progress.stars_for(sim.lives, sim.max_lives) if won else 0
+	if won:
+		Progress.record(level_id, Settings.difficulty, earned)
+	hud.show_end(won, sim.lives, _next_level_id() != "", earned)
 
 
 # --- Darstellung der Spielobjekte -----------------------------------------

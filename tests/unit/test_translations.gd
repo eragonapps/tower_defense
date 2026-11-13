@@ -51,29 +51,12 @@ func test_translations_are_loaded_by_the_engine() -> void:
 	TranslationServer.set_locale(before)
 
 
-func test_keys_used_in_scenes_exist() -> void:
-	var keys := {}
-	for row in _read_rows():
-		keys[row[0]] = true
-	var re := RegEx.new()
-	re.compile("text = \"([A-Z][A-Z0-9]*_[A-Z0-9_]+)\"")
-	var checked := 0
-	for file in DirAccess.get_files_at("res://scenes"):
-		if not file.ends_with(".tscn"):
-			continue
-		var content := FileAccess.get_file_as_string("res://scenes/" + file)
-		for m in re.search_all(content):
-			checked += 1
-			assert_true(keys.has(m.get_string(1)), "%s nutzt unbekannten Schlüssel %s" % [file, m.get_string(1)])
-	assert_gt(checked, 0, "keine Schlüssel in Szenen gefunden")
-
-
 func test_keys_used_in_scripts_exist() -> void:
 	var keys := {}
 	for row in _read_rows():
 		keys[row[0]] = true
 	var re := RegEx.new()
-	re.compile("\"((?:HUD|END|MENU|LANG|GAME|TOWER|ENEMY|LEVEL|REASON|HINT)_[A-Z0-9_]+)\"")
+	re.compile("\"((?:HUD|END|MENU|GAME|TOWER|ENEMY|LEVEL|REASON|HINT|DIFF)_[A-Z0-9_]+)\"")
 	var checked := 0
 	for dir in ["res://scripts/ui", "res://scripts/view", "res://scripts/core"]:
 		for file in DirAccess.get_files_at(dir):

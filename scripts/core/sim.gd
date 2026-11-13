@@ -58,6 +58,9 @@ const DEFAULT_RULES := {
 	"ore_interval": 2.0,
 	"ore_amount": 1,
 	"worker_threat_radius": 1.6,
+	## Schwierigkeitsgrad: Faktoren auf die Lebenspunkte der Gegner und das Startgold.
+	"enemy_hp_factor": 1.0,
+	"start_gold_factor": 1.0,
 }
 
 
@@ -127,6 +130,7 @@ var status := Status.RUNNING
 var gold := 0
 var ore := 0
 var lives := 0
+var max_lives := 0
 var tick := 0
 var kills := 0
 
@@ -164,7 +168,8 @@ func _init(level: Dictionary, tower_defs: Dictionary, enemy_defs: Dictionary, gl
 	_tower_defs = tower_defs
 	_enemy_defs = enemy_defs
 	grid = MineGrid.from_rows(level["grid"])
-	gold = int(level["start_gold"])
+	gold = roundi(float(level["start_gold"]) * float(rules["start_gold_factor"]))
+	max_lives = int(level["lives"])
 	lives = int(level["lives"])
 	wave_count = level["waves"].size()
 
@@ -496,7 +501,7 @@ func _spawn(type: String, entrance: int) -> void:
 	e.id = _take_id()
 	e.type = type
 	e.def = _enemy_defs[type]
-	e.max_hp = float(e.def["hp"])
+	e.max_hp = float(e.def["hp"]) * float(rules["enemy_hp_factor"])
 	e.hp = e.max_hp
 	var cell := grid.entrances[entrance]
 	e.pos = MineGrid.center(cell)
