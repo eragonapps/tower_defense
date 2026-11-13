@@ -91,8 +91,8 @@ Stand 13.11.2026. Alle Dateien sind unverändert übernommen. Die Lizenzdatei de
 | `assets/kaykit_adventurers/` (4 Figuren) | Zwerge auf den Türmen und Arbeiter: Rogue_Hooded (Armbrustschütze), Barbarian (Steinschleuder, Arbeiter), Mage (Runenstein), Knight (Schmiedefeuer) | KayKit Adventurers 1.0, Stand `672074b` | Kay Lousberg | [GitHub](https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0) | CC0 |
 | `assets/kaykit_skeletons/` (4 Figuren) | Gegner: Skeleton_Minion, Skeleton_Warrior, Skeleton_Rogue, Skeleton_Mage | KayKit Skeletons 1.0, Stand `15b62b9` | Kay Lousberg | [GitHub](https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0) | CC0 |
 | `assets/kaykit_dungeon/` (21 Modelle) | Stollenboden, Fackeln, Fässer, Kisten, Geröll, Truhe und Münzen am Herz, Tor am Eingang | KayKit Dungeon Remastered 1.0, Stand `b0ca9bd` | Kay Lousberg | [GitHub](https://github.com/KayKit-Game-Assets/KayKit-Dungeon-Remastered-1.0) | CC0 |
-| `assets/audio/kenney_impact_sounds/` (14 Töne) | Treffer, Einschläge, Graben, Bauen, Runenstein, Wellenbeginn | Kenney Impact Sounds 1.0 | Kenney | [kenney.nl](https://kenney.nl/assets/impact-sounds) | CC0 |
-| `assets/audio/kenney_rpg_audio/` (11 Töne) | Schüsse, Knöpfe, Verkauf, Ausbau, Sieg, Niederlage | Kenney RPG Audio | Kenney | [kenney.nl](https://kenney.nl/assets/rpg-audio) | CC0 |
+| `assets/audio/kenney_impact_sounds/` (16 Töne) | Armbrustschuss, Treffer, Einschläge, Graben, Bauen, Runenstein, Wellenbeginn | Kenney Impact Sounds 1.0 | Kenney | [kenney.nl](https://kenney.nl/assets/impact-sounds) | CC0 |
+| `assets/audio/kenney_rpg_audio/` (9 Töne) | Würfe, Knöpfe, Verkauf, Ausbau, Sieg, Niederlage | Kenney RPG Audio | Kenney | [kenney.nl](https://kenney.nl/assets/rpg-audio) | CC0 |
 
 Welche Datei wofür steht, legen zwei Tabellen im Code fest: `scripts/view/models.gd` für Modelle und `scripts/core/audio.gd` für Töne.
 

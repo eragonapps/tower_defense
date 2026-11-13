@@ -12,7 +12,8 @@ const SOUNDS := {
 	"sell": ["kenney_rpg_audio/handleCoins"],
 	"dig": ["kenney_impact_sounds/impactMining_000", "kenney_impact_sounds/impactMining_001"],
 	"fill": ["kenney_impact_sounds/impactSoft_heavy_001"],
-	"shoot_bolt": ["kenney_rpg_audio/drawKnife1", "kenney_rpg_audio/knifeSlice"],
+	# Zwei fast gleiche, dumpfe Holztöne. Der Armbrustschütze schießt am häufigsten, sein Ton muss unauffällig sein.
+	"shoot_bolt": ["kenney_impact_sounds/impactWood_light_000", "kenney_impact_sounds/impactWood_light_002"],
 	"shoot_stone": ["kenney_rpg_audio/cloth1", "kenney_rpg_audio/chop"],
 	"shoot_fire": ["kenney_rpg_audio/cloth3"],
 	"rune": ["kenney_impact_sounds/impactBell_heavy_000"],
