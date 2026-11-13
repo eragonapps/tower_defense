@@ -19,17 +19,23 @@ const TOWERS := {
 	"sling": {"model": ADVENTURERS + "Barbarian", "items": [], "idle": "Idle", "attack": "Throw"},
 	"runestone": {"model": ADVENTURERS + "Mage", "items": ["2H_Staff"], "idle": "Idle", "attack": "Spellcast_Raise"},
 	"forge": {"model": ADVENTURERS + "Knight", "items": [], "idle": "Idle", "attack": "Throw"},
+	"bomb": {"model": ADVENTURERS + "Barbarian", "items": ["Mug"], "idle": "Idle", "attack": "Throw"},
+	"shieldwall": {"model": ADVENTURERS + "Knight", "items": ["1H_Sword", "Rectangle_Shield"], "idle": "Blocking", "attack": "1H_Melee_Attack_Chop"},
 }
 const ENEMIES := {
 	"skeleton_minion": {"model": SKELETONS + "Skeleton_Minion", "walk": "Walking_A", "death": "Death_A"},
 	"skeleton_warrior": {"model": SKELETONS + "Skeleton_Warrior", "walk": "Walking_B", "death": "Death_B"},
 	"skeleton_rogue": {"model": SKELETONS + "Skeleton_Rogue", "walk": "Running_A", "death": "Death_A"},
 	"skeleton_mage": {"model": SKELETONS + "Skeleton_Mage", "walk": "Walking_A", "death": "Death_B"},
+	# tint färbt ein vorhandenes Modell um, solange es für diesen Gegner kein eigenes gibt.
+	"skeleton_guard": {"model": SKELETONS + "Skeleton_Warrior", "walk": "Walking_B", "death": "Death_B", "tint": Color(0.55, 0.7, 1.0)},
+	"bone_king": {"model": SKELETONS + "Skeleton_Mage", "walk": "Walking_C", "death": "Death_A", "tint": Color(1.0, 0.45, 0.4)},
 }
 const WORKER := {"model": ADVENTURERS + "Barbarian", "items": ["1H_Axe"], "work": "1H_Melee_Attack_Chop", "hide": "Sit_Floor_Idle"}
 
 static var _scenes := {}
 static var _meshes := {}
+static var _tints := {}
 
 
 static func has(path: String) -> bool:
@@ -70,6 +76,23 @@ static func character(path: String, items: Array, scale: Vector3) -> Node3D:
 		for item in slot.get_children():
 			item.visible = String(item.name) in items
 	return node
+
+
+## Färbt alle Teile einer Figur ein. Die Textur bleibt erhalten, die Farbe wird damit multipliziert.
+static func tint(character_node: Node3D, color: Color) -> void:
+	for mi in character_node.find_children("*", "MeshInstance3D", true, false):
+		var mesh: Mesh = mi.mesh
+		if mesh == null or mesh.get_surface_count() == 0:
+			continue
+		var key := "%s/%s" % [mesh.resource_path + str(mesh.get_rid().get_id()), color.to_html()]
+		if not _tints.has(key):
+			var original := mesh.surface_get_material(0)
+			if not original is StandardMaterial3D:
+				continue
+			var copy: StandardMaterial3D = original.duplicate()
+			copy.albedo_color = color
+			_tints[key] = copy
+		mi.material_override = _tints[key]
 
 
 static func player(character_node: Node3D) -> AnimationPlayer:

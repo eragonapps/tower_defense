@@ -66,3 +66,11 @@ MENU_LOCKED,Gesperrt,Locked
 DIFF_EASY,Leicht,Easy
 DIFF_NORMAL,Normal,Normal
 DIFF_HARD,Schwer,Hard
+TOWER_BOMB,Bombenwerfer,Bomb Thrower
+TOWER_SHIELDWALL,Schildwall,Shield Wall
+ENEMY_SKELETON_GUARD,Skelett-Wächter,Skeleton Guard
+ENEMY_BONE_KING,Knochenkönig,Bone King
+HUD_STAT_CAPACITY,Hält,Holds
+HUD_STAT_HOLD,Haltezeit,Hold time
+LEVEL_04_NAME,Der Knochenkönig,The Bone King
+HINT_LEVEL_04,"Wächter sind gegen Bolzen gepanzert. Der Schildwall hält Gegner auf, der Bombenwerfer trifft ganze Gruppen. Am Ende kommt der Knochenkönig.","Guards are armored against bolts. The shield wall holds enemies, the bomb thrower hits whole groups. The Bone King comes last."

@@ -19,6 +19,10 @@ signal ore_mined(worker: Worker, amount: int)
 signal aura_pulsed(tower: Tower)
 ## Ein Gegner hat andere Gegner geheilt.
 signal enemies_healed(healer: Enemy)
+## Ein Schildwall hat einen Gegner aufgehalten.
+signal enemy_held(tower: Tower, enemy: Enemy)
+## Ein Dieb hat Erz gestohlen.
+signal ore_stolen(thief: Enemy, worker: Worker, amount: int)
 signal projectile_fired(projectile: Projectile)
 signal projectile_hit(projectile: Projectile)
 signal wave_started(index: int)
@@ -83,6 +87,11 @@ class Enemy extends RefCounted:
 	var burn_left := 0.0
 	var burn_dps := 0.0
 	var heal_timer := 0.0
+	var summon_timer := 0.0
+	## Restzeit, in der ein Schildwall den Gegner festhält.
+	var hold_left := 0.0
+	var held_by: Tower
+	var has_stolen := false
 
 
 class Tower extends RefCounted:
@@ -94,6 +103,8 @@ class Tower extends RefCounted:
 	var cooldown_left := 0.0
 	var shots := 0
 	var level := 1
+	## Gegner, die dieser Schildwall schon einmal aufgehalten hat. Jeder nur einmal.
+	var held_ids := {}
 	## Die aktuell gültigen Werte: Grundwerte plus alle Ausbaustufen bis level.
 	var stats := {}
 
@@ -157,6 +168,8 @@ var _workers_by_cell := {}
 var _spawn_queue: Array[Dictionary] = []
 var _wave_time := 0.0
 var _next_id := 1
+## Gegner, die während eines Schritts entstehen, kommen erst danach dazu.
+var _pending_spawns: Array[Dictionary] = []
 
 
 func _init(level: Dictionary, tower_defs: Dictionary, enemy_defs: Dictionary, global_rules := {}) -> void:
@@ -229,6 +242,10 @@ func sell_tower(cell: Vector2i) -> bool:
 	if t == null or status != Status.RUNNING:
 		return false
 	gold += sell_value(t)
+	for e in enemies:
+		if e.held_by == t:
+			e.held_by = null
+			e.hold_left = 0.0
 	towers.erase(t)
 	_towers_by_cell.erase(cell)
 	tower_sold.emit(t)
@@ -497,16 +514,20 @@ func _step_waves() -> void:
 
 
 func _spawn(type: String, entrance: int) -> void:
+	var cell := grid.entrances[entrance]
+	_spawn_at(type, MineGrid.center(cell), grid.next_step(cell))
+
+
+func _spawn_at(type: String, pos: Vector2, target_cell: Vector2i) -> void:
 	var e := Enemy.new()
 	e.id = _take_id()
 	e.type = type
 	e.def = _enemy_defs[type]
 	e.max_hp = float(e.def["hp"]) * float(rules["enemy_hp_factor"])
 	e.hp = e.max_hp
-	var cell := grid.entrances[entrance]
-	e.pos = MineGrid.center(cell)
+	e.pos = pos
 	e.prev_pos = e.pos
-	e.target_cell = grid.next_step(cell)
+	e.target_cell = target_cell
 	_update_remaining(e)
 	enemies.append(e)
 	enemy_spawned.emit(e)
@@ -519,6 +540,13 @@ func _step_enemies() -> void:
 		e.prev_pos = e.pos
 		_step_status(e)
 		if not e.alive:
+			continue
+		_step_abilities(e)
+		if e.hold_left > 0.0:
+			e.hold_left -= DT
+			if e.hold_left <= 0.0:
+				e.hold_left = 0.0
+				e.held_by = null
 			continue
 		var budget := float(e.def["speed"]) * DT
 		if e.slow_left > 0.0:
@@ -539,6 +567,9 @@ func _step_enemies() -> void:
 				e.target_cell = grid.next_step(e.target_cell)
 		if e.alive:
 			_update_remaining(e)
+	for spawn in _pending_spawns:
+		_spawn_at(spawn["type"], spawn["pos"], spawn["target"])
+	_pending_spawns.clear()
 
 
 ## Laufende Wirkungen auf einem Gegner: Brennen, Verlangsamung, eigene Heilkraft.
@@ -547,7 +578,7 @@ func _step_status(e: Enemy) -> void:
 		# Der letzte Schritt zählt nur anteilig, damit der Gesamtschaden genau stimmt.
 		var t := minf(DT, e.burn_left)
 		e.burn_left -= t
-		_damage(e, e.burn_dps * t)
+		_damage(e, e.burn_dps * t, "fire")
 		if not e.alive:
 			return
 	if e.slow_left > 0.0:
@@ -570,6 +601,27 @@ func _step_status(e: Enemy) -> void:
 				enemies_healed.emit(e)
 
 
+## Besondere Fähigkeiten eines Gegners: Verstärkung rufen und Erz stehlen.
+func _step_abilities(e: Enemy) -> void:
+	if e.def.has("summon"):
+		var summon: Dictionary = e.def["summon"]
+		e.summon_timer += DT
+		if e.summon_timer >= float(summon["interval"]):
+			e.summon_timer = 0.0
+			for i in int(summon["count"]):
+				_pending_spawns.append({"type": summon["enemy"], "pos": e.pos, "target": e.target_cell})
+	if e.def.has("steal") and not e.has_stolen and ore > 0:
+		var steal: Dictionary = e.def["steal"]
+		var r_sq := float(steal["radius"]) ** 2
+		for w in workers:
+			if w.pos.distance_squared_to(e.pos) <= r_sq:
+				var amount := mini(ore, int(steal["ore"]))
+				ore -= amount
+				e.has_stolen = true
+				ore_stolen.emit(e, w, amount)
+				break
+
+
 ## Wendet die Zusatzwirkungen eines Turms auf einen Gegner an.
 ## Gleiche Wirkungen stapeln sich nicht: es gilt die stärkere und die längere Restdauer.
 func _apply_effects(e: Enemy, stats: Dictionary) -> void:
@@ -577,7 +629,9 @@ func _apply_effects(e: Enemy, stats: Dictionary) -> void:
 		return
 	if stats.has("slow"):
 		var slow: Dictionary = stats["slow"]
-		e.slow_factor = minf(e.slow_factor, float(slow["factor"])) if e.slow_left > 0.0 else float(slow["factor"])
+		# Manche Gegner widerstehen der Verlangsamung teilweise.
+		var factor := lerpf(float(slow["factor"]), 1.0, float(e.def.get("slow_resist", 0.0)))
+		e.slow_factor = minf(e.slow_factor, factor) if e.slow_left > 0.0 else factor
 		e.slow_left = maxf(e.slow_left, float(slow["duration"]))
 	if stats.has("burn"):
 		var burn: Dictionary = stats["burn"]
@@ -598,9 +652,13 @@ func _leak(e: Enemy) -> void:
 func _step_towers() -> void:
 	for t in towers:
 		t.cooldown_left = maxf(0.0, t.cooldown_left - DT)
+		var kind: String = t.stats.get("kind", "projectile")
+		if kind == "block":
+			_step_block(t)
+			continue
 		if t.cooldown_left > 0.0:
 			continue
-		if t.stats.get("kind", "projectile") == "aura":
+		if kind == "aura":
 			_pulse_aura(t)
 			continue
 		var target := _pick_target(t)
@@ -619,6 +677,35 @@ func _step_towers() -> void:
 		projectile_fired.emit(p)
 
 
+## Der Schildwall hält Gegner in Reichweite fest und schlägt auf die Gehaltenen ein.
+## Er hält höchstens capacity Gegner zugleich und jeden Gegner nur einmal.
+func _step_block(t: Tower) -> void:
+	var held: Array[Enemy] = []
+	for e in enemies:
+		if e.alive and e.held_by == t and e.hold_left > 0.0:
+			held.append(e)
+	var range_sq := float(t.stats["range"]) ** 2
+	var capacity := int(t.stats["capacity"])
+	if held.size() < capacity:
+		for e in enemies:
+			if held.size() >= capacity:
+				break
+			if not e.alive or e.hold_left > 0.0 or t.held_ids.has(e.id) or e.def.get("unblockable", false):
+				continue
+			if t.pos.distance_squared_to(e.pos) <= range_sq:
+				e.held_by = t
+				e.hold_left = float(t.stats["hold_time"])
+				t.held_ids[e.id] = true
+				held.append(e)
+				enemy_held.emit(t, e)
+	if t.cooldown_left <= 0.0 and not held.is_empty():
+		t.cooldown_left = float(t.stats["cooldown"])
+		t.shots += 1
+		for e in held:
+			_damage(e, float(t.stats["damage"]), t.stats.get("damage_type", ""))
+		aura_pulsed.emit(t)
+
+
 ## Ein Turm ohne Geschoss wirkt auf alle Gegner in Reichweite zugleich.
 func _pulse_aura(t: Tower) -> void:
 	var range_sq := float(t.stats["range"]) ** 2
@@ -627,7 +714,7 @@ func _pulse_aura(t: Tower) -> void:
 		if e.alive and t.pos.distance_squared_to(e.pos) <= range_sq:
 			hit = true
 			if float(t.stats["damage"]) > 0.0:
-				_damage(e, float(t.stats["damage"]))
+				_damage(e, float(t.stats["damage"]), t.stats.get("damage_type", ""))
 			_apply_effects(e, t.stats)
 	if hit:
 		t.cooldown_left = float(t.stats["cooldown"])
@@ -675,16 +762,19 @@ func _apply_hit(p: Projectile, splash: float) -> void:
 		var r_sq := splash * splash
 		for e in enemies:
 			if e.alive and e.pos.distance_squared_to(p.pos) <= r_sq:
-				_damage(e, damage)
+				_damage(e, damage, p.def.get("damage_type", ""))
 				_apply_effects(e, p.def)
 	elif p.target != null and p.target.alive:
-		_damage(p.target, damage)
+		_damage(p.target, damage, p.def.get("damage_type", ""))
 		_apply_effects(p.target, p.def)
 
 
-func _damage(e: Enemy, amount: float) -> void:
+## Fügt Schaden zu. Gegner können einzelnen Schadensarten widerstehen (resist: Art → Faktor).
+func _damage(e: Enemy, amount: float, type := "") -> void:
 	if not e.alive:
 		return
+	if type != "" and e.def.has("resist"):
+		amount *= float(e.def["resist"].get(type, 1.0))
 	e.hp -= amount
 	if e.hp <= 0.0:
 		e.hp = 0.0

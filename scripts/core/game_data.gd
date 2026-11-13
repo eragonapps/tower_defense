@@ -9,11 +9,12 @@ const LEVEL_PATH := "res://data/levels/%s.json"
 const RULES_PATH := "res://data/rules.json"
 const DIFFICULTIES_PATH := "res://data/difficulties.json"
 const DIFFICULTY_ORDER: Array[String] = ["easy", "normal", "hard"]
-const LEVEL_ORDER: Array[String] = ["level_01", "level_02", "level_03"]
+const LEVEL_ORDER: Array[String] = ["level_01", "level_02", "level_03", "level_04"]
 
 const TOWER_FIELDS := ["name_key", "cost", "range", "cooldown", "damage", "splash", "projectile_speed", "color"]
 ## Zusatzwirkungen eines Turms: kind (projectile oder aura), slow {factor, duration}, burn {dps, duration}.
-const TOWER_OPTIONAL := ["kind", "slow", "burn"]
+const TOWER_OPTIONAL := ["kind", "slow", "burn", "damage_type", "capacity", "hold_time"]
+const DAMAGE_TYPES := ["pierce", "blunt", "fire", "magic"]
 const ENEMY_FIELDS := ["name_key", "hp", "speed", "bounty", "lives", "color", "size"]
 
 
@@ -91,6 +92,10 @@ static func validate(level: Dictionary, towers: Dictionary, enemies: Dictionary)
 				errors.append("Turm %s: slow braucht factor und duration" % id)
 			if stats.has("burn") and not (stats["burn"].has("dps") and stats["burn"].has("duration")):
 				errors.append("Turm %s: burn braucht dps und duration" % id)
+		if towers[id].get("damage_type", "blunt") not in DAMAGE_TYPES:
+			errors.append("Turm %s: unbekannte Schadensart %s" % [id, towers[id]["damage_type"]])
+		if towers[id].get("kind", "") == "block" and not (towers[id].has("capacity") and towers[id].has("hold_time")):
+			errors.append("Turm %s: ein Schildwall braucht capacity und hold_time" % id)
 		for u in towers[id].get("upgrades", []):
 			if int(u.get("ore", 0)) <= 0:
 				errors.append("Turm %s: jede Ausbaustufe braucht Erzkosten (ore) größer als 0" % id)
@@ -105,6 +110,11 @@ static func validate(level: Dictionary, towers: Dictionary, enemies: Dictionary)
 			errors.append("Gegner %s: speed muss größer als 0 sein" % id)
 		if enemies[id].get("hp", 1.0) <= 0.0:
 			errors.append("Gegner %s: hp muss größer als 0 sein" % id)
+		for type in enemies[id].get("resist", {}):
+			if type not in DAMAGE_TYPES:
+				errors.append("Gegner %s: unbekannte Schadensart %s in resist" % [id, type])
+		if enemies[id].has("summon") and not enemies.has(enemies[id]["summon"].get("enemy", "")):
+			errors.append("Gegner %s: ruft unbekannten Gegner" % id)
 		if enemies[id].has("heal"):
 			for f in ["amount", "interval", "radius"]:
 				if not enemies[id]["heal"].has(f):

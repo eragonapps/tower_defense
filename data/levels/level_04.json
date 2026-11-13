@@ -1,0 +1,81 @@
+{
+  "name_key": "LEVEL_04_NAME",
+  "hint_key": "HINT_LEVEL_04",
+  "start_gold": 320,
+  "lives": 20,
+  "wave_pause": 10.0,
+  "towers": [
+    "crossbow",
+    "sling",
+    "runestone",
+    "forge",
+    "bomb",
+    "shieldwall"
+  ],
+  "waves": [
+    {
+      "reward": 35,
+      "groups": [
+        {"enemy": "skeleton_minion", "count": 12, "interval": 0.8}
+      ]
+    },
+    {
+      "reward": 40,
+      "groups": [
+        {"enemy": "skeleton_warrior", "count": 8, "interval": 1.3},
+        {"enemy": "skeleton_rogue", "count": 6, "interval": 0.8, "delay": 5.0}
+      ]
+    },
+    {
+      "reward": 45,
+      "groups": [
+        {"enemy": "skeleton_guard", "count": 5, "interval": 2.0},
+        {"enemy": "skeleton_minion", "count": 16, "interval": 0.5, "delay": 3.0}
+      ]
+    },
+    {
+      "reward": 50,
+      "groups": [
+        {"enemy": "skeleton_guard", "count": 8, "interval": 1.5},
+        {"enemy": "skeleton_mage", "count": 2, "interval": 4.0, "delay": 4.0},
+        {"enemy": "skeleton_rogue", "count": 10, "interval": 0.6, "delay": 8.0}
+      ]
+    },
+    {
+      "reward": 55,
+      "groups": [
+        {"enemy": "skeleton_warrior", "count": 20, "interval": 0.7},
+        {"enemy": "skeleton_guard", "count": 8, "interval": 1.4, "delay": 4.0},
+        {"enemy": "skeleton_mage", "count": 3, "interval": 3.0, "delay": 6.0}
+      ]
+    },
+    {
+      "reward": 60,
+      "groups": [
+        {"enemy": "skeleton_guard", "count": 16, "interval": 1.0},
+        {"enemy": "skeleton_rogue", "count": 20, "interval": 0.4, "delay": 5.0},
+        {"enemy": "skeleton_mage", "count": 4, "interval": 3.0, "delay": 5.0}
+      ]
+    },
+    {
+      "reward": 0,
+      "groups": [
+        {"enemy": "bone_king", "count": 1, "interval": 1.0},
+        {"enemy": "skeleton_guard", "count": 10, "interval": 2.5, "delay": 5.0},
+        {"enemy": "skeleton_warrior", "count": 20, "interval": 1.2, "delay": 8.0}
+      ]
+    }
+  ],
+  "grid": [
+    "##################",
+    "E...............:#",
+    "#:o::o::o::o::o.:#",
+    "#::o:*:::o::*:o.o#",
+    "#:..............:#",
+    "#o.o::o:::o::o:::#",
+    "#:.:o:::*::o::o::#",
+    "#:..............H#",
+    "#:::o:::o:::o::o:#",
+    "##################"
+  ]
+}

@@ -24,7 +24,11 @@
     "bounty": 6,
     "lives": 1,
     "color": "#9a3d4a",
-    "size": 0.85
+    "size": 0.85,
+    "steal": {
+      "ore": 6,
+      "radius": 1.6
+    }
   },
   "skeleton_mage": {
     "name_key": "ENEMY_SKELETON_MAGE",
@@ -38,6 +42,37 @@
       "amount": 25,
       "interval": 2.5,
       "radius": 1.6
+    }
+  },
+  "skeleton_guard": {
+    "name_key": "ENEMY_SKELETON_GUARD",
+    "hp": 300,
+    "speed": 0.85,
+    "bounty": 18,
+    "lives": 1,
+    "color": "#7f8fa6",
+    "size": 1.2,
+    "resist": {
+      "pierce": 0.35
+    }
+  },
+  "bone_king": {
+    "name_key": "ENEMY_BONE_KING",
+    "hp": 11000,
+    "speed": 0.45,
+    "bounty": 250,
+    "lives": 20,
+    "color": "#b03030",
+    "size": 2.1,
+    "slow_resist": 0.6,
+    "unblockable": true,
+    "resist": {
+      "fire": 0.7
+    },
+    "summon": {
+      "enemy": "skeleton_minion",
+      "count": 2,
+      "interval": 6.0
     }
   }
 }

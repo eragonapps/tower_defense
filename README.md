@@ -6,7 +6,7 @@
 - Quellen und Lizenzen der Assets: [`ASSETS.md`](ASSETS.md)
 
 ## Stand
-Meilenstein 3: drei spielbare Levels mit 3D-Modellen, Animationen, Ton und Effekten. Vier Türme, vier Gegner, Stollen graben, Arbeiter an Erzadern, Turm-Ausbau, Deutsch und Englisch.
+Meilenstein 4 (in Arbeit): vier Levels, sechs Türme, sechs Gegner samt Boss, Spielstand mit Sternen, Levelkarte und drei Schwierigkeitsgrade.
 
 ## Bedienung
 - Ein Finger ziehen: Karte verschieben. Zwei Finger: zoomen.

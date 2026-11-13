@@ -6,8 +6,9 @@ extends SceneTree
 const MINE_DIGS := {
 	"level_02": [Vector2i(4, 3), Vector2i(4, 2), Vector2i(12, 3)],
 	"level_03": [Vector2i(3, 3), Vector2i(10, 4), Vector2i(14, 6)],
+	"level_04": [Vector2i(8, 5), Vector2i(12, 2), Vector2i(5, 2)],
 }
-const ALL_TOWERS := ["crossbow", "forge", "crossbow", "sling", "runestone"]
+const ALL_TOWERS := ["crossbow", "forge", "sling", "crossbow", "bomb", "runestone", "shieldwall"]
 
 
 func _initialize() -> void:

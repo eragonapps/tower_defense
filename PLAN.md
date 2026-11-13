@@ -1,6 +1,6 @@
 # Plan: Durnhal: Wacht der Tiefe – 3D Tower Defense für Android
 
-Stand: 12.11.2026 · Status: **Meilensteine 0 bis 2 abgeschlossen, Meilenstein 3 umgesetzt und wartet auf den Gerätetest**
+Stand: 12.11.2026 · Status: **Meilensteine 0 bis 3 abgeschlossen, Meilenstein 4 zum Teil umgesetzt**
 
 ## 1. Festgelegte Entscheidungen
 
@@ -66,7 +66,7 @@ Kapitel 1 nutzt Untote, weil die Skelett-Modelle schon vorliegen und zum düster
 | Ork | Standardgegner (später) |
 | Troll | viel Leben, langsam |
 | Höhlenspinne | sehr schnell, wenig Leben |
-| Skelett-Schildträger | gepanzert, widersteht Pfeilen |
+| Skelett-Wächter | gepanzert, widersteht Bolzen |
 | Boss (z. B. Höhlentroll-König, später Drache) | Abschluss eines Kapitels |
 
 ### Meta-Fortschritt
@@ -142,7 +142,7 @@ Abweichungen und bekannte Schwächen:
 ### M3 – Vertical Slice
 Echte Low-Poly-Modelle, Animationen, 4 Türme, 4 Gegner, HUD, Ton, Effekte, 1 fertiges Level, Deutsch und Englisch vollständig.
 **Fertig, wenn:** jemand ohne Erklärung das Level spielen kann.
-**Stand:** umgesetzt am 13.11.2026, Gerätetest offen.
+**Stand:** abgeschlossen am 13.11.2026, auf dem S24 getestet (60 Bilder pro Sekunde). Ein anstrengender Armbrust-Ton wurde danach ersetzt.
 
 Was drin ist:
 - **Modelle:** Zwerge auf den Türmen und an den Erzadern, vier Skelett-Gegner, Bodenplatten, Fackeln mit Licht, Fässer und Kisten, Truhe am Herz, Tor am Eingang. Alle mit Animationen für Laufen, Schießen, Zaubern, Arbeiten und Sterben.
@@ -162,6 +162,23 @@ Abweichungen und offene Punkte:
 
 ### M4 – Inhalt
 Alle 6 Türme mit Spezialisierungen, alle Gegner, Boss, 8 bis 10 Levels, Levelkarte, Speichern, Schwierigkeitsgrade.
+**Stand:** zum Teil umgesetzt am 13.11.2026, Gerätetest offen.
+
+Fertig:
+- **Spielstand:** Sterne je Level und Schwierigkeit, gespeichert als Datei mit Versionsnummer. Beschädigte Dateien führen nicht zum Absturz.
+- **Sterne:** 3 ohne Verlust, 2 mit mindestens der Hälfte der Leben, sonst 1.
+- **Levelkarte:** Kacheln mit Nummer, Name und Sternen. Ein Level öffnet sich mit einem Sieg im Level davor.
+- **Schwierigkeitsgrade:** Leicht, Normal, Schwer. Sie ändern die Lebenspunkte der Gegner und das Startgold (`data/difficulties.json`).
+- **Türme:** Bombenwerfer (große Fläche, langsam) und Schildwall (hält Gegner direkt am Stollen fest). Damit sind alle 6 Türme da.
+- **Schadensarten:** Bolzen, Wucht, Feuer, Magie. Gegner können einzelnen Arten widerstehen.
+- **Gegner:** Skelett-Wächter (gegen Bolzen gepanzert), Knochenkönig (Boss: ruft Schergen, lässt sich kaum bremsen und nicht aufhalten). Skelett-Schurken stehlen jetzt Erz, wenn sie an einem Arbeiter vorbeikommen.
+- **Level 4 „Der Knochenkönig"** mit allen Türmen und dem Boss.
+
+Noch offen in diesem Meilenstein:
+- Spezialisierungen der Türme nach Stufe 3.
+- Levels 5 bis 8.
+- Wächter und Knochenkönig haben kein eigenes Modell. Sie sind umgefärbte, anders skalierte Skelette.
+- Der Boss ist für den Minen-Bot zu leicht: Er gewinnt Level 4 ohne Verlust. Ohne Mine verlieren alle Bots an ihm.
 
 ### M5 – Meta und Feinschliff
 Zwergenhalle, Tutorial, Balancing, Optimierung für das Fire HD 10, Einstellungen (Ton, Sprache, Grafikqualität).

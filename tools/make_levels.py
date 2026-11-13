@@ -47,6 +47,7 @@ def write(name, level, g):
 
 
 MINION, WARRIOR, ROGUE, MAGE = "skeleton_minion", "skeleton_warrior", "skeleton_rogue", "skeleton_mage"
+GUARD, KING = "skeleton_guard", "bone_king"
 
 # --- Level 2: Die Erzader -------------------------------------------------
 g = new_grid()
@@ -88,4 +89,24 @@ write('level_03', {
         {"reward": 55, "groups": [group(ROGUE, 18, 0.45), group(MINION, 26, 0.4, 0.0, 1), group(MAGE, 3, 2.5, 4.0, 1)]},
         {"reward": 60, "groups": [group(WARRIOR, 16, 0.8), group(WARRIOR, 16, 0.8, 0.0, 1), group(MAGE, 3, 2.5, 3.0), group(MAGE, 3, 2.5, 3.0, 1)]},
         {"reward": 0, "groups": [group(WARRIOR, 22, 0.65), group(WARRIOR, 22, 0.65, 0.0, 1), group(ROGUE, 20, 0.35, 5.0), group(MAGE, 5, 2.0, 4.0, 1)]},
+    ]}, g)
+
+# --- Level 4: Der Knochenkönig --------------------------------------------
+g = new_grid()
+# Ein langer Weg in drei Bahnen, mit einer Abkürzung, die sich zuschütten lässt.
+line(g, 0, 1, 15, 1); line(g, 15, 1, 15, 4); line(g, 2, 4, 15, 4); line(g, 2, 4, 2, 7); line(g, 2, 7, 16, 7)
+g[1][0] = 'E'; g[7][16] = 'H'
+place(g, '*', [(8, 6), (12, 3), (5, 3)])
+place(g, 'o', [(2, 2), (5, 2), (8, 2), (11, 2), (14, 2), (16, 3), (14, 3), (9, 3), (3, 3), (1, 5), (3, 5), (6, 5), (10, 5), (13, 5), (4, 6), (11, 6), (14, 6), (4, 8), (8, 8), (12, 8), (15, 8)], near_tunnel=True)
+write('level_04', {
+    "name_key": "LEVEL_04_NAME", "hint_key": "HINT_LEVEL_04", "start_gold": 320, "lives": 20, "wave_pause": 10.0,
+    "towers": ["crossbow", "sling", "runestone", "forge", "bomb", "shieldwall"],
+    "waves": [
+        {"reward": 35, "groups": [group(MINION, 12, 0.8)]},
+        {"reward": 40, "groups": [group(WARRIOR, 8, 1.3), group(ROGUE, 6, 0.8, 5.0)]},
+        {"reward": 45, "groups": [group(GUARD, 5, 2.0), group(MINION, 16, 0.5, 3.0)]},
+        {"reward": 50, "groups": [group(GUARD, 8, 1.5), group(MAGE, 2, 4.0, 4.0), group(ROGUE, 10, 0.6, 8.0)]},
+        {"reward": 55, "groups": [group(WARRIOR, 20, 0.7), group(GUARD, 8, 1.4, 4.0), group(MAGE, 3, 3.0, 6.0)]},
+        {"reward": 60, "groups": [group(GUARD, 16, 1.0), group(ROGUE, 20, 0.4, 5.0), group(MAGE, 4, 3.0, 5.0)]},
+        {"reward": 0, "groups": [group(KING, 1, 1.0), group(GUARD, 10, 2.5, 5.0), group(WARRIOR, 20, 1.2, 8.0)]},
     ]}, g)

@@ -77,6 +77,7 @@ func _ready() -> void:
 	sim.worker_placed.connect(_on_worker_placed)
 	sim.aura_pulsed.connect(_on_aura_pulsed)
 	sim.enemies_healed.connect(_on_enemies_healed)
+	sim.ore_stolen.connect(_on_ore_stolen)
 	sim.wave_started.connect(func(_i: int) -> void: Sfx.play("wave", -4.0))
 	hud.set_hint(level.get("hint_key", "HUD_HINT_BUILD"))
 	hud.show_state(sim, paused, SPEEDS[speed_index], _has_ore)
@@ -260,6 +261,9 @@ func _stats_text(stats: Dictionary, next: Dictionary) -> String:
 		if next.has("slow") and next["slow"] != stats["slow"]:
 			text += " → %d %%" % roundi(float(next["slow"]["factor"]) * 100.0)
 		parts.append(text)
+	if stats.has("capacity"):
+		parts.append(_stat("HUD_STAT_CAPACITY", stats, next, "capacity"))
+		parts.append(_stat("HUD_STAT_HOLD", stats, next, "hold_time"))
 	if stats.has("burn"):
 		var text := "%s %s/s" % [tr("HUD_STAT_BURN"), _number(stats["burn"]["dps"])]
 		if next.has("burn") and next["burn"] != stats["burn"]:
@@ -357,7 +361,8 @@ func _sync_views(alpha: float) -> void:
 		if view.has_meta("anim"):
 			var ap: AnimationPlayer = view.get_meta("anim")
 			# Die Schritte passen zum Tempo: verlangsamte Gegner laufen sichtbar langsamer.
-			ap.speed_scale = view.get_meta("walk_speed", 1.0) * (e.slow_factor if e.slow_left > 0.0 else 1.0)
+			# Vom Schildwall gehaltene Gegner stehen still.
+			ap.speed_scale = 0.0 if e.hold_left > 0.0 else view.get_meta("walk_speed", 1.0) * (e.slow_factor if e.slow_left > 0.0 else 1.0)
 		var bar: Node3D = view.get_node("Bar")
 		bar.visible = e.hp < e.max_hp
 		if bar.visible:
@@ -558,9 +563,24 @@ func _tower_attack(t: GameSim.Tower, dir: Vector2) -> void:
 func _on_aura_pulsed(t: GameSim.Tower) -> void:
 	if not _tower_views.has(t.id):
 		return
+	if t.stats.get("kind", "") == "block":
+		# Der Schildwall schlägt auf einen der Gehaltenen ein.
+		var dir := Vector2.ZERO
+		for e in sim.enemies:
+			if e.held_by == t:
+				dir = e.pos - t.pos
+				break
+		_tower_attack(t, dir)
+		Sfx.play("hit", -8.0)
+		return
 	_tower_attack(t, Vector2.ZERO)
 	_show_ring(to_world(t.pos, 0.12), float(t.stats["range"]) * CELL, Color(0.45, 0.75, 1.0, 0.35))
 	Sfx.play("rune", -16.0)
+
+
+func _on_ore_stolen(_thief: GameSim.Enemy, worker: GameSim.Worker, _amount: int) -> void:
+	_show_ring(to_world(worker.pos, cell_height(worker.cell) + 0.1), CELL * 0.9, Color(1.0, 0.25, 0.2, 0.6))
+	Sfx.play("sell", -4.0)
 
 
 func _on_enemies_healed(healer: GameSim.Enemy) -> void:
@@ -651,6 +671,8 @@ func _make_enemy(e: GameSim.Enemy) -> Node3D:
 	if visual.has("model") and Models.has(visual["model"]):
 		var figure := Models.character(visual["model"], [], Vector3.ONE * Models.ENEMY_SCALE * size)
 		figure.name = "Figure"
+		if visual.has("tint"):
+			Models.tint(figure, visual["tint"])
 		root.add_child(figure)
 		root.set_meta("anim", Models.player(figure))
 		# Schnelle Gegner bewegen die Beine schneller.
@@ -753,6 +775,11 @@ func _make_tower(t: GameSim.Tower) -> Node3D:
 		stone.material_override = _material(Color(0.35, 0.7, 1.0), 1.8)
 		stone.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		root.add_child(stone)
+	elif t.type == "bomb" and Models.has(Models.DUNGEON + "keg"):
+		var keg := Models.instance(Models.DUNGEON + "keg")
+		keg.scale = Vector3.ONE * 0.26
+		keg.position = Vector3(-0.42, 0.55, -0.3)
+		root.add_child(keg)
 	elif t.stats.has("burn"):
 		var bowl := MeshInstance3D.new()
 		var bowl_mesh := CylinderMesh.new()
@@ -817,10 +844,10 @@ func _make_projectile(p: GameSim.Projectile) -> Node3D:
 		m.mesh = ball
 		m.material_override = _material(Color(1.0, 0.5, 0.12), 3.5)
 	elif float(p.def["splash"]) > 0.0:
-		# Steinbrocken.
+		# Steinbrocken. Je größer die Fläche, desto größer das Geschoss.
 		var rock := SphereMesh.new()
-		rock.radius = 0.2
-		rock.height = 0.36
+		rock.radius = 0.2 if float(p.def["splash"]) < 1.5 else 0.32
+		rock.height = rock.radius * 1.8
 		rock.radial_segments = 6
 		rock.rings = 3
 		m.mesh = rock
@@ -1266,7 +1293,7 @@ func demo(state: String) -> void:
 	sim.gold = 2000
 	sim.ore = 200
 	var types := sim.allowed_towers()
-	for i in mini(3 if state == "fight" else 8, slots.size()):
+	for i in mini(3 if state == "fight" else (6 if state == "boss" else 8), slots.size()):
 		sim.build_tower(slots[i], types[i % types.size()])
 		for u in i % 3:
 			sim.upgrade_tower(slots[i])
@@ -1291,6 +1318,12 @@ func demo(state: String) -> void:
 		_sync_views(1.0)
 		return
 	sim.start_next_wave()
+	if state == "boss":
+		# Alle besonderen Gegner auf einmal, zum Ansehen.
+		for type in ["bone_king", "skeleton_guard", "skeleton_guard", "skeleton_mage", "skeleton_rogue"]:
+			sim._spawn(type, 0)
+			for i in 50:
+				sim.step()
 	for i in 1200:
 		sim.step()
 		if sim.enemies.size() >= 6 and sim.projectiles.size() >= 2:

@@ -5,8 +5,9 @@ extends GutTest
 const MINE_DIGS := {
 	"level_02": [Vector2i(4, 3), Vector2i(4, 2), Vector2i(12, 3)],
 	"level_03": [Vector2i(3, 3), Vector2i(10, 4), Vector2i(14, 6)],
+	"level_04": [Vector2i(8, 5), Vector2i(12, 2), Vector2i(5, 2)],
 }
-const ALL_TOWERS := ["crossbow", "forge", "crossbow", "sling", "runestone"]
+const ALL_TOWERS := ["crossbow", "forge", "sling", "crossbow", "bomb", "runestone", "shieldwall"]
 
 var towers: Dictionary
 var enemies: Dictionary
@@ -54,7 +55,9 @@ func test_every_build_slot_can_reach_a_tunnel() -> void:
 	# Auch Sackgassen zählen: sie können durch Graben zum Weg der Gegner werden.
 	var min_range := 999.0
 	for t in towers.values():
-		min_range = minf(min_range, t["range"])
+		# Der Schildwall wirkt nur direkt neben dem Stollen und wird unten eigens geprüft.
+		if t.get("kind", "") != "block":
+			min_range = minf(min_range, t["range"])
 	for id in GameData.LEVEL_ORDER:
 		var grid := MineGrid.from_rows(GameData.load_level(id)["grid"])
 		var tunnels := grid.cells_of_type(MineGrid.Cell.TUNNEL)
@@ -65,6 +68,22 @@ func test_every_build_slot_can_reach_a_tunnel() -> void:
 					reachable = true
 					break
 			assert_true(reachable, "%s: Bauplatz %s erreicht keinen Stollen" % [id, slot])
+
+
+func test_levels_with_shield_wall_have_slots_right_next_to_the_path() -> void:
+	for id in GameData.LEVEL_ORDER:
+		var level := GameData.load_level(id)
+		for type in level["towers"]:
+			if towers[type].get("kind", "") != "block":
+				continue
+			var grid := MineGrid.from_rows(level["grid"])
+			var usable := 0
+			for slot in grid.cells_of_type(MineGrid.Cell.BUILD):
+				for p in grid.path_cells():
+					if MineGrid.center(slot).distance_to(MineGrid.center(p)) <= float(towers[type]["range"]):
+						usable += 1
+						break
+			assert_gte(usable, 5, "%s: zu wenige Bauplätze, an denen %s wirkt" % [id, type])
 
 
 func _play(id: String, bot: Object) -> GameSim:
