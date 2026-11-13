@@ -11,6 +11,8 @@ signal pause_requested
 signal rotate_requested
 signal retry_requested
 signal next_requested
+## Eine der angebotenen Gaben wurde gewählt.
+signal boon_requested(index: int)
 signal menu_requested
 
 const BUTTON_HEIGHT := 76.0
@@ -42,6 +44,9 @@ var _end_next: Button
 var _end_stars: StarRow
 var _hint_key := "HUD_HINT_BUILD"
 var _fps: Label
+var _boons: Control
+var _boon_box: HBoxContainer
+var _active_boons: Label
 
 
 func _ready() -> void:
@@ -112,6 +117,49 @@ func show_end(won: bool, lives: int, has_next: bool, stars := 0) -> void:
 	_end_title.add_theme_color_override("font_color", COLOR_GOLD if won else COLOR_LIVES)
 	_end_text.text = (tr("END_LIVES_LEFT") % lives) if won else tr("END_DEFEAT_TEXT")
 	_end.visible = true
+
+
+## Zeigt die Auswahl der Gaben über dem Spielfeld. choices: Liste aus {"name", "desc"}.
+func show_boons(choices: Array) -> void:
+	hide_context()
+	for c in _boon_box.get_children():
+		_boon_box.remove_child(c)
+		c.queue_free()
+	for i in choices.size():
+		var b := _button("")
+		b.custom_minimum_size = Vector2(330, 190)
+		b.pressed.connect(boon_requested.emit.bind(i))
+		var box := VBoxContainer.new()
+		box.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 16)
+		box.alignment = BoxContainer.ALIGNMENT_CENTER
+		box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		box.add_theme_constant_override("separation", 10)
+		b.add_child(box)
+		var name_label := _label(choices[i]["name"], COLOR_GOLD)
+		name_label.add_theme_font_size_override("font_size", 28)
+		name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		box.add_child(name_label)
+		var desc := _label(choices[i]["desc"], COLOR_TEXT)
+		desc.add_theme_font_size_override("font_size", 20)
+		desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		box.add_child(desc)
+		_boon_box.add_child(b)
+	_boons.visible = true
+
+
+func hide_boons() -> void:
+	_boons.visible = false
+
+
+func is_boons_visible() -> bool:
+	return _boons.visible
+
+
+## Zeigt die Namen der gewählten Gaben klein unter den Anzeigen.
+func show_active_boons(names: Array) -> void:
+	_active_boons.text = " · ".join(names)
+	_active_boons.visible = not names.is_empty()
 
 
 func is_end_visible() -> bool:
@@ -219,7 +267,40 @@ func _build() -> void:
 		area.add_child(_fps)
 		_fps.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 
+	_active_boons = _label("", COLOR_GOLD.darkened(0.15))
+	_active_boons.add_theme_font_size_override("font_size", 17)
+	_active_boons.visible = false
+	area.add_child(_active_boons)
+	_active_boons.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	_active_boons.position = Vector2(6, 84)
+
+	_build_boon_screen()
 	_build_end_screen()
+
+
+func _build_boon_screen() -> void:
+	_boons = ColorRect.new()
+	_boons.color = Color(0, 0, 0, 0.6)
+	_boons.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_boons.visible = false
+	add_child(_boons)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_boons.add_child(center)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 22)
+	center.add_child(box)
+	var title := _label(tr("HUD_BOON_TITLE"), COLOR_GOLD)
+	title.add_theme_font_size_override("font_size", 44)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(title)
+	var sub := _label(tr("HUD_BOON_TEXT"), COLOR_TEXT)
+	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	box.add_child(sub)
+	_boon_box = HBoxContainer.new()
+	_boon_box.alignment = BoxContainer.ALIGNMENT_CENTER
+	_boon_box.add_theme_constant_override("separation", 18)
+	box.add_child(_boon_box)
 
 
 func _build_end_screen() -> void:

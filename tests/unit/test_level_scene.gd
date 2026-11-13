@@ -181,7 +181,8 @@ func test_mine_actions_work_through_the_menu() -> void:
 	# Wieder zuschütten.
 	l.hud.action_requested.emit("fill")
 	assert_eq(l.sim.grid.get_cell(rock), MineGrid.Cell.ROCK)
-	# Arbeiter an die Ader am Hauptweg.
+	# Arbeiter an die Ader am Hauptweg. Hier geht es um die Menüs, deshalb fließt Erz auch ohne Welle.
+	l.sim.rules["ore_only_during_waves"] = false
 	l.select_cell(vein)
 	l.hud.action_requested.emit("worker")
 	assert_eq(l.sim.workers.size(), 1)
@@ -229,6 +230,7 @@ func test_level_two_can_be_won_through_the_interface() -> void:
 	var l := _level_02()
 	var bot := Bots.MinerBot.new(["crossbow", "crossbow", "sling"], [Vector2i(4, 3), Vector2i(4, 2), Vector2i(12, 3)])
 	var guard := 0
+	var chosen := 0
 	var acted_at := -1
 	while l.sim.status == GameSim.Status.RUNNING and guard < 60000:
 		var second := l.sim.tick / GameSim.TICK_RATE
@@ -237,8 +239,14 @@ func test_level_two_can_be_won_through_the_interface() -> void:
 			bot.act(l.sim)
 			if l.sim.wave_index < 0 and second >= 5:
 				l.hud.wave_requested.emit()
+			# Angebotene Gaben über die Oberfläche wählen, sonst wartet das Spiel.
+			if l.hud.is_boons_visible():
+				l.hud.boon_requested.emit(0)
+				chosen += 1
 		l.advance(0.15)
 		guard += 1
 	assert_eq(l.sim.status, GameSim.Status.WON)
 	assert_eq(l._worker_views.size(), 3)
+	assert_eq(chosen, 3, "nach den Wellen 2, 4 und 6")
+	assert_eq(l.sim.active_boons.size(), 3)
 	assert_true(l.hud.is_end_visible())

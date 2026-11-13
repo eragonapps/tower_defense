@@ -17,6 +17,8 @@ const NO_CELL := Vector2i(-1, -1)
 
 ## Welches Level als Nächstes geladen wird. Wird vom Menü gesetzt.
 static var level_id := "level_01"
+## Fester Zufallswert für Tests und Screenshots. 0 bedeutet: jedes Mal ein neuer.
+static var run_seed := 0
 
 var sim: GameSim
 var hud: Hud
@@ -53,7 +55,8 @@ func _ready() -> void:
 		push_error("Level %s ist fehlerhaft: %s" % [level_id, ", ".join(errors)])
 		get_tree().change_scene_to_file.call_deferred(MENU_SCENE)
 		return
-	sim = GameSim.new(level, towers, enemies, GameData.rules_for(Settings.difficulty))
+	# Jeder Versuch bekommt einen eigenen Zufallswert: Die angebotenen Gaben sind jedes Mal andere.
+	sim = GameSim.new(level, towers, enemies, GameData.rules_for(Settings.difficulty), GameData.load_boons(), run_seed if run_seed != 0 else randi())
 	_has_ore = not sim.grid.cells_of_type(MineGrid.Cell.ORE).is_empty() or sim.ore > 0
 	_build_environment()
 	_torch_cells = _choose_torch_cells()
@@ -79,6 +82,8 @@ func _ready() -> void:
 	sim.aura_pulsed.connect(_on_aura_pulsed)
 	sim.enemies_healed.connect(_on_enemies_healed)
 	sim.ore_stolen.connect(_on_ore_stolen)
+	sim.boons_offered.connect(_on_boons_offered)
+	sim.boon_chosen.connect(_on_boon_chosen)
 	sim.wave_started.connect(func(_i: int) -> void: Sfx.play("wave", -4.0))
 	hud.set_hint(level.get("hint_key", "HUD_HINT_BUILD"))
 	hud.show_state(sim, paused, SPEEDS[speed_index], _has_ore)
@@ -87,7 +92,8 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if sim == null:
 		return
-	if not paused:
+	# Solange Gaben zur Wahl stehen, steht das Spiel.
+	if not paused and sim.pending_boons.is_empty():
 		advance(delta * SPEEDS[speed_index])
 	if _heart_crystal:
 		_heart_crystal.rotate_y(delta * 0.6)
@@ -232,7 +238,10 @@ func _menu_for(cell: Vector2i) -> Dictionary:
 		MineGrid.Cell.ORE:
 			var worker := sim.worker_at(cell)
 			if worker != null:
-				var state := tr("HUD_WORKER_MINING") if worker.active else tr("HUD_WORKER_HIDING")
+				var state := tr("HUD_WORKER_MINING")
+				if not worker.active:
+					# Zwischen den Wellen ruht die Arbeit. Während einer Welle versteckt er sich nur vor Gegnern.
+					state = tr("HUD_WORKER_HIDING") if sim.wave_active or not sim.rules["ore_only_during_waves"] else tr("HUD_WORKER_WAITING")
 				return {"title": tr("HUD_ORE_VEIN"), "info": state, "buttons": []}
 			var result := sim.can_place_worker(cell)
 			return {"title": tr("HUD_ORE_VEIN"), "info": _reason(result), "buttons": [{
@@ -614,6 +623,25 @@ func _on_aura_pulsed(t: GameSim.Tower) -> void:
 	_tower_attack(t, Vector2.ZERO)
 	_show_ring(to_world(t.pos, 0.12), float(t.stats["range"]) * CELL, Color(0.45, 0.75, 1.0, 0.35))
 	Sfx.play("rune", -16.0)
+
+
+func _on_boons_offered(ids: Array) -> void:
+	select_cell(NO_CELL)
+	var choices := []
+	for id in ids:
+		var def := sim.boon_def(id)
+		choices.append({"name": tr(def["name_key"]), "desc": tr(def["desc_key"])})
+	hud.show_boons(choices)
+	Sfx.play("wave", -8.0)
+
+
+func _on_boon_chosen(_id: String) -> void:
+	hud.hide_boons()
+	var names := []
+	for id in sim.active_boons:
+		names.append(tr(sim.boon_def(id)["name_key"]))
+	hud.show_active_boons(names)
+	Sfx.play("upgrade")
 
 
 func _on_ore_stolen(_thief: GameSim.Enemy, worker: GameSim.Worker, _amount: int) -> void:
@@ -1313,6 +1341,7 @@ func _build_hud() -> void:
 	add_child(hud)
 	hud.action_requested.connect(_on_action)
 	hud.next_requested.connect(_on_next_level)
+	hud.boon_requested.connect(func(index: int) -> void: sim.choose_boon(index))
 	hud.wave_requested.connect(func() -> void: sim.start_next_wave())
 	hud.speed_requested.connect(_on_speed_requested)
 	hud.pause_requested.connect(_on_pause_requested)
@@ -1337,6 +1366,10 @@ func demo(state: String) -> void:
 			sim.upgrade_tower(slots[i])
 	if state == "build":
 		select_cell(slots[9])
+		return
+	if state == "boons":
+		sim.pending_boons.assign(["sharp_bolts", "master_miners", "ancestors_guard"])
+		sim.boons_offered.emit(sim.pending_boons.duplicate())
 		return
 	if state == "mine":
 		# Zugang zu einer Erzader graben, Arbeiter setzen, ein weiteres Feld ist in Arbeit.

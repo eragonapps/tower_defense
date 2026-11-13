@@ -28,6 +28,9 @@ func _sim(groups: Array, build: Dictionary, extra := {}) -> GameSim:
 		"waves": [{"reward": 0, "groups": groups}],
 	}
 	level.merge(extra, true)
+	var level_rules := {"ore_only_during_waves": false}
+	level_rules.merge(level.get("rules", {}), true)
+	level["rules"] = level_rules
 	var sim := GameSim.new(level, towers, enemies)
 	for cell in build:
 		assert_eq(sim.build_tower(cell, build[cell]), GameSim.Result.OK)

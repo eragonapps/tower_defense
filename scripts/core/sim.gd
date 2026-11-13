@@ -24,6 +24,9 @@ signal enemies_healed(healer: Enemy)
 signal enemy_held(tower: Tower, enemy: Enemy)
 ## Ein Dieb hat Erz gestohlen.
 signal ore_stolen(thief: Enemy, worker: Worker, amount: int)
+## Nach einer Welle stehen Gaben zur Wahl. ids sind Kennungen aus data/boons.json.
+signal boons_offered(ids: Array)
+signal boon_chosen(id: String)
 signal projectile_fired(projectile: Projectile)
 signal projectile_hit(projectile: Projectile)
 signal wave_started(index: int)
@@ -69,6 +72,11 @@ const DEFAULT_RULES := {
 	## Schwierigkeitsgrad: Faktoren auf die Lebenspunkte der Gegner und das Startgold.
 	"enemy_hp_factor": 1.0,
 	"start_gold_factor": 1.0,
+	## Arbeiter bauen nur Erz ab, solange eine Welle läuft. Sonst ließe sich vor dem Start beliebig viel Erz sammeln.
+	"ore_only_during_waves": true,
+	## Nach jeder so vielten Welle stehen Gaben zur Wahl. 0 schaltet sie ab.
+	"boon_every": 2,
+	"boon_choices": 3,
 }
 
 
@@ -160,6 +168,11 @@ var dig_jobs: Array[DigJob] = []
 var workers: Array[Worker] = []
 var digs_started := 0
 var rules := {}
+## Gewählte Gaben in der Reihenfolge der Wahl, und die gerade angebotenen.
+var active_boons: Array[String] = []
+var pending_boons: Array[String] = []
+## Faktor auf das Kopfgeld, verändert durch Gaben.
+var bounty_factor := 1.0
 
 ## Index der laufenden oder zuletzt gelaufenen Welle. -1 vor der ersten.
 var wave_index := -1
@@ -178,10 +191,17 @@ var _wave_time := 0.0
 var _next_id := 1
 ## Gegner, die während eines Schritts entstehen, kommen erst danach dazu.
 var _pending_spawns: Array[Dictionary] = []
+var _boon_defs := {}
+## Turmtyp oder "all" → {Wert → Faktor}. Verändert durch Gaben.
+var _tower_factors := {}
+var _rng := RandomNumberGenerator.new()
 
 
-func _init(level: Dictionary, tower_defs: Dictionary, enemy_defs: Dictionary, global_rules := {}) -> void:
+## rng_seed bestimmt, welche Gaben angeboten werden. Derselbe Wert ergibt denselben Verlauf.
+func _init(level: Dictionary, tower_defs: Dictionary, enemy_defs: Dictionary, global_rules := {}, boon_defs := {}, rng_seed := 1) -> void:
 	_level = level
+	_boon_defs = boon_defs
+	_rng.seed = rng_seed
 	rules = DEFAULT_RULES.duplicate()
 	rules.merge(global_rules, true)
 	rules.merge(level.get("rules", {}), true)
@@ -231,7 +251,7 @@ func build_tower(cell: Vector2i, type: String) -> Result:
 	t.id = _take_id()
 	t.type = type
 	t.def = _tower_defs[type]
-	t.stats = _stats_for(t.def, 1)
+	_refresh_stats(t)
 	t.cell = cell
 	t.pos = MineGrid.center(cell)
 	gold -= int(t.def["cost"])
@@ -270,6 +290,109 @@ static func _stats_for(def: Dictionary, level: int) -> Dictionary:
 	return stats
 
 
+## Berechnet die gültigen Werte eines Turms neu: Grundwerte, Ausbaustufen, Spezialisierung, Gaben.
+func _refresh_stats(t: Tower) -> void:
+	var stats := _stats_for(t.def, t.level)
+	for spec in t.def.get("specs", []):
+		if spec["id"] == t.spec:
+			for key in spec:
+				if key not in ["id", "name_key", "desc_key", "ore"]:
+					stats[key] = spec[key]
+	t.stats = _with_boons(t.type, stats)
+
+
+## Wendet die Faktoren der gewählten Gaben auf Turmwerte an.
+func _with_boons(type: String, stats: Dictionary) -> Dictionary:
+	for scope in ["all", type]:
+		var factors: Dictionary = _tower_factors.get(scope, {})
+		for stat in factors:
+			if stat == "burn":
+				if stats.has("burn"):
+					var burn: Dictionary = stats["burn"].duplicate()
+					burn["dps"] = float(burn["dps"]) * float(factors[stat])
+					stats["burn"] = burn
+			elif stats.has(stat):
+				stats[stat] = float(stats[stat]) * float(factors[stat])
+	return stats
+
+
+# --- Gaben ----------------------------------------------------------------
+
+func boon_def(id: String) -> Dictionary:
+	return _boon_defs.get(id, {})
+
+
+## Gaben, die in diesem Level etwas bewirken und noch nicht gewählt sind.
+func _available_boons() -> Array[String]:
+	var out: Array[String] = []
+	var has_ore := not grid.cells_of_type(MineGrid.Cell.ORE).is_empty()
+	var ids := _boon_defs.keys()
+	ids.sort()
+	for id in ids:
+		if id in active_boons:
+			continue
+		var effect: Dictionary = _boon_defs[id]["effect"]
+		match effect["type"]:
+			"stat":
+				var useful := false
+				for t in effect["towers"]:
+					if t == "all" or t in _level["towers"]:
+						useful = true
+				if not useful:
+					continue
+			"ore":
+				if not has_ore:
+					continue
+			"rule":
+				if effect["key"] in ["dig_cost", "fill_cost"] and not rules["digging"]:
+					continue
+				if effect["key"] in ["ore_interval", "worker_cost"] and not has_ore:
+					continue
+		out.append(id)
+	return out
+
+
+func _offer_boons() -> void:
+	var pool := _available_boons()
+	pending_boons.clear()
+	for i in mini(int(rules["boon_choices"]), pool.size()):
+		var pick := _rng.randi_range(0, pool.size() - 1)
+		pending_boons.append(pool[pick])
+		pool.remove_at(pick)
+	if not pending_boons.is_empty():
+		boons_offered.emit(pending_boons.duplicate())
+
+
+## Wählt eine der angebotenen Gaben. Sie gilt bis zum Ende des Levels.
+func choose_boon(index: int) -> bool:
+	if index < 0 or index >= pending_boons.size() or status != Status.RUNNING:
+		return false
+	var id := pending_boons[index]
+	pending_boons.clear()
+	active_boons.append(id)
+	var effect: Dictionary = _boon_defs[id]["effect"]
+	match effect["type"]:
+		"stat":
+			for t in effect["towers"]:
+				if not _tower_factors.has(t):
+					_tower_factors[t] = {}
+				_tower_factors[t][effect["stat"]] = float(_tower_factors[t].get(effect["stat"], 1.0)) * float(effect["factor"])
+			for t in towers:
+				_refresh_stats(t)
+		"gold":
+			gold += int(effect["amount"])
+		"ore":
+			ore += int(effect["amount"])
+		"heal":
+			lives = mini(max_lives, lives + int(effect["amount"]))
+		"bounty":
+			bounty_factor *= float(effect["factor"])
+		"rule":
+			rules[effect["key"]] = float(rules[effect["key"]]) * float(effect["factor"])
+	boon_chosen.emit(id)
+	return true
+
+
 func max_level(tower: Tower) -> int:
 	return 1 + tower.def.get("upgrades", []).size()
 
@@ -285,7 +408,7 @@ func upgrade_cost(tower: Tower) -> int:
 func next_stats(tower: Tower) -> Dictionary:
 	if tower.level >= max_level(tower):
 		return {}
-	return _stats_for(tower.def, tower.level + 1)
+	return _with_boons(tower.type, _stats_for(tower.def, tower.level + 1))
 
 
 func can_upgrade(cell: Vector2i) -> Result:
@@ -308,7 +431,7 @@ func upgrade_tower(cell: Vector2i) -> Result:
 	var t: Tower = _towers_by_cell[cell]
 	ore -= upgrade_cost(t)
 	t.level += 1
-	t.stats = _stats_for(t.def, t.level)
+	_refresh_stats(t)
 	tower_upgraded.emit(t)
 	return result
 
@@ -344,11 +467,7 @@ func specialize(cell: Vector2i, index: int) -> Result:
 	var spec: Dictionary = specs_of(t)[index]
 	ore -= int(spec["ore"])
 	t.spec = spec["id"]
-	var stats := t.stats.duplicate()
-	for key in spec:
-		if key not in ["id", "name_key", "desc_key", "ore"]:
-			stats[key] = spec[key]
-	t.stats = stats
+	_refresh_stats(t)
 	tower_specialized.emit(t)
 	return result
 
@@ -475,6 +594,8 @@ func can_start_wave() -> bool:
 func start_next_wave() -> bool:
 	if not can_start_wave():
 		return false
+	# Wer die Welle startet, ohne zu wählen, verzichtet auf die Gabe.
+	pending_boons.clear()
 	wave_index += 1
 	wave_active = true
 	next_wave_in = 0.0
@@ -532,7 +653,7 @@ func _step_workers() -> void:
 	var threat_sq := float(rules["worker_threat_radius"]) ** 2
 	var interval := float(rules["ore_interval"])
 	for w in workers:
-		w.active = grid.touches_walkable(w.cell)
+		w.active = grid.touches_walkable(w.cell) and (wave_active or not rules["ore_only_during_waves"])
 		if w.active:
 			for e in enemies:
 				if e.alive and e.pos.distance_squared_to(w.pos) <= threat_sq:
@@ -555,7 +676,7 @@ func _step_waves() -> void:
 		while not _spawn_queue.is_empty() and _spawn_queue[0]["time"] <= _wave_time:
 			var s: Dictionary = _spawn_queue.pop_front()
 			_spawn(s["enemy"], s["entrance"])
-	elif wave_index >= 0 and wave_index + 1 < wave_count:
+	elif wave_index >= 0 and wave_index + 1 < wave_count and pending_boons.is_empty():
 		next_wave_in -= DT
 		if next_wave_in <= 0.0:
 			start_next_wave()
@@ -810,8 +931,11 @@ func _apply_hit(p: Projectile, splash: float) -> void:
 	if splash > 0.0:
 		var r_sq := splash * splash
 		for e in enemies:
-			if e.alive and e.pos.distance_squared_to(p.pos) <= r_sq:
-				_damage(e, damage, p.def.get("damage_type", ""))
+			var d_sq := e.pos.distance_squared_to(p.pos)
+			if e.alive and d_sq <= r_sq:
+				# falloff: Anteil des Schadens am Rand der Fläche. 1.0 bedeutet überall voller Schaden.
+				var share := lerpf(1.0, float(p.def.get("falloff", 1.0)), sqrt(d_sq) / splash)
+				_damage(e, damage * share, p.def.get("damage_type", ""))
 				_apply_effects(e, p.def)
 	elif p.target != null and p.target.alive:
 		_damage(p.target, damage, p.def.get("damage_type", ""))
@@ -829,7 +953,7 @@ func _damage(e: Enemy, amount: float, type := "") -> void:
 		e.hp = 0.0
 		e.alive = false
 		kills += 1
-		gold += int(e.def["bounty"])
+		gold += roundi(float(e.def["bounty"]) * bounty_factor)
 		enemy_removed.emit(e, "killed")
 
 
@@ -853,6 +977,9 @@ func _check_end() -> void:
 			finished.emit(true)
 		else:
 			next_wave_in = float(_level["wave_pause"])
+			var every := int(rules["boon_every"])
+			if every > 0 and (wave_index + 1) % every == 0:
+				_offer_boons()
 
 
 func _take_id() -> int:

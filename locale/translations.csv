@@ -106,3 +106,30 @@ LEVEL_07_NAME,Belagerung,Siege
 HINT_LEVEL_07,"Die Gegner kommen durch drei Tore, auch von Norden.","Enemies come through three gates, including from the north."
 LEVEL_08_NAME,Der Thronsaal,The Throne Room
 HINT_LEVEL_08,"Die letzte Schlacht. Die Gegner sind hier zäher als je zuvor, und der Knochenkönig kommt nicht allein.","The final battle. Enemies are tougher here than ever, and the Bone King does not come alone."
+HUD_WORKER_WAITING,Der Arbeiter wartet. Erz wird nur während einer Welle abgebaut.,The worker is waiting. Ore is only mined while a wave is running.
+HUD_BOON_TITLE,Gabe der Ahnen,Gift of the Ancestors
+HUD_BOON_TEXT,Wähle eine Gabe. Sie gilt bis zum Ende dieses Levels.,Choose a gift. It lasts until the end of this level.
+BOON_SHARP_BOLTS,Scharfe Bolzen,Sharp Bolts
+BOON_SHARP_BOLTS_DESC,Armbrustschützen: 30 % mehr Schaden,Crossbow dwarves: 30 % more damage
+BOON_HEAVY_STONES,Schwere Steine,Heavy Stones
+BOON_HEAVY_STONES_DESC,Steinschleuder und Bombenwerfer: 20 % mehr Schaden,Stone sling and bomb thrower: 20 % more damage
+BOON_EAGLE_EYE,Adlerauge,Eagle Eye
+BOON_EAGLE_EYE_DESC,Alle Türme: 12 % mehr Reichweite,All towers: 12 % more range
+BOON_QUICK_HANDS,Flinke Hände,Quick Hands
+BOON_QUICK_HANDS_DESC,Alle Türme: 12 % schneller,All towers: 12 % faster
+BOON_HOT_COALS,Heiße Kohlen,Hot Coals
+BOON_HOT_COALS_DESC,Schmiedefeuer: 35 % mehr Brandschaden,Forge fire: 35 % more burn damage
+BOON_WIDE_RUNES,Weite Runen,Wide Runes
+BOON_WIDE_RUNES_DESC,Runenstein und Schildwall: 25 % mehr Reichweite,Rune stone and shield wall: 25 % more range
+BOON_GOLD_VEIN,Goldader,Gold Vein
+BOON_GOLD_VEIN_DESC,Sofort 120 Gold,120 gold at once
+BOON_ORE_CACHE,Erzvorrat,Ore Cache
+BOON_ORE_CACHE_DESC,Sofort 40 Erz,40 ore at once
+BOON_ANCESTORS_GUARD,Schutz der Ahnen,Ancestors' Guard
+BOON_ANCESTORS_GUARD_DESC,Heilt bis zu 4 Leben,Heals up to 4 lives
+BOON_BOUNTY_HUNTERS,Kopfgeldjäger,Bounty Hunters
+BOON_BOUNTY_HUNTERS_DESC,30 % mehr Gold für besiegte Gegner,30 % more gold for defeated enemies
+BOON_MASTER_MINERS,Meisterhauer,Master Miners
+BOON_MASTER_MINERS_DESC,Arbeiter bauen 30 % schneller ab,Workers mine 30 % faster
+BOON_SWIFT_PICKS,Flinke Hacken,Swift Picks
+BOON_SWIFT_PICKS_DESC,Graben kostet nur die Hälfte,Digging costs only half

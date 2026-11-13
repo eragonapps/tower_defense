@@ -83,7 +83,8 @@
         "cooldown": 0.8,
         "damage": 46
       }
-    ]
+    ],
+    "falloff": 0.6
   },
   "runestone": {
     "name_key": "TOWER_RUNESTONE",
@@ -203,23 +204,23 @@
     "cost": 165,
     "range": 3.4,
     "cooldown": 3.2,
-    "damage": 60,
+    "damage": 50,
     "splash": 1.6,
     "projectile_speed": 6.0,
     "color": "#4a4a52",
     "damage_type": "blunt",
     "upgrades": [
       {
-        "ore": 30,
-        "damage": 95,
-        "splash": 1.8
+        "ore": 35,
+        "damage": 75,
+        "splash": 1.75
       },
       {
-        "ore": 55,
-        "damage": 150,
-        "splash": 2.0,
-        "cooldown": 2.8,
-        "range": 3.8
+        "ore": 60,
+        "damage": 105,
+        "splash": 1.9,
+        "cooldown": 3.0,
+        "range": 3.7
       }
     ],
     "specs": [
@@ -227,20 +228,21 @@
         "id": "mega",
         "name_key": "SPEC_MEGA",
         "desc_key": "SPEC_MEGA_DESC",
-        "ore": 90,
-        "damage": 320,
-        "splash": 2.5,
-        "cooldown": 3.4
+        "ore": 100,
+        "damage": 170,
+        "splash": 2.3,
+        "cooldown": 4.2
       },
       {
         "id": "cluster",
         "name_key": "SPEC_CLUSTER",
         "desc_key": "SPEC_CLUSTER_DESC",
-        "ore": 90,
-        "cooldown": 1.4,
-        "damage": 140
+        "ore": 100,
+        "cooldown": 1.7,
+        "damage": 85
       }
-    ]
+    ],
+    "falloff": 0.4
   },
   "shieldwall": {
     "name_key": "TOWER_SHIELDWALL",

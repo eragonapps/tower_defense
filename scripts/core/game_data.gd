@@ -15,7 +15,9 @@ const LEVEL_ORDER: Array[String] = [
 
 const TOWER_FIELDS := ["name_key", "cost", "range", "cooldown", "damage", "splash", "projectile_speed", "color"]
 ## Zusatzwirkungen eines Turms: kind (projectile oder aura), slow {factor, duration}, burn {dps, duration}.
-const TOWER_OPTIONAL := ["kind", "slow", "burn", "damage_type", "capacity", "hold_time"]
+const TOWER_OPTIONAL := ["kind", "slow", "burn", "damage_type", "capacity", "hold_time", "falloff"]
+const BOONS_PATH := "res://data/boons.json"
+const BOON_TYPES := ["stat", "gold", "ore", "heal", "bounty", "rule"]
 const DAMAGE_TYPES := ["pierce", "blunt", "fire", "magic"]
 const ENEMY_FIELDS := ["name_key", "hp", "speed", "bounty", "lives", "color", "size"]
 
@@ -51,6 +53,33 @@ static func load_difficulties() -> Dictionary:
 	return d if d is Dictionary else {}
 
 
+static func load_boons() -> Dictionary:
+	var d: Variant = load_json(BOONS_PATH)
+	return d if d is Dictionary else {}
+
+
+## Prüft die Gaben. Leer bedeutet: in Ordnung.
+static func validate_boons(boons: Dictionary, towers: Dictionary) -> Array[String]:
+	var errors: Array[String] = []
+	for id in boons:
+		var b: Dictionary = boons[id]
+		for f in ["name_key", "desc_key", "effect"]:
+			if not b.has(f):
+				errors.append("Gabe %s: %s fehlt" % [id, f])
+		var effect: Dictionary = b.get("effect", {})
+		if effect.get("type", "") not in BOON_TYPES:
+			errors.append("Gabe %s: unbekannte Art %s" % [id, effect.get("type", "")])
+		if effect.get("type", "") == "stat":
+			for t in effect.get("towers", []):
+				if t != "all" and not towers.has(t):
+					errors.append("Gabe %s: unbekannter Turm %s" % [id, t])
+			if effect.get("stat", "") not in ["damage", "range", "cooldown", "burn", "splash"]:
+				errors.append("Gabe %s: unbekannter Wert %s" % [id, effect.get("stat", "")])
+		if effect.get("type", "") == "rule" and not GameSim.DEFAULT_RULES.has(effect.get("key", "")):
+			errors.append("Gabe %s: unbekannte Regel %s" % [id, effect.get("key", "")])
+	return errors
+
+
 ## Die allgemeinen Regeln mit den Faktoren eines Schwierigkeitsgrads.
 static func rules_for(difficulty: String) -> Dictionary:
 	var rules := load_rules()
@@ -62,8 +91,8 @@ static func rules_for(difficulty: String) -> Dictionary:
 
 
 ## Erzeugt die Simulation für ein Level mit allen Daten aus data/.
-static func create_sim(level_id: String, difficulty := "normal") -> GameSim:
-	return GameSim.new(load_level(level_id), load_towers(), load_enemies(), rules_for(difficulty))
+static func create_sim(level_id: String, difficulty := "normal", rng_seed := 1) -> GameSim:
+	return GameSim.new(load_level(level_id), load_towers(), load_enemies(), rules_for(difficulty), load_boons(), rng_seed)
 
 
 static func load_level(id: String) -> Dictionary:

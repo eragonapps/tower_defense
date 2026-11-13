@@ -186,6 +186,11 @@ Abweichungen und bekannte Schwächen:
 - Die Levels 5 bis 8 sind nur mit Bots eingestellt.
 - Höchstens 79 Gegner sind laut Bot gleichzeitig unterwegs (Level 2). Ein Test hält alle Levels unter 80.
 
+### Nach M4 – Rückmeldungen vom Gerät (13.11.2026)
+- **Erz nur während der Wellen:** Arbeiter bauen nur ab, solange eine Welle läuft. Vorher ließ sich vor dem Start beliebig viel Erz sammeln. Zum Ausgleich arbeiten sie etwas schneller (alle 0,8 statt 1,0 Sekunden).
+- **Bombenwerfer abgeschwächt:** Die Großbombe erledigte in Level 7 alles mit einem Treffer. Jetzt gilt: Grundschaden 50 statt 60, Stufe 3 mit 105 statt 150, Großbombe 170 statt 320. Außerdem trifft Flächenschaden am Rand schwächer als in der Mitte: beim Bombenwerfer 40 %, bei der Steinschleuder 60 % des vollen Schadens.
+- **Gaben der Ahnen (Roguelike-Element):** Nach jeder zweiten Welle wählt man eine von drei zufälligen Gaben, die bis zum Ende des Levels gilt. Es gibt zwölf Gaben (`data/boons.json`), zum Beispiel mehr Schaden für einen Turmtyp, mehr Reichweite für alle, sofort Gold oder Erz, Heilung, mehr Kopfgeld. Jeder Versuch bietet andere an. Level 1 hat keine Gaben, damit der Einstieg einfach bleibt.
+
 ### M5 – Meta und Feinschliff
 Zwergenhalle, Tutorial, Balancing, Optimierung für das Fire HD 10, Einstellungen (Ton, Sprache, Grafikqualität).
 

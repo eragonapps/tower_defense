@@ -5,7 +5,10 @@
   "fill_cost": 20,
   "max_digs": -1,
   "worker_cost": 40,
-  "ore_interval": 1.0,
+  "ore_interval": 0.8,
   "ore_amount": 1,
-  "worker_threat_radius": 1.6
+  "worker_threat_radius": 1.6,
+  "ore_only_during_waves": true,
+  "boon_every": 2,
+  "boon_choices": 3
 }

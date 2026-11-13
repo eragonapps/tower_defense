@@ -27,8 +27,11 @@ const DETOUR := [
 
 
 func _sim(grid: Array, groups := [], rules := {}, extra := {}) -> GameSim:
+	# Diese Tests prüfen die Arbeiter für sich: Erz fließt hier auch ohne laufende Welle.
+	var all_rules := {"ore_only_during_waves": false}
+	all_rules.merge(rules, true)
 	var level := {
-		"start_gold": 200, "lives": 50, "wave_pause": 3.0, "towers": ["bow"], "grid": grid, "rules": rules,
+		"start_gold": 200, "lives": 50, "wave_pause": 3.0, "towers": ["bow"], "grid": grid, "rules": all_rules,
 		"waves": [{"reward": 0, "groups": groups if not groups.is_empty() else [{"enemy": "tank", "count": 1}]}],
 	}
 	level.merge(extra, true)
@@ -415,3 +418,22 @@ func test_every_real_tower_has_two_valid_specializations() -> void:
 			var before: Dictionary = sim.tower_at(cell).stats
 			assert_eq(sim.specialize(cell, i), GameSim.Result.OK, "%s Spezialisierung %d" % [id, i])
 			assert_ne(sim.tower_at(cell).stats, before, "%s: Spezialisierung %d ändert nichts" % [id, i])
+
+
+# --- Erz nur während der Wellen -------------------------------------------
+
+func test_workers_only_mine_while_a_wave_is_running() -> void:
+	var sim := _sim(VEINS, [{"enemy": "slow", "count": 1}], {"ore_only_during_waves": true, "ore_interval": 0.5, "worker_threat_radius": 0.0}, {"lives": 50})
+	sim.place_worker(Vector2i(1, 2))
+	_run(sim, 20.0)
+	assert_eq(sim.ore, 0, "vor der ersten Welle gibt es kein Erz, egal wie lange man wartet")
+	assert_false(sim.workers[0].active)
+	sim.start_next_wave()
+	_run(sim, 5.0)
+	assert_between(sim.ore, 9, 10)
+	assert_true(sim.workers[0].active)
+	# Der Gegner braucht 28 s bis zum Herz. Danach ist die Welle vorbei und das Erz versiegt.
+	_run(sim, 30.0)
+	assert_eq(sim.status, GameSim.Status.WON)
+	var after := sim.ore
+	assert_between(after, 54, 58)
