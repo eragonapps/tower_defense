@@ -96,6 +96,19 @@ static func validate(level: Dictionary, towers: Dictionary, enemies: Dictionary)
 			errors.append("Turm %s: unbekannte Schadensart %s" % [id, towers[id]["damage_type"]])
 		if towers[id].get("kind", "") == "block" and not (towers[id].has("capacity") and towers[id].has("hold_time")):
 			errors.append("Turm %s: ein Schildwall braucht capacity und hold_time" % id)
+		var spec_ids := {}
+		for spec in towers[id].get("specs", []):
+			for f in ["id", "name_key", "desc_key", "ore"]:
+				if not spec.has(f):
+					errors.append("Turm %s: Spezialisierung braucht %s" % [id, f])
+			if spec_ids.has(spec.get("id", "")):
+				errors.append("Turm %s: Spezialisierung %s doppelt" % [id, spec.get("id", "")])
+			spec_ids[spec.get("id", "")] = true
+			for key in spec:
+				if key not in ["id", "name_key", "desc_key", "ore"] and key not in TOWER_FIELDS and key not in TOWER_OPTIONAL:
+					errors.append("Turm %s: Spezialisierung ändert unbekannten Wert %s" % [id, key])
+		if towers[id].has("specs") and towers[id]["specs"].size() != 2:
+			errors.append("Turm %s: es müssen genau zwei Spezialisierungen sein" % id)
 		for u in towers[id].get("upgrades", []):
 			if int(u.get("ore", 0)) <= 0:
 				errors.append("Turm %s: jede Ausbaustufe braucht Erzkosten (ore) größer als 0" % id)

@@ -42,6 +42,10 @@ func test_every_data_name_has_a_translation() -> void:
 	var keys := []
 	for d in towers.values() + enemies.values():
 		keys.append(d["name_key"])
+	for t in towers.values():
+		for spec in t.get("specs", []):
+			keys.append(spec["name_key"])
+			keys.append(spec["desc_key"])
 	for id in GameData.LEVEL_ORDER:
 		keys.append(GameData.load_level(id)["name_key"])
 	for locale in ["de", "en"]:

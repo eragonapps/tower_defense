@@ -74,3 +74,27 @@ HUD_STAT_CAPACITY,Hält,Holds
 HUD_STAT_HOLD,Haltezeit,Hold time
 LEVEL_04_NAME,Der Knochenkönig,The Bone King
 HINT_LEVEL_04,"Wächter sind gegen Bolzen gepanzert. Der Schildwall hält Gegner auf, der Bombenwerfer trifft ganze Gruppen. Am Ende kommt der Knochenkönig.","Guards are armored against bolts. The shield wall holds enemies, the bomb thrower hits whole groups. The Bone King comes last."
+SPEC_SNIPER,Scharfschütze,Sharpshooter
+SPEC_SNIPER_DESC,"sehr weit, sehr stark, langsam","very long range, very strong, slow"
+SPEC_REPEATER,Schnellfeuer,Rapid Fire
+SPEC_REPEATER_DESC,schießt viel schneller,fires much faster
+SPEC_BOULDER,Felsbrocken,Boulder
+SPEC_BOULDER_DESC,"schwerer Treffer, große Fläche","heavy hit, large area"
+SPEC_HAIL,Steinhagel,Stone Hail
+SPEC_HAIL_DESC,wirft doppelt so schnell,throws twice as fast
+SPEC_FROST,Frostrune,Frost Rune
+SPEC_FROST_DESC,bremst fast bis zum Stillstand,slows almost to a halt
+SPEC_STORM,Sturmrune,Storm Rune
+SPEC_STORM_DESC,"schadet allen im Umkreis, größere Reichweite","damages everything nearby, longer range"
+SPEC_INFERNO,Inferno,Inferno
+SPEC_INFERNO_DESC,setzt ganze Gruppen in starken Brand,sets whole groups ablaze
+SPEC_EMBER,Glutregen,Ember Rain
+SPEC_EMBER_DESC,"wirft sehr schnell, entzündet viele einzeln","throws very fast, ignites many one by one"
+SPEC_MEGA,Großbombe,Mega Bomb
+SPEC_MEGA_DESC,"riesige Fläche, gewaltiger Schaden","huge area, massive damage"
+SPEC_CLUSTER,Streubomben,Cluster Bombs
+SPEC_CLUSTER_DESC,wirft doppelt so schnell,throws twice as fast
+SPEC_BULWARK,Bollwerk,Bulwark
+SPEC_BULWARK_DESC,hält viel mehr Gegner viel länger,holds many more enemies much longer
+SPEC_BERSERKER,Berserker,Berserker
+SPEC_BERSERKER_DESC,"schlägt hart und schnell zu","strikes hard and fast"

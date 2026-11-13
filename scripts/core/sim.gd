@@ -10,6 +10,7 @@ signal enemy_removed(enemy: Enemy, reason: String)
 signal tower_built(tower: Tower)
 signal tower_sold(tower: Tower)
 signal tower_upgraded(tower: Tower)
+signal tower_specialized(tower: Tower)
 signal dig_started(job: DigJob)
 ## Eine Zelle wurde zu Stollen oder zu Fels. Die Wege sind schon neu berechnet.
 signal grid_changed(cell: Vector2i)
@@ -41,6 +42,9 @@ enum Result {
 	ENEMY_IN_THE_WAY,
 	LIMIT_REACHED,
 	MAX_LEVEL,
+	## Eine Spezialisierung gibt es erst auf der höchsten Stufe, und nur eine.
+	NOT_MAX_LEVEL,
+	ALREADY_SPECIALIZED,
 	## Die Zelle grenzt an keinen Stollen.
 	NOT_CONNECTED,
 }
@@ -103,6 +107,8 @@ class Tower extends RefCounted:
 	var cooldown_left := 0.0
 	var shots := 0
 	var level := 1
+	## Kennung der gewählten Spezialisierung, leer ohne.
+	var spec := ""
 	## Gegner, die dieser Schildwall schon einmal aufgehalten hat. Jeder nur einmal.
 	var held_ids := {}
 	## Die aktuell gültigen Werte: Grundwerte plus alle Ausbaustufen bis level.
@@ -302,6 +308,46 @@ func upgrade_tower(cell: Vector2i) -> Result:
 	t.level += 1
 	t.stats = _stats_for(t.def, t.level)
 	tower_upgraded.emit(t)
+	return result
+
+
+# --- Spezialisierung ------------------------------------------------------
+
+## Die Spezialisierungen, zwischen denen ein Turm auf der höchsten Stufe wählen kann.
+func specs_of(tower: Tower) -> Array:
+	return tower.def.get("specs", [])
+
+
+func can_specialize(cell: Vector2i, index: int) -> Result:
+	if status != Status.RUNNING:
+		return Result.GAME_OVER
+	var t: Tower = _towers_by_cell.get(cell)
+	if t == null or index < 0 or index >= specs_of(t).size():
+		return Result.NOT_ALLOWED
+	if t.spec != "":
+		return Result.ALREADY_SPECIALIZED
+	if t.level < max_level(t):
+		return Result.NOT_MAX_LEVEL
+	if ore < int(specs_of(t)[index]["ore"]):
+		return Result.NOT_ENOUGH_ORE
+	return Result.OK
+
+
+## Wählt eine der Spezialisierungen. Ihre Werte ersetzen die bisherigen, die Wahl ist endgültig.
+func specialize(cell: Vector2i, index: int) -> Result:
+	var result := can_specialize(cell, index)
+	if result != Result.OK:
+		return result
+	var t: Tower = _towers_by_cell[cell]
+	var spec: Dictionary = specs_of(t)[index]
+	ore -= int(spec["ore"])
+	t.spec = spec["id"]
+	var stats := t.stats.duplicate()
+	for key in spec:
+		if key not in ["id", "name_key", "desc_key", "ore"]:
+			stats[key] = spec[key]
+	t.stats = stats
+	tower_specialized.emit(t)
 	return result
 
 

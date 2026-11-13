@@ -183,6 +183,8 @@ func _build() -> void:
 	box.add_child(_context_title)
 	_context_info = _label("", COLOR_TEXT.darkened(0.2))
 	_context_info.add_theme_font_size_override("font_size", 20)
+	_context_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_context_info.custom_minimum_size.x = 640
 	box.add_child(_context_info)
 	_context_buttons = HBoxContainer.new()
 	_context_buttons.add_theme_constant_override("separation", 12)

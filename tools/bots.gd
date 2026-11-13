@@ -49,16 +49,59 @@ class MinerBot extends RefCounted:
 	## So viele Türme stehen vor der ersten Welle. Mit jeder Welle kommt einer dazu, bevor Gold in die Mine fließt.
 	var towers_first := 4
 
+	var _auto := false
+
+	## Ohne dig_cells sucht der Bot selbst den kürzesten Zugang zu jeder Erzader.
 	func _init(tower_pattern: Array, dig_cells: Array = [], fill_cells: Array = []) -> void:
 		builder = BuilderBot.new(tower_pattern)
 		digs = dig_cells.duplicate()
 		fills = fill_cells.duplicate()
+		_auto = dig_cells.is_empty()
+
+	## Für jede Ader ohne Stollen daneben: die Felsfelder, die bis zum nächsten Stollen fehlen.
+	static func find_digs(sim: GameSim) -> Array:
+		var out := []
+		var g := sim.grid
+		for vein in g.cells_of_type(MineGrid.Cell.ORE):
+			if g.touches_walkable(vein):
+				continue
+			# Breitensuche durch Fels, höchstens drei Felder weit.
+			var came := {vein: vein}
+			var queue := [vein]
+			var goal := Vector2i(-1, -1)
+			while not queue.is_empty() and goal.x < 0:
+				var c: Vector2i = queue.pop_front()
+				for d in MineGrid.DIRS:
+					var n: Vector2i = c + d
+					if came.has(n) or g.get_cell(n) != MineGrid.Cell.ROCK:
+						continue
+					came[n] = c
+					if g.touches_walkable(n):
+						goal = n
+						break
+					queue.append(n)
+			var chain := []
+			var cur := goal
+			while cur.x >= 0 and cur != vein and chain.size() < 3:
+				chain.append(cur)
+				cur = came[cur]
+			if cur == vein:
+				for cell in chain:
+					if cell not in out:
+						out.append(cell)
+		return out
 
 	func act(sim: GameSim) -> void:
+		if _auto:
+			_auto = false
+			digs = find_digs(sim)
 		# Ausbau kostet nur Erz und kommt deshalb immer zuerst.
 		if use_upgrades:
 			for t in sim.towers:
 				if sim.upgrade_tower(t.cell) == GameSim.Result.OK:
+					break
+				# Auf der höchsten Stufe abwechselnd die erste und zweite Spezialisierung.
+				if sim.specialize(t.cell, t.id % 2) == GameSim.Result.OK:
 					break
 		# Erst eine Grundverteidigung, dann die Mine, dann weitere Türme.
 		if sim.towers.size() < towers_first + maxi(sim.wave_index, 0) * 2:

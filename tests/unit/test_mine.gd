@@ -5,6 +5,10 @@ var towers := {
 	"bow": {
 		"name_key": "T", "cost": 50, "range": 2.0, "cooldown": 0.5, "damage": 10, "splash": 0.0, "projectile_speed": 20.0, "color": "#fff",
 		"upgrades": [{"ore": 5, "damage": 25}, {"ore": 8, "range": 3.0, "cooldown": 0.25}],
+		"specs": [
+			{"id": "far", "name_key": "S", "desc_key": "S", "ore": 10, "range": 9.0, "damage": 100},
+			{"id": "fast", "name_key": "S", "desc_key": "S", "ore": 12, "cooldown": 0.1},
+		],
 	},
 }
 var enemies := {
@@ -349,3 +353,65 @@ func test_selling_an_upgraded_tower_refunds_gold_only() -> void:
 	sim.sell_tower(Vector2i(5, 2))
 	assert_eq(sim.gold, 200 - 50 + 35)
 	assert_eq(sim.ore, 15)
+
+
+# --- Spezialisierung ------------------------------------------------------
+
+func test_specialization_needs_the_highest_level() -> void:
+	var sim := _sim(DETOUR, [], {}, {"start_ore": 100})
+	assert_eq(sim.specialize(Vector2i(5, 2), 0), GameSim.Result.NOT_ALLOWED, "kein Turm")
+	sim.build_tower(Vector2i(5, 2), "bow")
+	assert_eq(sim.specialize(Vector2i(5, 2), 0), GameSim.Result.NOT_MAX_LEVEL)
+	sim.upgrade_tower(Vector2i(5, 2))
+	assert_eq(sim.specialize(Vector2i(5, 2), 0), GameSim.Result.NOT_MAX_LEVEL)
+	sim.upgrade_tower(Vector2i(5, 2))
+	assert_eq(sim.specialize(Vector2i(5, 2), 2), GameSim.Result.NOT_ALLOWED, "es gibt nur zwei")
+	assert_eq(sim.specialize(Vector2i(5, 2), -1), GameSim.Result.NOT_ALLOWED)
+	assert_eq(sim.ore, 100 - 13)
+	assert_eq(sim.towers[0].spec, "")
+
+
+func test_specialization_costs_ore_changes_stats_and_is_final() -> void:
+	var sim := _sim(DETOUR, [], {}, {"start_ore": 40})
+	sim.build_tower(Vector2i(5, 2), "bow")
+	sim.upgrade_tower(Vector2i(5, 2))
+	sim.upgrade_tower(Vector2i(5, 2))
+	var t := sim.towers[0]
+	watch_signals(sim)
+	assert_eq(sim.specialize(Vector2i(5, 2), 0), GameSim.Result.OK)
+	assert_eq(sim.ore, 40 - 13 - 10)
+	assert_eq(t.spec, "far")
+	assert_eq(t.stats["range"], 9.0)
+	assert_eq(t.stats["damage"], 100)
+	assert_eq(t.stats["cooldown"], 0.25, "nicht genannte Werte bleiben von Stufe 3")
+	assert_false(t.stats.has("name_key") and t.stats["name_key"] == "S", "Name und Kosten der Spezialisierung sind keine Turmwerte")
+	assert_signal_emit_count(sim, "tower_specialized", 1)
+	assert_eq(sim.specialize(Vector2i(5, 2), 1), GameSim.Result.ALREADY_SPECIALIZED)
+	assert_eq(sim.specialize(Vector2i(5, 2), 0), GameSim.Result.ALREADY_SPECIALIZED)
+	assert_eq(sim.ore, 17)
+	assert_eq(towers["bow"]["range"], 2.0, "die Grunddaten bleiben unverändert")
+
+
+func test_specialization_needs_ore() -> void:
+	var sim := _sim(DETOUR, [], {}, {"start_ore": 13 + 11})
+	sim.build_tower(Vector2i(5, 2), "bow")
+	sim.upgrade_tower(Vector2i(5, 2))
+	sim.upgrade_tower(Vector2i(5, 2))
+	assert_eq(sim.specialize(Vector2i(5, 2), 1), GameSim.Result.NOT_ENOUGH_ORE)
+	assert_eq(sim.specialize(Vector2i(5, 2), 0), GameSim.Result.OK)
+
+
+func test_every_real_tower_has_two_valid_specializations() -> void:
+	var real := GameData.load_towers()
+	for id in real:
+		assert_eq(real[id].get("specs", []).size(), 2, id)
+		var sim := GameSim.new({"start_gold": 9999, "start_ore": 9999, "lives": 5, "wave_pause": 1.0, "towers": [id],
+			"grid": ["E...H", "#oo:#"], "waves": [{"reward": 0, "groups": [{"enemy": "tank", "count": 1}]}]}, real, enemies)
+		for i in 2:
+			var cell := Vector2i(1 + i, 1)
+			sim.build_tower(cell, id)
+			while sim.upgrade_tower(cell) == GameSim.Result.OK:
+				pass
+			var before: Dictionary = sim.tower_at(cell).stats
+			assert_eq(sim.specialize(cell, i), GameSim.Result.OK, "%s Spezialisierung %d" % [id, i])
+			assert_ne(sim.tower_at(cell).stats, before, "%s: Spezialisierung %d ändert nichts" % [id, i])

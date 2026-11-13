@@ -72,6 +72,7 @@ func _ready() -> void:
 	sim.projectile_hit.connect(_on_projectile_hit)
 	sim.finished.connect(_on_finished)
 	sim.tower_upgraded.connect(_on_tower_upgraded)
+	sim.tower_specialized.connect(_on_tower_specialized)
 	sim.dig_started.connect(_on_dig_started)
 	sim.grid_changed.connect(_on_grid_changed)
 	sim.worker_placed.connect(_on_worker_placed)
@@ -191,12 +192,24 @@ func _menu_for(cell: Vector2i) -> Dictionary:
 					"text": "%s\n%s" % [tr("HUD_UPGRADE"), tr("HUD_COST_ORE") % cost],
 					"disabled": sim.can_upgrade(cell) != GameSim.Result.OK,
 				})
+			var info := _stats_text(tower.stats, sim.next_stats(tower))
+			var title := "%s · %s" % [tr(tower.def["name_key"]), tr("HUD_TOWER_LEVEL") % [tower.level, sim.max_level(tower)]]
+			var specs := sim.specs_of(tower)
+			if tower.spec != "":
+				for spec in specs:
+					if spec["id"] == tower.spec:
+						title = "%s · %s" % [tr(tower.def["name_key"]), tr(spec["name_key"])]
+			elif cost < 0 and not specs.is_empty():
+				# Höchste Stufe erreicht: zwei Spezialisierungen zur Wahl, mit kurzer Beschreibung.
+				for i in specs.size():
+					buttons.append({
+						"id": "spec:%d" % i,
+						"text": "%s\n%s" % [tr(specs[i]["name_key"]), tr("HUD_COST_ORE") % int(specs[i]["ore"])],
+						"disabled": sim.can_specialize(cell, i) != GameSim.Result.OK,
+					})
+					info += "\n%s: %s" % [tr(specs[i]["name_key"]), tr(specs[i]["desc_key"])]
 			buttons.append({"id": "sell", "text": tr("HUD_SELL") % sim.sell_value(tower), "disabled": false})
-			return {
-				"title": "%s · %s" % [tr(tower.def["name_key"]), tr("HUD_TOWER_LEVEL") % [tower.level, sim.max_level(tower)]],
-				"info": _stats_text(tower.stats, sim.next_stats(tower)),
-				"buttons": buttons,
-			}
+			return {"title": title, "info": info, "buttons": buttons}
 		MineGrid.Cell.ROCK:
 			if not rules["digging"]:
 				return {}
@@ -293,6 +306,8 @@ func _on_action(id: String) -> void:
 		sim.sell_tower(selected)
 	elif id == "upgrade":
 		sim.upgrade_tower(selected)
+	elif id.begins_with("spec:"):
+		sim.specialize(selected, int(id.trim_prefix("spec:")))
 	elif id == "dig":
 		sim.dig(selected)
 	elif id == "fill":
@@ -489,6 +504,29 @@ func _on_tower_upgraded(t: GameSim.Tower) -> void:
 	view.add_child(gem)
 	Sfx.play("upgrade")
 	_burst(view.position + Vector3(0, 1.0, 0), Color(0.45, 0.85, 1.0), 12)
+	if selected == t.cell:
+		_show_range(t)
+
+
+func _on_tower_specialized(t: GameSim.Tower) -> void:
+	var view: Node3D = _tower_views.get(t.id)
+	if view == null:
+		return
+	# Ein goldener Ring um den Sockel zeigt den Meister seines Fachs.
+	view.get_node("Head").scale = Vector3.ONE * 1.42
+	var ring := MeshInstance3D.new()
+	var mesh := TorusMesh.new()
+	mesh.inner_radius = 0.8
+	mesh.outer_radius = 0.9
+	mesh.rings = 20
+	mesh.ring_segments = 6
+	ring.mesh = mesh
+	ring.position.y = 0.3
+	ring.material_override = _material(Color(1.0, 0.8, 0.3), 2.0)
+	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	view.add_child(ring)
+	Sfx.play("upgrade")
+	_burst(view.position + Vector3(0, 1.0, 0), Color(1.0, 0.8, 0.3), 18)
 	if selected == t.cell:
 		_show_range(t)
 
