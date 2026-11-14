@@ -1,6 +1,6 @@
 # Plan: Durnhal: Wacht der Tiefe – 3D Tower Defense für Android
 
-Stand: 12.11.2026 · Status: **Meilensteine 0 bis 3 abgeschlossen, Meilenstein 4 umgesetzt und wartet auf den Gerätetest**
+Stand: 12.11.2026 · Status: **Meilensteine 0 bis 4 abgeschlossen, Meilenstein 5 umgesetzt und wartet auf den Gerätetest**
 
 ## 1. Festgelegte Entscheidungen
 
@@ -193,6 +193,19 @@ Abweichungen und bekannte Schwächen:
 
 ### M5 – Meta und Feinschliff
 Zwergenhalle, Tutorial, Balancing, Optimierung für das Fire HD 10, Einstellungen (Ton, Sprache, Grafikqualität).
+**Stand:** umgesetzt am 14.11.2026, Gerätetest offen.
+
+Was drin ist:
+- **Zwergenhalle:** Verdiente Sterne sind die Währung für dauerhafte Verbesserungen: mehr Startgold, mehr Leben, Start-Erz, günstigere Türme, höhere Erstattung beim Verkauf, eine vierte Gabe zur Wahl. Alle Stufen zusammen kosten 37 Sterne, erreichbar sind 24. Man muss also wählen, kann die Sterne aber jederzeit kostenlos zurückholen und neu verteilen (`data/hall.json`).
+- **Einführung:** Level 1 führt beim ersten Mal in fünf Schritten durch Bauen, Welle starten und Ausbauen. Jeder Schritt endet, sobald man das Gezeigte getan hat.
+- **Grafikstufen:** „Hoch" und „Niedrig", im Hauptmenü umschaltbar. Niedrig verzichtet auf Schatten, Leuchten, Fackellichter und Teilchen und rechnet die 3D-Ansicht in geringerer Auflösung. Gedacht für das Fire HD 10.
+- **Einstellungen:** Sprache, Ton, Schwierigkeit und Grafik stehen im Hauptmenü und werden gespeichert.
+
+Abweichungen und offene Punkte:
+- Die Leistung auf dem Fire HD 10 ist nicht gemessen, auch nicht mit der niedrigen Grafikstufe.
+- Die Halle ist nicht in das Balancing eingerechnet: Die Levels sind ohne Verbesserungen eingestellt und werden mit ihnen leichter.
+- Ein gezieltes Nachstellen der Schwierigkeit aus Spielerdaten steht noch aus. Bekannt ist: Nur Steinschleudern gewinnen laut Bot mehrere Levels.
+- Es gibt weiterhin keine Musik und keine eigene Schrift.
 
 ### M6 – Veröffentlichung
 Signierter App-Bundle-Build, Store-Eintrag (Texte de/en, Bilder, Datenschutzerklärung, Alterseinstufung), geschlossener Test, Produktion.

@@ -54,8 +54,6 @@ enum Result {
 
 const TICK_RATE := 60
 const DT := 1.0 / TICK_RATE
-## Anteil der Baukosten, den ein Verkauf erstattet.
-const SELL_REFUND := 0.7
 ## So nah am Ziel gilt ein Geschoss als angekommen.
 const HIT_DISTANCE := 0.05
 ## Regeln, die für alle Levels gelten. data/rules.json und das Level können sie überschreiben.
@@ -77,6 +75,13 @@ const DEFAULT_RULES := {
 	## Nach jeder so vielten Welle stehen Gaben zur Wahl. 0 schaltet sie ab.
 	"boon_every": 2,
 	"boon_choices": 3,
+	## Anteil der Baukosten, den ein Verkauf erstattet.
+	"sell_refund": 0.7,
+	## Dauerhafte Verbesserungen aus der Zwergenhalle.
+	"tower_cost_factor": 1.0,
+	"start_gold_bonus": 0,
+	"start_ore_bonus": 0,
+	"lives_bonus": 0,
 }
 
 
@@ -115,6 +120,8 @@ class Tower extends RefCounted:
 	var cooldown_left := 0.0
 	var shots := 0
 	var level := 1
+	## Das beim Bau bezahlte Gold. Grundlage für die Erstattung beim Verkauf.
+	var paid := 0
 	## Kennung der gewählten Spezialisierung, leer ohne.
 	var spec := ""
 	## Gegner, die dieser Schildwall schon einmal aufgehalten hat. Jeder nur einmal.
@@ -205,13 +212,13 @@ func _init(level: Dictionary, tower_defs: Dictionary, enemy_defs: Dictionary, gl
 	rules = DEFAULT_RULES.duplicate()
 	rules.merge(global_rules, true)
 	rules.merge(level.get("rules", {}), true)
-	ore = int(level.get("start_ore", 0))
+	ore = int(level.get("start_ore", 0)) + int(rules["start_ore_bonus"])
 	_tower_defs = tower_defs
 	_enemy_defs = enemy_defs
 	grid = MineGrid.from_rows(level["grid"])
-	gold = roundi(float(level["start_gold"]) * float(rules["start_gold_factor"]))
-	max_lives = int(level["lives"])
-	lives = int(level["lives"])
+	gold = roundi(float(level["start_gold"]) * float(rules["start_gold_factor"])) + int(rules["start_gold_bonus"])
+	max_lives = int(level["lives"]) + int(rules["lives_bonus"])
+	lives = max_lives
 	wave_count = level["waves"].size()
 
 
@@ -223,6 +230,11 @@ func allowed_towers() -> Array:
 
 func tower_def(type: String) -> Dictionary:
 	return _tower_defs.get(type, {})
+
+
+## Was ein Turm in diesem Spiel kostet. Die Zwergenhalle kann den Preis senken.
+func tower_cost(type: String) -> int:
+	return maxi(1, roundi(float(_tower_defs[type]["cost"]) * float(rules["tower_cost_factor"])))
 
 
 func tower_at(cell: Vector2i) -> Tower:
@@ -238,7 +250,7 @@ func can_build(cell: Vector2i, type: String) -> Result:
 		return Result.NOT_BUILDABLE
 	if _towers_by_cell.has(cell):
 		return Result.OCCUPIED
-	if gold < int(_tower_defs[type]["cost"]):
+	if gold < tower_cost(type):
 		return Result.NOT_ENOUGH_GOLD
 	return Result.OK
 
@@ -254,7 +266,8 @@ func build_tower(cell: Vector2i, type: String) -> Result:
 	_refresh_stats(t)
 	t.cell = cell
 	t.pos = MineGrid.center(cell)
-	gold -= int(t.def["cost"])
+	gold -= tower_cost(t.type)
+	t.paid = tower_cost(t.type)
 	towers.append(t)
 	_towers_by_cell[cell] = t
 	tower_built.emit(t)
@@ -262,7 +275,7 @@ func build_tower(cell: Vector2i, type: String) -> Result:
 
 
 func sell_value(tower: Tower) -> int:
-	return floori(int(tower.def["cost"]) * SELL_REFUND)
+	return floori(tower.paid * float(rules["sell_refund"]))
 
 
 func sell_tower(cell: Vector2i) -> bool:

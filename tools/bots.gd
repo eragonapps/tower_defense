@@ -19,7 +19,7 @@ class BuilderBot extends RefCounted:
 
 	func act(sim: GameSim) -> void:
 		var type: String = pattern[_built % pattern.size()]
-		if sim.gold < int(sim.tower_def(type)["cost"]):
+		if sim.gold < sim.tower_cost(type):
 			return
 		var best := Vector2i(-1, -1)
 		var best_score := -1

@@ -43,6 +43,9 @@ var _dig_views := {}
 var _worker_views := {}
 var _menu_signature := ""
 var _has_ore := false
+var _low_graphics := false
+## Schritt der Einführung in Level 1. -1 bedeutet: keine Einführung.
+var tutorial_step := -1
 var _materials := {}
 
 
@@ -56,8 +59,11 @@ func _ready() -> void:
 		get_tree().change_scene_to_file.call_deferred(MENU_SCENE)
 		return
 	# Jeder Versuch bekommt einen eigenen Zufallswert: Die angebotenen Gaben sind jedes Mal andere.
-	sim = GameSim.new(level, towers, enemies, GameData.rules_for(Settings.difficulty), GameData.load_boons(), run_seed if run_seed != 0 else randi())
+	sim = GameSim.new(level, towers, enemies, _rules(), GameData.load_boons(), run_seed if run_seed != 0 else randi())
 	_has_ore = not sim.grid.cells_of_type(MineGrid.Cell.ORE).is_empty() or sim.ore > 0
+	_low_graphics = Settings.graphics == "low"
+	# Niedrige Grafikstufe rechnet die 3D-Ansicht kleiner und vergrößert sie wieder. Die Oberfläche bleibt scharf.
+	get_viewport().scaling_3d_scale = 0.7 if _low_graphics else 1.0
 	_build_environment()
 	_torch_cells = _choose_torch_cells()
 	_rebuild_terrain()
@@ -86,7 +92,16 @@ func _ready() -> void:
 	sim.boon_chosen.connect(_on_boon_chosen)
 	sim.wave_started.connect(func(_i: int) -> void: Sfx.play("wave", -4.0))
 	hud.set_hint(level.get("hint_key", "HUD_HINT_BUILD"))
+	if level.get("tutorial", false) and not Settings.tutorial_done:
+		tutorial_step = 0
 	hud.show_state(sim, paused, SPEEDS[speed_index], _has_ore)
+
+
+## Regeln für diesen Versuch: allgemeine Regeln, Schwierigkeitsgrad und die Verbesserungen aus der Zwergenhalle.
+static func _rules() -> Dictionary:
+	var rules := GameData.rules_for(Settings.difficulty)
+	rules.merge(Progress.hall_rules(GameData.load_hall(), rules), true)
+	return rules
 
 
 func _process(delta: float) -> void:
@@ -99,6 +114,34 @@ func _process(delta: float) -> void:
 		_heart_crystal.rotate_y(delta * 0.6)
 	_refresh_menu()
 	hud.show_state(sim, paused, SPEEDS[speed_index], _has_ore)
+	_update_tutorial()
+
+
+## Die Einführung führt Schritt für Schritt durch das erste Level. Jeder Schritt endet,
+## sobald der Spieler das Gezeigte getan hat.
+func _update_tutorial() -> void:
+	if tutorial_step < 0:
+		return
+	var done := false
+	match tutorial_step:
+		0:
+			done = selected != NO_CELL
+		1:
+			done = not sim.towers.is_empty()
+		2:
+			done = sim.wave_index >= 0
+		3:
+			done = sim.towers.size() >= 3 or sim.wave_index >= 1
+		4:
+			done = sim.wave_index >= 2
+	if done:
+		tutorial_step += 1
+	if tutorial_step > 4 or sim.status != GameSim.Status.RUNNING:
+		tutorial_step = -1
+		hud.show_tip("")
+		Settings.set_tutorial_done(true)
+		return
+	hud.show_tip(tr("TUTORIAL_%d" % tutorial_step))
 
 
 ## Rechnet die Simulation um die angegebene Spielzeit weiter und zieht die Darstellung nach.
@@ -187,7 +230,7 @@ func _menu_for(cell: Vector2i) -> Dictionary:
 					var def := sim.tower_def(type)
 					buttons.append({
 						"id": "build:" + type,
-						"text": "%s\n%s" % [tr(def["name_key"]), tr("HUD_COST") % int(def["cost"])],
+						"text": "%s\n%s" % [tr(def["name_key"]), tr("HUD_COST") % sim.tower_cost(type)],
 						"disabled": sim.can_build(cell, type) != GameSim.Result.OK,
 					})
 				return {"title": tr("HUD_BUILD_TITLE"), "info": "", "buttons": buttons}
@@ -704,6 +747,8 @@ func _show_ring(at: Vector3, radius: float, color: Color) -> void:
 
 ## Ein kurzer Stoß kleiner Teilchen, zum Beispiel Staub oder Funken.
 func _burst(at: Vector3, color: Color, count: int) -> void:
+	if _low_graphics:
+		return
 	var p := CPUParticles3D.new()
 	p.one_shot = true
 	p.explosiveness = 1.0
@@ -966,12 +1011,13 @@ func _build_environment() -> void:
 	env.background_color = Color(0.025, 0.024, 0.03)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color(0.36, 0.38, 0.5)
-	env.ambient_light_energy = 0.55
+	# Ohne Fackellichter wäre es zu dunkel, deshalb auf niedriger Stufe mehr Grundlicht.
+	env.ambient_light_energy = 0.9 if _low_graphics else 0.55
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.fog_enabled = true
 	env.fog_light_color = Color(0.04, 0.045, 0.06)
 	env.fog_density = 0.006
-	env.glow_enabled = true
+	env.glow_enabled = not _low_graphics
 	env.glow_intensity = 0.6
 	env.glow_bloom = 0.1
 	var world := WorldEnvironment.new()
@@ -983,7 +1029,7 @@ func _build_environment() -> void:
 	sun.light_color = Color(0.62, 0.7, 0.9)
 	sun.light_energy = 0.6
 	sun.rotation_degrees = Vector3(-58, 35, 0)
-	sun.shadow_enabled = true
+	sun.shadow_enabled = not _low_graphics
 	sun.directional_shadow_max_distance = 90.0
 	add_child(sun)
 
@@ -1131,12 +1177,13 @@ func _add_props() -> void:
 			torch.position.y = 0.4
 			torch.scale = Vector3.ONE * 0.9
 			holder.add_child(torch)
-		var light := OmniLight3D.new()
-		light.light_color = Color(1.0, 0.62, 0.3)
-		light.light_energy = 2.4
-		light.omni_range = 6.5
-		light.position.y = 1.3
-		holder.add_child(light)
+		if not _low_graphics:
+			var light := OmniLight3D.new()
+			light.light_color = Color(1.0, 0.62, 0.3)
+			light.light_energy = 2.4
+			light.omni_range = 6.5
+			light.position.y = 1.3
+			holder.add_child(light)
 		add_child(holder)
 		_terrain_nodes.append(holder)
 	var props := ["barrel_small", "box_large", "keg", "crates_stacked", "rubble_half"]

@@ -1,0 +1,14 @@
+{
+  "treasury": {"name_key": "HALL_TREASURY", "desc_key": "HALL_TREASURY_DESC", "costs": [1, 2, 3],
+    "effect": {"rule": "start_gold_bonus", "per_level": 25}},
+  "gate": {"name_key": "HALL_GATE", "desc_key": "HALL_GATE_DESC", "costs": [2, 3, 4],
+    "effect": {"rule": "lives_bonus", "per_level": 2}},
+  "stores": {"name_key": "HALL_STORES", "desc_key": "HALL_STORES_DESC", "costs": [1, 2, 3],
+    "effect": {"rule": "start_ore_bonus", "per_level": 12}},
+  "veterans": {"name_key": "HALL_VETERANS", "desc_key": "HALL_VETERANS_DESC", "costs": [2, 3, 4],
+    "effect": {"rule": "tower_cost_factor", "per_level": -0.05}},
+  "salvage": {"name_key": "HALL_SALVAGE", "desc_key": "HALL_SALVAGE_DESC", "costs": [1, 2],
+    "effect": {"rule": "sell_refund", "per_level": 0.1}},
+  "shrine": {"name_key": "HALL_SHRINE", "desc_key": "HALL_SHRINE_DESC", "costs": [4],
+    "effect": {"rule": "boon_choices", "per_level": 1}}
+}

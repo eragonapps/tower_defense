@@ -17,6 +17,7 @@ const TOWER_FIELDS := ["name_key", "cost", "range", "cooldown", "damage", "splas
 ## Zusatzwirkungen eines Turms: kind (projectile oder aura), slow {factor, duration}, burn {dps, duration}.
 const TOWER_OPTIONAL := ["kind", "slow", "burn", "damage_type", "capacity", "hold_time", "falloff"]
 const BOONS_PATH := "res://data/boons.json"
+const HALL_PATH := "res://data/hall.json"
 const BOON_TYPES := ["stat", "gold", "ore", "heal", "bounty", "rule"]
 const DAMAGE_TYPES := ["pierce", "blunt", "fire", "magic"]
 const ENEMY_FIELDS := ["name_key", "hp", "speed", "bounty", "lives", "color", "size"]
@@ -51,6 +52,29 @@ static func load_rules() -> Dictionary:
 static func load_difficulties() -> Dictionary:
 	var d: Variant = load_json(DIFFICULTIES_PATH)
 	return d if d is Dictionary else {}
+
+
+static func load_hall() -> Dictionary:
+	var d: Variant = load_json(HALL_PATH)
+	return d if d is Dictionary else {}
+
+
+## Prüft die Verbesserungen der Zwergenhalle. Leer bedeutet: in Ordnung.
+static func validate_hall(hall: Dictionary) -> Array[String]:
+	var errors: Array[String] = []
+	for id in hall:
+		var h: Dictionary = hall[id]
+		for f in ["name_key", "desc_key", "costs", "effect"]:
+			if not h.has(f):
+				errors.append("Halle %s: %s fehlt" % [id, f])
+		if h.get("costs", []).is_empty():
+			errors.append("Halle %s: braucht mindestens eine Stufe" % id)
+		for c in h.get("costs", []):
+			if int(c) <= 0:
+				errors.append("Halle %s: Kosten müssen größer als 0 sein" % id)
+		if not GameSim.DEFAULT_RULES.has(h.get("effect", {}).get("rule", "")):
+			errors.append("Halle %s: unbekannte Regel %s" % [id, h.get("effect", {}).get("rule", "")])
+	return errors
 
 
 static func load_boons() -> Dictionary:

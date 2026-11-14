@@ -6,7 +6,7 @@
 - Quellen und Lizenzen der Assets: [`ASSETS.md`](ASSETS.md)
 
 ## Stand
-Meilenstein 4: acht Levels, sechs Türme mit je drei Stufen und zwei Spezialisierungen, sechs Gegner samt Boss, Spielstand mit Sternen, Levelkarte und drei Schwierigkeitsgrade.
+Meilenstein 5: acht Levels, sechs Türme mit Ausbau und Spezialisierungen, sechs Gegner samt Boss, zufällige Gaben nach jeder zweiten Welle, Zwergenhalle mit dauerhaften Verbesserungen, Einführung, drei Schwierigkeitsgrade und zwei Grafikstufen.
 
 ## Bedienung
 - Ein Finger ziehen: Karte verschieben. Zwei Finger: zoomen.
@@ -47,4 +47,4 @@ Balancing-Bericht (Bots spielen jedes Level):
 godot --headless -s tools/balance_report.gd
 ```
 
-Die Spielwerte stehen in `data/towers.json`, `data/enemies.json`, `data/rules.json` und `data/levels/`.
+Die Spielwerte stehen im Ordner `data/`: Türme, Gegner, Regeln, Schwierigkeitsgrade, Gaben, Zwergenhalle und die Levels.

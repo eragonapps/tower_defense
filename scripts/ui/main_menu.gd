@@ -14,6 +14,13 @@ var _difficulty: Button
 var _btn_de: Button
 var _btn_en: Button
 var _sound: Button
+var _graphics: Button
+var _hall_button: Button
+var _hall: Control
+var _hall_list: VBoxContainer
+var _hall_stars: Label
+## Verbesserung → Kaufknopf. Für Tests.
+var hall_buttons := {}
 var _quit: Button
 var _version: Label
 ## Level-Kennung → Kachel. Für Tests.
@@ -83,6 +90,23 @@ func _build() -> void:
 	for b in [_difficulty, _btn_de, _btn_en, _sound, _quit]:
 		row.add_child(b)
 
+	var row2 := HBoxContainer.new()
+	row2.alignment = BoxContainer.ALIGNMENT_CENTER
+	row2.add_theme_constant_override("separation", 12)
+	box.add_child(row2)
+	box.move_child(row2, row.get_index())
+	_hall_button = _button(420)
+	_hall_button.pressed.connect(func() -> void:
+		_hall.visible = true
+		_refresh())
+	_graphics = _button(250)
+	_graphics.pressed.connect(func() -> void:
+		Settings.set_graphics("low" if Settings.graphics == "high" else "high")
+		_refresh())
+	row2.add_child(_hall_button)
+	row2.add_child(_graphics)
+	_build_hall()
+
 	_version = Label.new()
 	_version.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 	_version.text = "v%s" % ProjectSettings.get_setting("application/config/version", "?")
@@ -91,6 +115,86 @@ func _build() -> void:
 	_version.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT, Control.PRESET_MODE_MINSIZE, 20)
 	_version.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	_version.grow_vertical = Control.GROW_DIRECTION_BEGIN
+
+
+## Die Zwergenhalle: dauerhafte Verbesserungen, bezahlt mit verdienten Sternen.
+func _build_hall() -> void:
+	_hall = ColorRect.new()
+	_hall.color = Color(0.05, 0.045, 0.04, 0.97)
+	_hall.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_hall.visible = false
+	add_child(_hall)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_hall.add_child(center)
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 12)
+	center.add_child(box)
+	var title := Label.new()
+	title.name = "Title"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 44)
+	title.add_theme_color_override("font_color", COLOR_TITLE)
+	box.add_child(title)
+	_hall_stars = Label.new()
+	_hall_stars.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+	_hall_stars.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_hall_stars.add_theme_font_size_override("font_size", 22)
+	_hall_stars.add_theme_color_override("font_color", COLOR_TEXT)
+	box.add_child(_hall_stars)
+	_hall_list = VBoxContainer.new()
+	_hall_list.add_theme_constant_override("separation", 8)
+	box.add_child(_hall_list)
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 12)
+	box.add_child(row)
+	var reset := _button(300)
+	reset.name = "Reset"
+	reset.pressed.connect(Progress.reset_hall)
+	var back := _button(200)
+	back.name = "Back"
+	back.pressed.connect(func() -> void: _hall.visible = false)
+	row.add_child(reset)
+	row.add_child(back)
+
+
+func _refresh_hall() -> void:
+	var hall := GameData.load_hall()
+	var free := Progress.free_stars(hall)
+	_hall_button.text = "%s (%s)" % [tr("MENU_HALL"), tr("HALL_FREE_STARS") % free]
+	if not _hall.visible:
+		return
+	(_hall.find_child("Title", true, false) as Label).text = tr("MENU_HALL")
+	(_hall.find_child("Reset", true, false) as Button).text = tr("HALL_RESET")
+	(_hall.find_child("Back", true, false) as Button).text = tr("HALL_BACK")
+	_hall_stars.text = tr("HALL_STARS") % [free, Progress.total_stars()]
+	for c in _hall_list.get_children():
+		_hall_list.remove_child(c)
+		c.queue_free()
+	hall_buttons.clear()
+	for id in hall:
+		var def: Dictionary = hall[id]
+		var level := Progress.hall_level(id)
+		var max_level: int = def["costs"].size()
+		var cost := Progress.hall_cost(id, hall)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 16)
+		var text := Label.new()
+		text.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		text.text = "%s  %d/%d\n%s" % [tr(def["name_key"]), level, max_level, tr(def["desc_key"])]
+		text.custom_minimum_size = Vector2(620, 0)
+		text.add_theme_font_size_override("font_size", 20)
+		text.add_theme_color_override("font_color", COLOR_TEXT)
+		row.add_child(text)
+		var buy := _button(230)
+		buy.custom_minimum_size.y = 62
+		buy.text = tr("HALL_MAXED") if cost < 0 else tr("HALL_BUY") % cost
+		buy.disabled = cost < 0 or cost > free
+		buy.pressed.connect(Progress.buy_hall.bind(id, hall))
+		row.add_child(buy)
+		_hall_list.add_child(row)
+		hall_buttons[id] = buy
 
 
 func _button(width: float) -> Button:
@@ -113,6 +217,8 @@ func _refresh() -> void:
 	_btn_en.set_pressed_no_signal(Settings.language == "en")
 	_sound.text = tr("MENU_SOUND_ON") if Settings.sound_enabled else tr("MENU_SOUND_OFF")
 	_quit.text = tr("MENU_QUIT")
+	_graphics.text = "%s: %s" % [tr("MENU_GRAPHICS"), tr("MENU_GRAPHICS_HIGH") if Settings.graphics == "high" else tr("MENU_GRAPHICS_LOW")]
+	_refresh_hall()
 	for c in _tiles.get_children():
 		_tiles.remove_child(c)
 		c.queue_free()

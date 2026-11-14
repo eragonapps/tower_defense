@@ -34,6 +34,9 @@ func _run(args: PackedStringArray) -> void:
 	# Optional: die Szene bereitet selbst einen sehenswerten Zustand vor.
 	if args.size() >= 4 and node.has_method("demo"):
 		node.demo(args[3])
+	# Für das Hauptmenü: "hall" öffnet die Zwergenhalle.
+	elif args.size() >= 4 and args[3] == "hall" and node.get("_hall_button") != null:
+		node._hall_button.pressed.emit()
 	for i in 10:
 		await process_frame
 	await RenderingServer.frame_post_draw

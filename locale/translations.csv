@@ -133,3 +133,30 @@ BOON_MASTER_MINERS,Meisterhauer,Master Miners
 BOON_MASTER_MINERS_DESC,Arbeiter bauen 30 % schneller ab,Workers mine 30 % faster
 BOON_SWIFT_PICKS,Flinke Hacken,Swift Picks
 BOON_SWIFT_PICKS_DESC,Graben kostet nur die Hälfte,Digging costs only half
+MENU_HALL,Zwergenhalle,Dwarven Hall
+MENU_GRAPHICS,Grafik,Graphics
+MENU_GRAPHICS_HIGH,Hoch,High
+MENU_GRAPHICS_LOW,Niedrig,Low
+HALL_FREE_STARS,%d Sterne frei,%d stars free
+HALL_STARS,Freie Sterne: %d von %d verdienten,Free stars: %d of %d earned
+HALL_BUY,Ausbauen (%d Sterne),Upgrade (%d stars)
+HALL_MAXED,Voll ausgebaut,Fully upgraded
+HALL_RESET,Sterne zurückholen,Take stars back
+HALL_BACK,Zurück,Back
+HALL_TREASURY,Schatzkammer,Treasury
+HALL_TREASURY_DESC,Jedes Level beginnt mit 25 Gold mehr je Stufe.,Every level starts with 25 more gold per rank.
+HALL_GATE,Festes Tor,Sturdy Gate
+HALL_GATE_DESC,2 Leben mehr je Stufe.,2 more lives per rank.
+HALL_STORES,Erzlager,Ore Stores
+HALL_STORES_DESC,Jedes Level beginnt mit 12 Erz mehr je Stufe.,Every level starts with 12 more ore per rank.
+HALL_VETERANS,Veteranen,Veterans
+HALL_VETERANS_DESC,Türme kosten 5 % weniger je Stufe.,Towers cost 5 % less per rank.
+HALL_SALVAGE,Wiederverwertung,Salvage
+HALL_SALVAGE_DESC,Verkaufte Türme erstatten 10 % mehr je Stufe.,Sold towers refund 10 % more per rank.
+HALL_SHRINE,Ahnenschrein,Ancestor Shrine
+HALL_SHRINE_DESC,Eine vierte Gabe steht zur Wahl.,A fourth gift is offered.
+TUTORIAL_0,Tippe auf einen der leuchtenden Bauplätze neben dem Stollen.,Tap one of the glowing build sites next to the tunnel.
+TUTORIAL_1,Wähle unten links den Armbrustschützen. Er kostet 50 Gold.,Choose the crossbow dwarf at the bottom left. He costs 50 gold.
+TUTORIAL_2,Gut! Baue noch einen Turm oder starte unten rechts die erste Welle.,Good! Build another tower or start the first wave at the bottom right.
+TUTORIAL_3,"Besiegte Gegner bringen Gold. Baue damit weitere Türme. Die Steinschleuder trifft mehrere Gegner auf einmal.","Defeated enemies give gold. Use it to build more towers. The stone sling hits several enemies at once."
+TUTORIAL_4,"Tippe einen Turm an, um seine Reichweite zu sehen. Oben rechts kannst du das Tempo erhöhen. Halte das Herz der Mine!","Tap a tower to see its range. You can speed up the game at the top right. Hold the heart of the mine!"

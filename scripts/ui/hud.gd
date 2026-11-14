@@ -47,6 +47,8 @@ var _fps: Label
 var _boons: Control
 var _boon_box: HBoxContainer
 var _active_boons: Label
+var _tip: PanelContainer
+var _tip_label: Label
 
 
 func _ready() -> void:
@@ -73,7 +75,8 @@ func show_state(sim: GameSim, paused: bool, speed: float, show_ore: bool) -> voi
 			_wave_button.text = tr("HUD_NEXT_WAVE") % ceili(sim.next_wave_in)
 	if _fps:
 		_fps.text = "%d FPS" % Engine.get_frames_per_second()
-	_hint.visible = sim.wave_index < 0 and not _context.visible and sim.status == GameSim.Status.RUNNING
+	# Während der Einführung führt der Hinweis oben, der allgemeine unten bleibt aus.
+	_hint.visible = sim.wave_index < 0 and not _context.visible and sim.status == GameSim.Status.RUNNING and not _tip.visible
 
 
 ## Legt den Hinweistext fest, der vor der ersten Welle unten links steht.
@@ -154,6 +157,16 @@ func hide_boons() -> void:
 
 func is_boons_visible() -> bool:
 	return _boons.visible
+
+
+## Zeigt einen Hinweis der Einführung oben in der Mitte. Ein leerer Text blendet ihn aus.
+func show_tip(text: String) -> void:
+	_tip.visible = text != ""
+	_tip_label.text = text
+
+
+func tip_text() -> String:
+	return _tip_label.text if _tip.visible else ""
 
 
 ## Zeigt die Namen der gewählten Gaben klein unter den Anzeigen.
@@ -273,6 +286,23 @@ func _build() -> void:
 	area.add_child(_active_boons)
 	_active_boons.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
 	_active_boons.position = Vector2(6, 84)
+
+	_tip = _panel()
+	_tip.visible = false
+	_tip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var tip_style: StyleBoxFlat = _tip.get_theme_stylebox("panel").duplicate()
+	tip_style.border_color = COLOR_GOLD
+	tip_style.set_border_width_all(2)
+	_tip.add_theme_stylebox_override("panel", tip_style)
+	area.add_child(_tip)
+	_tip.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_tip.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_tip.position.y = 110
+	_tip_label = _label("", COLOR_TEXT)
+	_tip_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_tip_label.custom_minimum_size.x = 620
+	_tip_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_tip.add_child(_tip_label)
 
 	_build_boon_screen()
 	_build_end_screen()

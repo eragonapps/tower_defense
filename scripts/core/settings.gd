@@ -13,6 +13,10 @@ var config_path := "user://settings.cfg"
 var language := FALLBACK_LOCALE
 var sound_enabled := true
 var difficulty := "normal"
+## Grafikqualität: "high" oder "low". Niedrig verzichtet auf Schatten, Leuchten, Fackellichter und Teilchen.
+var graphics := "high"
+## Wahr, sobald die Einführung in Level 1 einmal durchlaufen ist.
+var tutorial_done := false
 
 
 func _ready() -> void:
@@ -48,6 +52,18 @@ func set_difficulty(value: String) -> void:
 	save_settings()
 
 
+func set_graphics(value: String) -> void:
+	if value not in ["high", "low"]:
+		return
+	graphics = value
+	save_settings()
+
+
+func set_tutorial_done(value: bool) -> void:
+	tutorial_done = value
+	save_settings()
+
+
 func load_settings() -> void:
 	var cfg := ConfigFile.new()
 	var chosen := pick_locale(OS.get_locale())
@@ -60,6 +76,10 @@ func load_settings() -> void:
 		sound_enabled = sound if sound is bool else true
 		var diff: Variant = cfg.get_value("general", "difficulty", "normal")
 		difficulty = diff if diff is String and diff in GameData.DIFFICULTY_ORDER else "normal"
+		var gfx: Variant = cfg.get_value("general", "graphics", "high")
+		graphics = gfx if gfx is String and gfx in ["high", "low"] else "high"
+		var tut: Variant = cfg.get_value("general", "tutorial_done", false)
+		tutorial_done = tut if tut is bool else false
 	language = chosen
 	TranslationServer.set_locale(language)
 
@@ -70,6 +90,8 @@ func save_settings() -> void:
 	cfg.set_value("general", "language", language)
 	cfg.set_value("general", "sound", sound_enabled)
 	cfg.set_value("general", "difficulty", difficulty)
+	cfg.set_value("general", "graphics", graphics)
+	cfg.set_value("general", "tutorial_done", tutorial_done)
 	var err := cfg.save(config_path)
 	if err != OK:
 		push_warning("Einstellungen konnten nicht gespeichert werden (Fehler %d)" % err)

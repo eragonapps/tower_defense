@@ -3,6 +3,7 @@
   "start_gold": 110,
   "lives": 20,
   "wave_pause": 8.0,
+  "tutorial": true,
   "rules": {"digging": false, "boon_every": 0},
   "towers": [
     "crossbow",
