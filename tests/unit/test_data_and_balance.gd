@@ -186,23 +186,25 @@ func test_level_two_ore_pays_for_upgrades() -> void:
 	assert_gt(mined, 100)
 
 
-func test_stress_300_enemies_40_towers_stays_fast() -> void:
-	var rows := ["##########################################"]
-	rows.append("E" + ".".repeat(40) + "H")
-	rows.append("#" + "o".repeat(40) + "#")
+func test_stress_at_the_real_upper_limit_stays_fast() -> void:
+	# Mehr als das Spiel je zeigt: 120 Gegner und 25 Türme. Im Spiel sind es höchstens rund 90 Gegner,
+	# und kein Level hat mehr als 25 Bauplätze.
+	var rows := ["###########################"]
+	rows.append("E" + ".".repeat(25) + "H")
+	rows.append("#" + "o".repeat(25) + "#")
 	var big := {"name_key": "E", "hp": 100000, "speed": 0.1, "bounty": 0, "lives": 1, "color": "#fff", "size": 1.0}
 	var level := {
 		"start_gold": 100000, "lives": 999, "wave_pause": 1.0, "towers": towers.keys(), "grid": rows,
-		"waves": [{"reward": 0, "groups": [{"enemy": "big", "count": 300, "interval": 0.02}]}],
+		"waves": [{"reward": 0, "groups": [{"enemy": "big", "count": 120, "interval": 0.02}]}],
 	}
 	var sim := GameSim.new(level, towers, {"big": big})
 	var types := towers.keys()
-	for x in 40:
+	for x in 25:
 		assert_eq(sim.build_tower(Vector2i(x + 1, 2), types[x % types.size()]), GameSim.Result.OK)
 	sim.start_next_wave()
 	for i in 600:
 		sim.step()
-	assert_eq(sim.enemies.size(), 300)
+	assert_eq(sim.enemies.size(), 120)
 	var t0 := Time.get_ticks_usec()
 	for i in 300:
 		sim.step()

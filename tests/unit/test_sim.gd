@@ -292,3 +292,15 @@ func test_same_inputs_give_the_same_result() -> void:
 	var b := Bots.run(level, t, e, Bots.BuilderBot.new(["crossbow", "sling"]), 90)
 	assert_eq(a.snapshot(), b.snapshot())
 	assert_gt(a.kills, 0)
+
+
+func test_enemy_without_a_path_does_not_freeze_the_game() -> void:
+	# Ein Raster ohne Weg ist ungültig und wird beim Laden abgelehnt. Sollte es doch einmal
+	# dazu kommen, darf ein Zeitschritt trotzdem nie hängen bleiben.
+	var sim := _sim([{"enemy": "tank", "count": 1}], {"grid": ["E.:.H", "#o::#"]})
+	assert_ne(sim.grid.error, "")
+	sim.start_next_wave()
+	for i in 120:
+		sim.step()
+	assert_eq(sim.enemies.size(), 1)
+	assert_eq(sim.lives, 5)

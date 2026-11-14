@@ -27,6 +27,10 @@ signal ore_stolen(thief: Enemy, worker: Worker, amount: int)
 ## Nach einer Welle stehen Gaben zur Wahl. ids sind Kennungen aus data/boons.json.
 signal boons_offered(ids: Array)
 signal boon_chosen(id: String)
+## Im Endlosmodus kommt ein dauerhafter Fluch dazu. id ist eine Kennung aus data/curses.json.
+signal curse_added(id: String)
+## Der erste Gegner einer Welle am Herz wurde von der Schutzrune aufgehalten.
+signal leak_warded(enemy: Enemy)
 signal projectile_fired(projectile: Projectile)
 signal projectile_hit(projectile: Projectile)
 signal wave_started(index: int)
@@ -56,6 +60,9 @@ const TICK_RATE := 60
 const DT := 1.0 / TICK_RATE
 ## So nah am Ziel gilt ein Geschoss als angekommen.
 const HIT_DISTANCE := 0.05
+const STUN_IMMUNITY := 2.5
+const ENDLESS_MAX_ENEMIES := 70
+const WILDFIRE_RADIUS := 1.0
 ## Regeln, die für alle Levels gelten. data/rules.json und das Level können sie überschreiben.
 const DEFAULT_RULES := {
 	"digging": true,
@@ -82,6 +89,20 @@ const DEFAULT_RULES := {
 	"start_gold_bonus": 0,
 	"start_ore_bonus": 0,
 	"lives_bonus": 0,
+	## Endlosmodus: Wachstum je Welle. Leben der Gegner als Faktor, Anzahl und Kopfgeld als Zuschlag.
+	"endless_hp_growth": 1.08,
+	"endless_count_growth": 0.02,
+	"endless_count_cap": 1.25,
+	"endless_bounty_growth": 0.03,
+	"endless_boss_every": 5,
+	## Bosse im Endlosmodus haben diesen Anteil ihrer Lebenspunkte. Sie kommen oft und in Levels ohne starke Türme.
+	"endless_boss_hp": 0.5,
+	## So viele Leben kostet ein durchgekommener Boss im Endlosmodus. Im normalen Spiel beendet er das Level sofort.
+	"endless_boss_lives": 8,
+	## Im Endlosmodus gibt es Gaben in jedem Level, auch wenn es sonst keine anbietet.
+	"endless_boon_every": 2,
+	"endless_curse_every": 5,
+	"endless_reward": 40,
 }
 
 
@@ -109,6 +130,7 @@ class Enemy extends RefCounted:
 	var hold_left := 0.0
 	var held_by: Tower
 	var has_stolen := false
+	var stun_immune_left := 0.0
 
 
 class Tower extends RefCounted:
@@ -180,6 +202,18 @@ var active_boons: Array[String] = []
 var pending_boons: Array[String] = []
 ## Faktor auf das Kopfgeld, verändert durch Gaben.
 var bounty_factor := 1.0
+## Endlosmodus: läuft er, und wie viele seiner Wellen sind überstanden.
+var endless := false
+var endless_wave := 0
+var endless_cleared := 0
+var active_curses: Array[String] = []
+## Faktoren aus Gaben und Flüchen auf alle Gegner.
+var enemy_hp_extra := 1.0
+var enemy_speed_factor := 1.0
+## Schadensart → Faktor, den alle Gegner zusätzlich abziehen.
+var global_resist := {}
+## Schalter aus Gaben, zum Beispiel "wildfire" oder "ward".
+var flags := {}
 
 ## Index der laufenden oder zuletzt gelaufenen Welle. -1 vor der ersten.
 var wave_index := -1
@@ -202,12 +236,17 @@ var _boon_defs := {}
 ## Turmtyp oder "all" → {Wert → Faktor}. Verändert durch Gaben.
 var _tower_factors := {}
 var _rng := RandomNumberGenerator.new()
+var _curse_defs := {}
+var _endless_groups: Array = []
+var _ward_used := false
+var _tower_flags := {}
 
 
-## rng_seed bestimmt, welche Gaben angeboten werden. Derselbe Wert ergibt denselben Verlauf.
-func _init(level: Dictionary, tower_defs: Dictionary, enemy_defs: Dictionary, global_rules := {}, boon_defs := {}, rng_seed := 1) -> void:
+## rng_seed bestimmt, welche Gaben und Flüche kommen. Derselbe Wert ergibt denselben Verlauf.
+func _init(level: Dictionary, tower_defs: Dictionary, enemy_defs: Dictionary, global_rules := {}, boon_defs := {}, rng_seed := 1, curse_defs := {}) -> void:
 	_level = level
 	_boon_defs = boon_defs
+	_curse_defs = curse_defs
 	_rng.seed = rng_seed
 	rules = DEFAULT_RULES.duplicate()
 	rules.merge(global_rules, true)
@@ -326,6 +365,9 @@ func _with_boons(type: String, stats: Dictionary) -> Dictionary:
 					stats["burn"] = burn
 			elif stats.has(stat):
 				stats[stat] = float(stats[stat]) * float(factors[stat])
+		# Schalter aus Gaben, zum Beispiel durchschlagende Bolzen.
+		for flag in _tower_flags.get(scope, {}):
+			stats[flag] = _tower_flags[scope][flag]
 	return stats
 
 
@@ -335,33 +377,51 @@ func boon_def(id: String) -> Dictionary:
 	return _boon_defs.get(id, {})
 
 
-## Gaben, die in diesem Level etwas bewirken und noch nicht gewählt sind.
+## Die Wirkungen einer Gabe oder eines Fluchs als Liste. Die Daten erlauben "effect" oder "effects".
+static func _effects_of(def: Dictionary) -> Array:
+	return def["effects"] if def.has("effects") else [def["effect"]]
+
+
+## Gaben, die in diesem Level etwas bewirken. Im normalen Spiel jede nur einmal.
+## Im Endlosmodus dürfen sich Gaben wiederholen, außer reinen Schaltern.
 func _available_boons() -> Array[String]:
 	var out: Array[String] = []
 	var has_ore := not grid.cells_of_type(MineGrid.Cell.ORE).is_empty()
 	var ids := _boon_defs.keys()
 	ids.sort()
 	for id in ids:
+		var def: Dictionary = _boon_defs[id]
+		var effects := _effects_of(def)
 		if id in active_boons:
+			var stackable := endless
+			for effect in effects:
+				if effect["type"] in ["flag", "tower_flag"]:
+					stackable = false
+			if not stackable:
+				continue
+		var needs: Array = def.get("needs", [])
+		if ("ore" in needs and not has_ore) or ("digging" in needs and not rules["digging"]):
 			continue
-		var effect: Dictionary = _boon_defs[id]["effect"]
-		match effect["type"]:
-			"stat":
-				var useful := false
-				for t in effect["towers"]:
-					if t == "all" or t in _level["towers"]:
-						useful = true
-				if not useful:
-					continue
-			"ore":
-				if not has_ore:
-					continue
-			"rule":
-				if effect["key"] in ["dig_cost", "fill_cost"] and not rules["digging"]:
-					continue
-				if effect["key"] in ["ore_interval", "worker_cost"] and not has_ore:
-					continue
-		out.append(id)
+		var useful := true
+		for effect in effects:
+			match effect["type"]:
+				"stat", "tower_flag":
+					var any := false
+					for t in effect["towers"]:
+						if t == "all" or t in _level["towers"]:
+							any = true
+					if not any:
+						useful = false
+				"ore":
+					if not has_ore:
+						useful = false
+				"rule":
+					if effect["key"] in ["dig_cost", "fill_cost"] and not rules["digging"]:
+						useful = false
+					if effect["key"] in ["ore_interval", "worker_cost", "worker_threat_radius"] and not has_ore:
+						useful = false
+		if useful:
+			out.append(id)
 	return out
 
 
@@ -383,7 +443,14 @@ func choose_boon(index: int) -> bool:
 	var id := pending_boons[index]
 	pending_boons.clear()
 	active_boons.append(id)
-	var effect: Dictionary = _boon_defs[id]["effect"]
+	for effect in _effects_of(_boon_defs[id]):
+		_apply_effect(effect)
+	boon_chosen.emit(id)
+	return true
+
+
+## Wendet eine einzelne Wirkung einer Gabe oder eines Fluchs an.
+func _apply_effect(effect: Dictionary) -> void:
 	match effect["type"]:
 		"stat":
 			for t in effect["towers"]:
@@ -392,18 +459,104 @@ func choose_boon(index: int) -> bool:
 				_tower_factors[t][effect["stat"]] = float(_tower_factors[t].get(effect["stat"], 1.0)) * float(effect["factor"])
 			for t in towers:
 				_refresh_stats(t)
+		"tower_flag":
+			for t in effect["towers"]:
+				if not _tower_flags.has(t):
+					_tower_flags[t] = {}
+				_tower_flags[t][effect["flag"]] = effect["value"]
+			for t in towers:
+				_refresh_stats(t)
+		"flag":
+			flags[effect["flag"]] = effect.get("value", true)
 		"gold":
-			gold += int(effect["amount"])
+			gold = maxi(0, gold + int(effect["amount"]))
 		"ore":
-			ore += int(effect["amount"])
+			ore = maxi(0, ore + int(effect["amount"]))
 		"heal":
 			lives = mini(max_lives, lives + int(effect["amount"]))
+		"lives":
+			# Ein Preis in Leben lässt immer mindestens eines übrig.
+			lives = maxi(1, lives + int(effect["amount"]))
 		"bounty":
 			bounty_factor *= float(effect["factor"])
+		"enemy_hp":
+			enemy_hp_extra *= float(effect["factor"])
+		"enemy_speed":
+			enemy_speed_factor *= float(effect["factor"])
+		"resist":
+			global_resist[effect["damage_type"]] = float(global_resist.get(effect["damage_type"], 1.0)) * float(effect["factor"])
 		"rule":
 			rules[effect["key"]] = float(rules[effect["key"]]) * float(effect["factor"])
-	boon_chosen.emit(id)
+
+
+# --- Endlosmodus ----------------------------------------------------------
+
+## Nach dem Sieg mit allem Gebauten weiterkämpfen. Die Wellen entstehen ab jetzt von selbst und werden immer härter.
+func continue_endless() -> bool:
+	if status != Status.WON or endless:
+		return false
+	endless = true
+	status = Status.RUNNING
+	next_wave_in = float(_level["wave_pause"])
 	return true
+
+
+## Die laufende Nummer der Welle über das ganze Spiel, für die Anzeige.
+func wave_number() -> int:
+	return wave_index + 1
+
+
+## Baut die Gruppen der nächsten Endlos-Welle: eine der letzten festen Wellen als Vorlage,
+## mit etwas mehr Gegnern. Die eigentliche Steigerung kommt über die Lebenspunkte beim Erscheinen.
+func _make_endless_groups() -> Array:
+	var waves: Array = _level["waves"]
+	var template: Dictionary = waves[waves.size() - 1 - _rng.randi_range(0, mini(2, waves.size() - 1))]
+	var scale := minf(float(rules["endless_count_cap"]), 1.0 + float(rules["endless_count_growth"]) * endless_wave)
+	var groups := []
+	for g in template["groups"]:
+		if _is_boss(g["enemy"]):
+			continue
+		var copy: Dictionary = g.duplicate()
+		copy["count"] = maxi(1, roundi(int(g["count"]) * scale))
+		copy["entrance"] = _rng.randi_range(0, grid.entrances.size() - 1)
+		groups.append(copy)
+	var boss_every := int(rules["endless_boss_every"])
+	if boss_every > 0 and endless_wave % boss_every == 0:
+		var boss := _boss_type()
+		if boss != "":
+			groups.append({"enemy": boss, "count": 1 + endless_wave / (boss_every * 3), "interval": 12.0, "delay": 2.0,
+				"entrance": _rng.randi_range(0, grid.entrances.size() - 1)})
+	return groups
+
+
+func _is_boss(type: String) -> bool:
+	return _enemy_defs.get(type, {}).get("unblockable", false)
+
+
+func _boss_type() -> String:
+	var ids := _enemy_defs.keys()
+	ids.sort()
+	for id in ids:
+		if _is_boss(id):
+			return id
+	return ""
+
+
+## Wählt zufällig einen Fluch. Jeder kann mehrfach kommen und wirkt dann stärker.
+func _add_curse() -> void:
+	if _curse_defs.is_empty():
+		return
+	var ids := _curse_defs.keys()
+	ids.sort()
+	var id: String = ids[_rng.randi_range(0, ids.size() - 1)]
+	active_curses.append(id)
+	for effect in _effects_of(_curse_defs[id]):
+		_apply_effect(effect)
+	curse_added.emit(id)
+
+
+func curse_def(id: String) -> Dictionary:
+	return _curse_defs.get(id, {})
 
 
 func max_level(tower: Tower) -> int:
@@ -414,7 +567,17 @@ func max_level(tower: Tower) -> int:
 func upgrade_cost(tower: Tower) -> int:
 	if tower.level >= max_level(tower):
 		return -1
-	return int(tower.def["upgrades"][tower.level - 1]["ore"])
+	return _ore_price(int(tower.def["upgrades"][tower.level - 1]["ore"]))
+
+
+## Was eine Spezialisierung kostet.
+func spec_cost(tower: Tower, index: int) -> int:
+	return _ore_price(int(specs_of(tower)[index]["ore"]))
+
+
+## Ein Erzpreis nach Abzug von Rabatten aus Gaben.
+func _ore_price(base: int) -> int:
+	return maxi(1, roundi(base * float(flags.get("ore_cost_factor", 1.0))))
 
 
 ## Die Werte, die der Turm nach dem nächsten Ausbau hätte. Leer auf der höchsten Stufe.
@@ -466,7 +629,7 @@ func can_specialize(cell: Vector2i, index: int) -> Result:
 		return Result.ALREADY_SPECIALIZED
 	if t.level < max_level(t):
 		return Result.NOT_MAX_LEVEL
-	if ore < int(specs_of(t)[index]["ore"]):
+	if ore < spec_cost(t, index):
 		return Result.NOT_ENOUGH_ORE
 	return Result.OK
 
@@ -478,7 +641,7 @@ func specialize(cell: Vector2i, index: int) -> Result:
 		return result
 	var t: Tower = _towers_by_cell[cell]
 	var spec: Dictionary = specs_of(t)[index]
-	ore -= int(spec["ore"])
+	ore -= spec_cost(t, index)
 	t.spec = spec["id"]
 	_refresh_stats(t)
 	tower_specialized.emit(t)
@@ -601,7 +764,7 @@ func place_worker(cell: Vector2i) -> Result:
 
 
 func can_start_wave() -> bool:
-	return status == Status.RUNNING and not wave_active and wave_index + 1 < wave_count
+	return status == Status.RUNNING and not wave_active and (wave_index + 1 < wave_count or endless)
 
 
 func start_next_wave() -> bool:
@@ -613,8 +776,18 @@ func start_next_wave() -> bool:
 	wave_active = true
 	next_wave_in = 0.0
 	_wave_time = 0.0
+	_ward_used = false
 	_spawn_queue.clear()
-	for g in _level["waves"][wave_index]["groups"]:
+	var groups: Array
+	if wave_index < wave_count:
+		groups = _level["waves"][wave_index]["groups"]
+	else:
+		endless_wave += 1
+		var curse_every := int(rules["endless_curse_every"])
+		if curse_every > 0 and endless_wave % curse_every == 0:
+			_add_curse()
+		groups = _make_endless_groups()
+	for g in groups:
 		for i in int(g["count"]):
 			_spawn_queue.append({
 				"time": float(g.get("delay", 0.0)) + i * float(g.get("interval", 1.0)),
@@ -654,6 +827,7 @@ func _step_digs() -> void:
 	for job in finished_jobs:
 		dig_jobs.erase(job)
 		grid.set_cell(job.cell, MineGrid.Cell.TUNNEL)
+		gold += int(flags.get("dig_gold", 0))
 		for e in enemies:
 			if e.alive:
 				_update_remaining(e)
@@ -685,11 +859,14 @@ func _step_workers() -> void:
 
 func _step_waves() -> void:
 	if wave_active:
+		# Im Endlosmodus wartet der Nachschub, wenn schon sehr viele Gegner unterwegs sind. Das schützt die Bildrate.
+		if endless_wave > 0 and enemies.size() >= ENDLESS_MAX_ENEMIES and not _spawn_queue.is_empty():
+			return
 		_wave_time += DT
 		while not _spawn_queue.is_empty() and _spawn_queue[0]["time"] <= _wave_time:
 			var s: Dictionary = _spawn_queue.pop_front()
 			_spawn(s["enemy"], s["entrance"])
-	elif wave_index >= 0 and wave_index + 1 < wave_count and pending_boons.is_empty():
+	elif wave_index >= 0 and (wave_index + 1 < wave_count or endless) and status == Status.RUNNING and pending_boons.is_empty():
 		next_wave_in -= DT
 		if next_wave_in <= 0.0:
 			start_next_wave()
@@ -706,7 +883,11 @@ func _spawn_at(type: String, pos: Vector2, target_cell: Vector2i) -> void:
 	e.type = type
 	e.def = _enemy_defs[type]
 	# Lebenspunkte: Grundwert, mal Faktor des Levels, mal Faktor des Schwierigkeitsgrads.
-	e.max_hp = float(e.def["hp"]) * float(_level.get("enemy_hp_scale", 1.0)) * float(rules["enemy_hp_factor"])
+	e.max_hp = float(e.def["hp"]) * float(_level.get("enemy_hp_scale", 1.0)) * float(rules["enemy_hp_factor"]) * enemy_hp_extra
+	if endless_wave > 0:
+		e.max_hp *= pow(float(rules["endless_hp_growth"]), endless_wave)
+		if _is_boss(type):
+			e.max_hp *= float(rules["endless_boss_hp"])
 	e.hp = e.max_hp
 	e.pos = pos
 	e.prev_pos = e.pos
@@ -725,13 +906,14 @@ func _step_enemies() -> void:
 		if not e.alive:
 			continue
 		_step_abilities(e)
+		e.stun_immune_left = maxf(0.0, e.stun_immune_left - DT)
 		if e.hold_left > 0.0:
 			e.hold_left -= DT
 			if e.hold_left <= 0.0:
 				e.hold_left = 0.0
 				e.held_by = null
 			continue
-		var budget := float(e.def["speed"]) * DT
+		var budget := float(e.def["speed"]) * enemy_speed_factor * DT
 		if e.slow_left > 0.0:
 			budget *= e.slow_factor
 		# Ein schneller Gegner kann in einem Schritt mehrere Zellenmitten passieren.
@@ -747,7 +929,11 @@ func _step_enemies() -> void:
 				if e.target_cell == grid.heart:
 					_leak(e)
 					break
-				e.target_cell = grid.next_step(e.target_cell)
+				var next := grid.next_step(e.target_cell)
+				if next == e.target_cell:
+					# Kein Weg von hier zum Herz. Das darf im Spiel nicht vorkommen, soll aber nie hängen bleiben.
+					break
+				e.target_cell = next
 		if e.alive:
 			_update_remaining(e)
 	for spawn in _pending_spawns:
@@ -793,7 +979,7 @@ func _step_abilities(e: Enemy) -> void:
 			e.summon_timer = 0.0
 			for i in int(summon["count"]):
 				_pending_spawns.append({"type": summon["enemy"], "pos": e.pos, "target": e.target_cell})
-	if e.def.has("steal") and not e.has_stolen and ore > 0:
+	if e.def.has("steal") and not e.has_stolen and ore > 0 and not flags.get("no_steal", false):
 		var steal: Dictionary = e.def["steal"]
 		var r_sq := float(steal["radius"]) ** 2
 		for w in workers:
@@ -828,13 +1014,25 @@ func _update_remaining(e: Enemy) -> void:
 
 func _leak(e: Enemy) -> void:
 	e.alive = false
-	lives = maxi(0, lives - int(e.def["lives"]))
+	# Schutzrune: Der erste gewöhnliche Gegner jeder Welle am Herz kostet kein Leben. Bosse hält sie nicht auf.
+	if flags.get("ward", false) and not _ward_used and not _is_boss(e.type):
+		_ward_used = true
+		leak_warded.emit(e)
+	else:
+		var cost := int(e.def["lives"])
+		if endless_wave > 0 and _is_boss(e.type):
+			cost = mini(cost, int(rules["endless_boss_lives"]))
+		lives = maxi(0, lives - cost)
 	enemy_removed.emit(e, "leaked")
 
 
 func _step_towers() -> void:
+	# Zwergenbräu: In den ersten Sekunden jeder Welle laden alle Türme schneller nach.
+	var dt := DT
+	if wave_active and flags.has("brew") and _wave_time <= float(flags["brew"]["seconds"]):
+		dt *= float(flags["brew"]["factor"])
 	for t in towers:
-		t.cooldown_left = maxf(0.0, t.cooldown_left - DT)
+		t.cooldown_left = maxf(0.0, t.cooldown_left - dt)
 		var kind: String = t.stats.get("kind", "projectile")
 		if kind == "block":
 			_step_block(t)
@@ -941,6 +1139,7 @@ func _step_projectiles() -> void:
 
 func _apply_hit(p: Projectile, splash: float) -> void:
 	var damage := float(p.def["damage"])
+	var type: String = p.def.get("damage_type", "")
 	if splash > 0.0:
 		var r_sq := splash * splash
 		for e in enemies:
@@ -948,25 +1147,62 @@ func _apply_hit(p: Projectile, splash: float) -> void:
 			if e.alive and d_sq <= r_sq:
 				# falloff: Anteil des Schadens am Rand der Fläche. 1.0 bedeutet überall voller Schaden.
 				var share := lerpf(1.0, float(p.def.get("falloff", 1.0)), sqrt(d_sq) / splash)
-				_damage(e, damage * share, p.def.get("damage_type", ""))
+				_damage(e, damage * share, type)
 				_apply_effects(e, p.def)
+				_stun(e, float(p.def.get("stun", 0.0)))
 	elif p.target != null and p.target.alive:
-		_damage(p.target, damage, p.def.get("damage_type", ""))
-		_apply_effects(p.target, p.def)
+		var first := p.target
+		_damage(first, damage, type)
+		_apply_effects(first, p.def)
+		if float(p.def.get("pierce", 0.0)) > 0.0:
+			# Der Bolzen durchschlägt und trifft noch den nächsten Gegner in der Nähe.
+			var next: Enemy = null
+			var best := float(p.def["pierce"]) ** 2
+			for e in enemies:
+				if e != first and e.alive:
+					var d := e.pos.distance_squared_to(first.pos)
+					if d <= best:
+						best = d
+						next = e
+			if next != null:
+				_damage(next, damage, type)
+				_apply_effects(next, p.def)
+
+
+## Betäubt einen Gegner kurz. Danach ist er eine Weile dagegen gefeit, damit niemand dauerhaft festsitzt.
+func _stun(e: Enemy, seconds: float) -> void:
+	if seconds <= 0.0 or not e.alive or e.stun_immune_left > 0.0 or _is_boss(e.type):
+		return
+	e.hold_left = maxf(e.hold_left, seconds)
+	e.stun_immune_left = STUN_IMMUNITY
 
 
 ## Fügt Schaden zu. Gegner können einzelnen Schadensarten widerstehen (resist: Art → Faktor).
 func _damage(e: Enemy, amount: float, type := "") -> void:
 	if not e.alive:
 		return
-	if type != "" and e.def.has("resist"):
-		amount *= float(e.def["resist"].get(type, 1.0))
+	if type != "":
+		if e.def.has("resist"):
+			amount *= float(e.def["resist"].get(type, 1.0))
+		amount *= float(global_resist.get(type, 1.0))
+	if e.slow_left > 0.0:
+		amount *= float(flags.get("frostbite", 1.0))
+	if flags.has("last_stand") and lives < int(flags["last_stand"]["lives"]):
+		amount *= float(flags["last_stand"]["factor"])
 	e.hp -= amount
 	if e.hp <= 0.0:
 		e.hp = 0.0
 		e.alive = false
 		kills += 1
-		gold += roundi(float(e.def["bounty"]) * bounty_factor)
+		var bounty := float(e.def["bounty"]) * bounty_factor
+		if endless_wave > 0:
+			bounty *= 1.0 + float(rules["endless_bounty_growth"]) * endless_wave
+		gold += roundi(bounty)
+		if flags.get("wildfire", false) and e.burn_left > 0.0:
+			# Lauffeuer: Das Feuer springt auf Gegner in der Nähe über.
+			for other in enemies:
+				if other != e and other.alive and other.pos.distance_squared_to(e.pos) <= WILDFIRE_RADIUS * WILDFIRE_RADIUS:
+					_apply_effects(other, {"burn": {"dps": e.burn_dps, "duration": maxf(e.burn_left, 2.0)}})
 		enemy_removed.emit(e, "killed")
 
 
@@ -983,14 +1219,21 @@ func _check_end() -> void:
 		return
 	if wave_active and _spawn_queue.is_empty() and enemies.is_empty():
 		wave_active = false
-		gold += int(_level["waves"][wave_index].get("reward", 0))
+		if wave_index < wave_count:
+			gold += int(_level["waves"][wave_index].get("reward", 0))
+		else:
+			endless_cleared = endless_wave
+			gold += int(rules["endless_reward"]) + 5 * endless_wave
+		if flags.has("interest"):
+			# Zinsen: ein Anteil des Goldes, bis zu einer Obergrenze.
+			gold += mini(int(flags["interest"]["cap"]), floori(gold * float(flags["interest"]["rate"])))
 		wave_cleared.emit(wave_index)
-		if wave_index + 1 >= wave_count:
+		if wave_index + 1 >= wave_count and not endless:
 			status = Status.WON
 			finished.emit(true)
 		else:
 			next_wave_in = float(_level["wave_pause"])
-			var every := int(rules["boon_every"])
+			var every := int(rules["endless_boon_every"]) if endless else int(rules["boon_every"])
 			if every > 0 and (wave_index + 1) % every == 0:
 				_offer_boons()
 

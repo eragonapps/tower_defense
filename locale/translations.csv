@@ -160,3 +160,60 @@ TUTORIAL_1,Wähle unten links den Armbrustschützen. Er kostet 50 Gold.,Choose t
 TUTORIAL_2,Gut! Baue noch einen Turm oder starte unten rechts die erste Welle.,Good! Build another tower or start the first wave at the bottom right.
 TUTORIAL_3,"Besiegte Gegner bringen Gold. Baue damit weitere Türme. Die Steinschleuder trifft mehrere Gegner auf einmal.","Defeated enemies give gold. Use it to build more towers. The stone sling hits several enemies at once."
 TUTORIAL_4,"Tippe einen Turm an, um seine Reichweite zu sehen. Oben rechts kannst du das Tempo erhöhen. Halte das Herz der Mine!","Tap a tower to see its range. You can speed up the game at the top right. Hold the heart of the mine!"
+HUD_WAVE_ENDLESS,Welle %d · Endlos %d,Wave %d · Endless %d
+HUD_ENDLESS_START,Endlosmodus: Halte so lange wie möglich durch!,Endless mode: hold out as long as you can!
+HUD_BONUS_STAR,Endlos-Welle %d überstanden: Bonus-Stern für die Zwergenhalle!,Endless wave %d survived: bonus star for the Dwarven Hall!
+HUD_CURSE,Fluch,Curse
+END_CONTINUE,Weiterkämpfen (Endlos),Keep fighting (endless)
+END_ENDLESS,Endlos-Welle %d überstanden,Endless wave %d survived
+END_ENDLESS_NEW_RECORD,Neuer Rekord!,New record!
+END_ENDLESS_RECORD,Dein Rekord: %d,Your record: %d
+MENU_ENDLESS,Endlos %d · Bonus %d,Endless %d · bonus %d
+BOON_PIERCING_BOLTS,Splitterbolzen,Piercing Bolts
+BOON_PIERCING_BOLTS_DESC,Bolzen durchschlagen und treffen noch einen zweiten Gegner,Bolts pierce and hit a second enemy
+BOON_AFTERSHOCK,Nachbeben,Aftershock
+BOON_AFTERSHOCK_DESC,Steinschleuder und Bombenwerfer betäuben kurz,Stone sling and bomb thrower stun briefly
+BOON_WILDFIRE,Lauffeuer,Wildfire
+BOON_WILDFIRE_DESC,"Stirbt ein brennender Gegner, springt das Feuer über","When a burning enemy dies, the fire spreads"
+BOON_FROSTBITE,Frostbiss,Frostbite
+BOON_FROSTBITE_DESC,Verlangsamte Gegner erleiden 20 % mehr Schaden,Slowed enemies take 20 % more damage
+BOON_RUNE_ECHO,Runenecho,Rune Echo
+BOON_RUNE_ECHO_DESC,Runensteine pulsieren doppelt so oft,Rune stones pulse twice as often
+BOON_DWARVEN_BREW,Zwergenbräu,Dwarven Brew
+BOON_DWARVEN_BREW_DESC,Die ersten 15 Sekunden jeder Welle: alle Türme 25 % schneller,First 15 seconds of each wave: all towers 25 % faster
+BOON_INTEREST,Zinsen,Interest
+BOON_INTEREST_DESC,"Nach jeder Welle 5 % deines Goldes dazu, höchstens 50","After each wave gain 5 % of your gold, up to 50"
+BOON_TREASURE_HUNTERS,Schatzsucher,Treasure Hunters
+BOON_TREASURE_HUNTERS_DESC,Jedes gegrabene Feld bringt 15 Gold,Every dug tile gives 15 gold
+BOON_FEARLESS_MINERS,Furchtlose Hauer,Fearless Miners
+BOON_FEARLESS_MINERS_DESC,Arbeiter verstecken sich nicht mehr vor Gegnern,Workers no longer hide from enemies
+BOON_GUARD_DOGS,Wachhunde,Guard Dogs
+BOON_GUARD_DOGS_DESC,Diebe können kein Erz mehr stehlen,Thieves can no longer steal ore
+BOON_MASTER_SMITH,Meisterschmied,Master Smith
+BOON_MASTER_SMITH_DESC,Ausbau und Spezialisierung kosten 25 % weniger Erz,Upgrades and specializations cost 25 % less ore
+BOON_LAST_STAND,Letztes Aufgebot,Last Stand
+BOON_LAST_STAND_DESC,Unter 6 Leben: alle Türme 40 % mehr Schaden,Below 6 lives: all towers deal 40 % more damage
+BOON_WARD_RUNE,Schutzrune,Ward Rune
+BOON_WARD_RUNE_DESC,"Der erste Gegner jeder Welle am Herz kostet kein Leben","The first enemy of each wave at the heart costs no life"
+BOON_BLOOD_PACT,Blutpakt,Blood Pact
+BOON_BLOOD_PACT_DESC,"Alle Türme 35 % mehr Schaden. Preis: sofort 5 Leben","All towers deal 35 % more damage. Price: 5 lives at once"
+BOON_GREED,Gier,Greed
+BOON_GREED_DESC,"Doppeltes Kopfgeld. Preis: alle Gegner 15 % mehr Leben","Double bounty. Price: all enemies have 15 % more health"
+BOON_ALL_IN_ORE,Alles auf Erz,All In On Ore
+BOON_ALL_IN_ORE_DESC,"Sofort 80 Erz. Preis: 100 Gold","80 ore at once. Price: 100 gold"
+CURSE_SWIFT_DEAD,Eilende Tote,Swift Dead
+CURSE_SWIFT_DEAD_DESC,Alle Gegner sind 10 % schneller,All enemies are 10 % faster
+CURSE_THICK_BONES,Dicke Knochen,Thick Bones
+CURSE_THICK_BONES_DESC,Alle Gegner haben 15 % mehr Leben,All enemies have 15 % more health
+CURSE_FIREPROOF,Feuerfest,Fireproof
+CURSE_FIREPROOF_DESC,Feuer richtet 30 % weniger Schaden an,Fire deals 30 % less damage
+CURSE_BOLT_WARD,Bolzenbann,Bolt Ward
+CURSE_BOLT_WARD_DESC,Bolzen richten 20 % weniger Schaden an,Bolts deal 20 % less damage
+CURSE_STONE_SKIN,Steinhaut,Stone Skin
+CURSE_STONE_SKIN_DESC,Steine und Bomben richten 15 % weniger Schaden an,Stones and bombs deal 15 % less damage
+CURSE_EMPTY_POCKETS,Leere Taschen,Empty Pockets
+CURSE_EMPTY_POCKETS_DESC,Besiegte Gegner bringen 15 % weniger Gold,Defeated enemies give 15 % less gold
+CURSE_WEARY_MINERS,Müde Hauer,Weary Miners
+CURSE_WEARY_MINERS_DESC,Arbeiter bauen 30 % langsamer ab,Workers mine 30 % slower
+CURSE_DIM_LIGHT,Trübes Licht,Dim Light
+CURSE_DIM_LIGHT_DESC,Alle Türme haben 6 % weniger Reichweite,All towers have 6 % less range

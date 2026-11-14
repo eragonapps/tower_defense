@@ -6,7 +6,7 @@
 - Quellen und Lizenzen der Assets: [`ASSETS.md`](ASSETS.md)
 
 ## Stand
-Meilenstein 5: acht Levels, sechs Türme mit Ausbau und Spezialisierungen, sechs Gegner samt Boss, zufällige Gaben nach jeder zweiten Welle, Zwergenhalle mit dauerhaften Verbesserungen, Einführung, drei Schwierigkeitsgrade und zwei Grafikstufen.
+Acht Levels, sechs Türme mit Ausbau und Spezialisierungen, sechs Gegner samt Boss, 28 zufällige Gaben, Endlosmodus mit Flüchen und Rekorden, Zwergenhalle mit dauerhaften Verbesserungen, Einführung, drei Schwierigkeitsgrade und zwei Grafikstufen.
 
 ## Bedienung
 - Ein Finger ziehen: Karte verschieben. Zwei Finger: zoomen.
@@ -41,10 +41,14 @@ Screenshot einer Szene erzeugen (Szene, Ausgabedatei, Sprache):
 godot --resolution 2340x1080 --path . -s tools/screenshot.gd -- res://scenes/main_menu.tscn menu.png de
 ```
 
-Balancing-Bericht (Bots spielen jedes Level):
+Balancing-Berichte (Bots spielen jedes Level, im zweiten auch endlos):
 
 ```bash
 godot --headless -s tools/balance_report.gd
+```
+
+```bash
+godot --headless -s tools/endless_report.gd
 ```
 
 Die Spielwerte stehen im Ordner `data/`: Türme, Gegner, Regeln, Schwierigkeitsgrade, Gaben, Zwergenhalle und die Levels.

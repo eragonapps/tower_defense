@@ -13,6 +13,8 @@ var save_path := "user://progress.json"
 var _stars := {}
 ## Verbesserung der Zwergenhalle → gekaufte Stufe
 var _hall := {}
+## Level-Kennung → {Schwierigkeit → beste überstandene Endlos-Welle}
+var _endless := {}
 
 
 func _ready() -> void:
@@ -66,12 +68,50 @@ func record(level_id: String, difficulty: String, earned: int) -> bool:
 
 # --- Zwergenhalle ---------------------------------------------------------
 
-## Alle verdienten Sterne: je Level der beste Wert über alle Schwierigkeiten.
+## Alle verdienten Sterne: je Level der beste Wert über alle Schwierigkeiten, dazu die Bonus-Sterne aus dem Endlosmodus.
 func total_stars() -> int:
 	var total := 0
 	for id in _stars:
 		total += best_stars(id)
+	for id in _endless:
+		total += bonus_stars(id)
 	return total
+
+
+# --- Endlosmodus ----------------------------------------------------------
+
+func endless_record(level_id: String, difficulty: String) -> int:
+	return int(_endless.get(level_id, {}).get(difficulty, 0))
+
+
+func best_endless(level_id: String) -> int:
+	var best := 0
+	for d in _endless.get(level_id, {}):
+		best = maxi(best, int(_endless[level_id][d]))
+	return best
+
+
+## Bonus-Sterne eines Levels: einer für jede erreichte Marke, egal auf welcher Schwierigkeit.
+func bonus_stars(level_id: String) -> int:
+	var best := best_endless(level_id)
+	var count := 0
+	for mark in GameData.ENDLESS_STAR_WAVES:
+		if best >= mark:
+			count += 1
+	return count
+
+
+## Trägt eine überstandene Endlos-Welle ein. Liefert die Zahl der dadurch neu verdienten Bonus-Sterne.
+func record_endless(level_id: String, difficulty: String, waves: int) -> int:
+	if waves <= endless_record(level_id, difficulty):
+		return 0
+	var before := bonus_stars(level_id)
+	if not _endless.has(level_id):
+		_endless[level_id] = {}
+	_endless[level_id][difficulty] = waves
+	save_progress()
+	changed.emit()
+	return bonus_stars(level_id) - before
 
 
 func hall_level(id: String) -> int:
@@ -132,6 +172,7 @@ func hall_rules(hall: Dictionary, base: Dictionary) -> Dictionary:
 func reset() -> void:
 	_stars.clear()
 	_hall.clear()
+	_endless.clear()
 	save_progress()
 	changed.emit()
 
@@ -139,6 +180,7 @@ func reset() -> void:
 func load_progress() -> void:
 	_stars.clear()
 	_hall.clear()
+	_endless.clear()
 	if not FileAccess.file_exists(save_path):
 		return
 	var json := JSON.new()
@@ -149,6 +191,16 @@ func load_progress() -> void:
 	var levels: Variant = json.data.get("levels", {})
 	if not levels is Dictionary:
 		return
+	var endless: Variant = json.data.get("endless", {})
+	if endless is Dictionary:
+		for id in endless:
+			if not endless[id] is Dictionary:
+				continue
+			for d in endless[id]:
+				if (endless[id][d] is float or endless[id][d] is int) and endless[id][d] >= 1:
+					if not _endless.has(id):
+						_endless[id] = {}
+					_endless[id][d] = int(endless[id][d])
 	var hall: Variant = json.data.get("hall", {})
 	if hall is Dictionary:
 		for id in hall:
@@ -171,5 +223,5 @@ func save_progress() -> void:
 	if f == null:
 		push_warning("Spielstand konnte nicht gespeichert werden (Fehler %d)" % FileAccess.get_open_error())
 		return
-	f.store_string(JSON.stringify({"version": SAVE_VERSION, "levels": _stars, "hall": _hall}, "  "))
+	f.store_string(JSON.stringify({"version": SAVE_VERSION, "levels": _stars, "hall": _hall, "endless": _endless}, "  "))
 	f.close()

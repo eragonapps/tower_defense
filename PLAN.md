@@ -1,6 +1,6 @@
 # Plan: Durnhal: Wacht der Tiefe – 3D Tower Defense für Android
 
-Stand: 12.11.2026 · Status: **Meilensteine 0 bis 4 abgeschlossen, Meilenstein 5 umgesetzt und wartet auf den Gerätetest**
+Stand: 12.11.2026 · Status: **Meilensteine 0 bis 5 umgesetzt. Endlosmodus, Flüche und 16 weitere Gaben sind dazugekommen und warten auf den Gerätetest. Die Veröffentlichung (M6) ist zurückgestellt.**
 
 ## 1. Festgelegte Entscheidungen
 
@@ -206,6 +206,24 @@ Abweichungen und offene Punkte:
 - Die Halle ist nicht in das Balancing eingerechnet: Die Levels sind ohne Verbesserungen eingestellt und werden mit ihnen leichter.
 - Ein gezieltes Nachstellen der Schwierigkeit aus Spielerdaten steht noch aus. Bekannt ist: Nur Steinschleudern gewinnen laut Bot mehrere Levels.
 - Es gibt weiterhin keine Musik und keine eigene Schrift.
+
+### Nach M5 – Endlosmodus, Flüche, mehr Gaben (14.11.2026)
+**Stand:** umgesetzt, Gerätetest offen.
+
+- **Weiterkämpfen:** Nach dem Sieg kann man mit allem Gebauten endlos weiterspielen. Die Sterne für das Level sind dann schon gutgeschrieben.
+- **Endlos-Wellen:** Das Spiel nimmt eine der letzten drei festen Wellen als Vorlage und verteilt sie zufällig auf die Tore. Die Gegner werden je Welle 8 % zäher. Ihre Zahl wächst nur um 2 % je Welle und höchstens auf das 1,25-Fache. Sind 70 Gegner unterwegs, wartet der Nachschub.
+- **Bosse:** Jede fünfte Endlos-Welle bringt einen Knochenkönig, ab Welle 15 zwei. Im Endlosmodus hat er die halben Lebenspunkte und kostet 8 statt 20 Leben, damit ein einzelner Boss den Lauf nicht sofort beendet.
+- **Flüche:** Jede fünfte Endlos-Welle bringt einen dauerhaften Fluch aus acht möglichen (`data/curses.json`). Derselbe Fluch kann mehrfach kommen und wirkt dann stärker.
+- **Gaben im Endlosmodus:** Sie kommen weiter nach jeder zweiten Welle, auch in Level 1, und dürfen sich wiederholen. Reine Schalter wie die Schutzrune gibt es nur einmal.
+- **Rekord und Bonus-Sterne:** Der Rekord wird je Level und Schwierigkeit gespeichert und steht auf der Levelkachel. Für 10, 20 und 30 überstandene Endlos-Wellen gibt es je Level einmalig einen Bonus-Stern für die Zwergenhalle. Damit sind 48 statt 24 Sterne erreichbar, die Halle kostet 37.
+- **16 neue Gaben** (zusammen 28), darunter drei mit Preis: Blutpakt, Gier, Alles auf Erz.
+- **Werte als Daten:** Alle Wachstumswerte des Endlosmodus stehen als Regeln in `scripts/core/sim.gd` (`DEFAULT_RULES`) und lassen sich in `data/rules.json` überschreiben.
+
+Bekannte Schwächen:
+- Wie weit Menschen kommen, ist ungetestet. Bots überstehen je nach Level 9 bis 19 Endlos-Wellen. Ob die Marken 20 und 30 erreichbar sind, ist offen.
+- Mit den Bonus-Sternen lässt sich die Zwergenhalle komplett ausbauen. Die Levels sind ohne Halle eingestellt.
+- Welche Gaben zu stark oder zu schwach sind, ist nicht untersucht.
+- Im Endlosmodus gibt es keinen Knopf, um den Lauf freiwillig zu beenden. Man geht über „Menü" hinaus, der Rekord ist dann schon gespeichert.
 
 ### M6 – Veröffentlichung
 Signierter App-Bundle-Build, Store-Eintrag (Texte de/en, Bilder, Datenschutzerklärung, Alterseinstufung), geschlossener Test, Produktion.

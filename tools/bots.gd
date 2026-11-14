@@ -129,10 +129,15 @@ class MinerBot extends RefCounted:
 ## Er startet die erste Welle nach prepare_seconds und nutzt danach die normalen Pausen.
 ## Mit rush startet er jede Welle sofort, das ist deutlich härter als ein Mensch spielt.
 ## Angebotene Gaben nimmt er nach boon_pick: 0 immer die erste, sonst wechselnd.
-static func run(level: Dictionary, towers: Dictionary, enemies: Dictionary, bot: Object, max_seconds := 1800.0, rules := {}, rush := false, prepare_seconds := 5.0, boons := {}, rng_seed := 1) -> GameSim:
-	var sim := GameSim.new(level, towers, enemies, rules, boons, rng_seed)
+## Mit endless spielt er nach dem Sieg weiter, bis die Verteidigung bricht oder die Zeit um ist.
+static func run(level: Dictionary, towers: Dictionary, enemies: Dictionary, bot: Object, max_seconds := 1800.0, rules := {}, rush := false, prepare_seconds := 5.0, boons := {}, rng_seed := 1, endless := false, curses := {}) -> GameSim:
+	var sim := GameSim.new(level, towers, enemies, rules, boons, rng_seed, curses)
 	var max_ticks := int(max_seconds * GameSim.TICK_RATE)
-	while sim.status == GameSim.Status.RUNNING and sim.tick < max_ticks:
+	while sim.tick < max_ticks:
+		if sim.status == GameSim.Status.WON and endless and not sim.endless:
+			sim.continue_endless()
+		if sim.status != GameSim.Status.RUNNING:
+			break
 		if sim.tick % GameSim.TICK_RATE == 0:
 			if not sim.pending_boons.is_empty():
 				sim.choose_boon(sim.active_boons.size() % sim.pending_boons.size())

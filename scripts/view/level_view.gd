@@ -59,7 +59,7 @@ func _ready() -> void:
 		get_tree().change_scene_to_file.call_deferred(MENU_SCENE)
 		return
 	# Jeder Versuch bekommt einen eigenen Zufallswert: Die angebotenen Gaben sind jedes Mal andere.
-	sim = GameSim.new(level, towers, enemies, _rules(), GameData.load_boons(), run_seed if run_seed != 0 else randi())
+	sim = GameSim.new(level, towers, enemies, _rules(), GameData.load_boons(), run_seed if run_seed != 0 else randi(), GameData.load_curses())
 	_has_ore = not sim.grid.cells_of_type(MineGrid.Cell.ORE).is_empty() or sim.ore > 0
 	_low_graphics = Settings.graphics == "low"
 	# Niedrige Grafikstufe rechnet die 3D-Ansicht kleiner und vergrößert sie wieder. Die Oberfläche bleibt scharf.
@@ -90,6 +90,9 @@ func _ready() -> void:
 	sim.ore_stolen.connect(_on_ore_stolen)
 	sim.boons_offered.connect(_on_boons_offered)
 	sim.boon_chosen.connect(_on_boon_chosen)
+	sim.curse_added.connect(_on_curse_added)
+	sim.leak_warded.connect(_on_leak_warded)
+	sim.wave_cleared.connect(_on_wave_cleared)
 	sim.wave_started.connect(func(_i: int) -> void: Sfx.play("wave", -4.0))
 	hud.set_hint(level.get("hint_key", "HUD_HINT_BUILD"))
 	if level.get("tutorial", false) and not Settings.tutorial_done:
@@ -253,7 +256,7 @@ func _menu_for(cell: Vector2i) -> Dictionary:
 				for i in specs.size():
 					buttons.append({
 						"id": "spec:%d" % i,
-						"text": "%s\n%s" % [tr(specs[i]["name_key"]), tr("HUD_COST_ORE") % int(specs[i]["ore"])],
+						"text": "%s\n%s" % [tr(specs[i]["name_key"]), tr("HUD_COST_ORE") % sim.spec_cost(tower, i)],
 						"disabled": sim.can_specialize(cell, i) != GameSim.Result.OK,
 					})
 					info += "\n%s: %s" % [tr(specs[i]["name_key"]), tr(specs[i]["desc_key"])]
@@ -400,6 +403,10 @@ func _on_next_level() -> void:
 func _on_finished(won: bool) -> void:
 	select_cell(NO_CELL)
 	Sfx.play("victory" if won else "defeat")
+	if sim.endless:
+		# Das Level war schon gewonnen. Jetzt zählt nur, wie weit der Endloslauf kam.
+		hud.show_end(false, 0, false, 0, sim.endless_cleared, Progress.endless_record(level_id, Settings.difficulty))
+		return
 	var earned := Progress.stars_for(sim.lives, sim.max_lives) if won else 0
 	if won:
 		Progress.record(level_id, Settings.difficulty, earned)
@@ -685,6 +692,37 @@ func _on_boon_chosen(_id: String) -> void:
 		names.append(tr(sim.boon_def(id)["name_key"]))
 	hud.show_active_boons(names)
 	Sfx.play("upgrade")
+
+
+func _on_endless_requested() -> void:
+	if sim.continue_endless():
+		hud.hide_end()
+		hud.notify(tr("HUD_ENDLESS_START"), Hud.COLOR_GOLD)
+
+
+## Im Endlosmodus zählt jede überstandene Welle für den Rekord. Bestimmte Marken geben einen Bonus-Stern.
+func _on_wave_cleared(_index: int) -> void:
+	if not sim.endless or sim.endless_cleared <= 0:
+		return
+	var new_stars := Progress.record_endless(level_id, Settings.difficulty, sim.endless_cleared)
+	if new_stars > 0:
+		hud.notify(tr("HUD_BONUS_STAR") % sim.endless_cleared, Hud.COLOR_GOLD)
+		Sfx.play("victory")
+
+
+func _on_curse_added(id: String) -> void:
+	var def := sim.curse_def(id)
+	hud.notify("%s: %s\n%s" % [tr("HUD_CURSE"), tr(def["name_key"]), tr(def["desc_key"])], Hud.COLOR_LIVES)
+	var names := []
+	for c in sim.active_curses:
+		names.append(tr(sim.curse_def(c)["name_key"]))
+	hud.show_active_curses(names)
+	Sfx.play("defeat", -6.0)
+
+
+func _on_leak_warded(_enemy: GameSim.Enemy) -> void:
+	_show_ring(to_world(MineGrid.center(sim.grid.heart), 0.15), CELL * 1.2, Color(0.5, 0.85, 1.0, 0.7))
+	Sfx.play("rune", -6.0)
 
 
 func _on_ore_stolen(_thief: GameSim.Enemy, worker: GameSim.Worker, _amount: int) -> void:
@@ -1389,6 +1427,7 @@ func _build_hud() -> void:
 	hud.action_requested.connect(_on_action)
 	hud.next_requested.connect(_on_next_level)
 	hud.boon_requested.connect(func(index: int) -> void: sim.choose_boon(index))
+	hud.endless_requested.connect(_on_endless_requested)
 	hud.wave_requested.connect(func() -> void: sim.start_next_wave())
 	hud.speed_requested.connect(_on_speed_requested)
 	hud.pause_requested.connect(_on_pause_requested)
@@ -1413,6 +1452,20 @@ func demo(state: String) -> void:
 			sim.upgrade_tower(slots[i])
 	if state == "build":
 		select_cell(slots[9])
+		return
+	if state == "won" or state == "endless":
+		sim.wave_index = sim.wave_count - 1
+		sim.status = GameSim.Status.WON
+		sim.finished.emit(true)
+		if state == "endless":
+			hud.endless_requested.emit()
+			sim.endless_wave = 4
+			sim.start_next_wave()
+			for i in 240:
+				sim.step()
+			sim.active_boons.assign(["sharp_bolts", "greed"])
+			_on_boon_chosen("greed")
+			_sync_views(1.0)
 		return
 	if state == "boons":
 		sim.pending_boons.assign(["sharp_bolts", "master_miners", "ancestors_guard"])

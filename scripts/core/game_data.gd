@@ -15,10 +15,13 @@ const LEVEL_ORDER: Array[String] = [
 
 const TOWER_FIELDS := ["name_key", "cost", "range", "cooldown", "damage", "splash", "projectile_speed", "color"]
 ## Zusatzwirkungen eines Turms: kind (projectile oder aura), slow {factor, duration}, burn {dps, duration}.
-const TOWER_OPTIONAL := ["kind", "slow", "burn", "damage_type", "capacity", "hold_time", "falloff"]
+const TOWER_OPTIONAL := ["kind", "slow", "burn", "damage_type", "capacity", "hold_time", "falloff", "pierce", "stun"]
 const BOONS_PATH := "res://data/boons.json"
 const HALL_PATH := "res://data/hall.json"
-const BOON_TYPES := ["stat", "gold", "ore", "heal", "bounty", "rule"]
+const CURSES_PATH := "res://data/curses.json"
+const BOON_TYPES := ["stat", "tower_flag", "flag", "gold", "ore", "heal", "lives", "bounty", "enemy_hp", "enemy_speed", "resist", "rule"]
+## Nach so vielen überstandenen Endlos-Wellen gibt es je Level einmalig einen Bonus-Stern.
+const ENDLESS_STAR_WAVES: Array[int] = [10, 20, 30]
 const DAMAGE_TYPES := ["pierce", "blunt", "fire", "magic"]
 const ENEMY_FIELDS := ["name_key", "hp", "speed", "bounty", "lives", "color", "size"]
 
@@ -82,25 +85,36 @@ static func load_boons() -> Dictionary:
 	return d if d is Dictionary else {}
 
 
-## Prüft die Gaben. Leer bedeutet: in Ordnung.
+static func load_curses() -> Dictionary:
+	var d: Variant = load_json(CURSES_PATH)
+	return d if d is Dictionary else {}
+
+
+## Prüft Gaben oder Flüche. Leer bedeutet: in Ordnung.
 static func validate_boons(boons: Dictionary, towers: Dictionary) -> Array[String]:
 	var errors: Array[String] = []
 	for id in boons:
 		var b: Dictionary = boons[id]
-		for f in ["name_key", "desc_key", "effect"]:
+		for f in ["name_key", "desc_key"]:
 			if not b.has(f):
 				errors.append("Gabe %s: %s fehlt" % [id, f])
-		var effect: Dictionary = b.get("effect", {})
-		if effect.get("type", "") not in BOON_TYPES:
-			errors.append("Gabe %s: unbekannte Art %s" % [id, effect.get("type", "")])
-		if effect.get("type", "") == "stat":
-			for t in effect.get("towers", []):
-				if t != "all" and not towers.has(t):
-					errors.append("Gabe %s: unbekannter Turm %s" % [id, t])
-			if effect.get("stat", "") not in ["damage", "range", "cooldown", "burn", "splash"]:
+		if not b.has("effect") and not b.has("effects"):
+			errors.append("Gabe %s: effect fehlt" % id)
+			continue
+		for effect in GameSim._effects_of(b):
+			var type: String = effect.get("type", "")
+			if type not in BOON_TYPES:
+				errors.append("Gabe %s: unbekannte Art %s" % [id, type])
+			if type in ["stat", "tower_flag"]:
+				for t in effect.get("towers", []):
+					if t != "all" and not towers.has(t):
+						errors.append("Gabe %s: unbekannter Turm %s" % [id, t])
+			if type == "stat" and effect.get("stat", "") not in ["damage", "range", "cooldown", "burn", "splash"]:
 				errors.append("Gabe %s: unbekannter Wert %s" % [id, effect.get("stat", "")])
-		if effect.get("type", "") == "rule" and not GameSim.DEFAULT_RULES.has(effect.get("key", "")):
-			errors.append("Gabe %s: unbekannte Regel %s" % [id, effect.get("key", "")])
+			if type == "rule" and not GameSim.DEFAULT_RULES.has(effect.get("key", "")):
+				errors.append("Gabe %s: unbekannte Regel %s" % [id, effect.get("key", "")])
+			if type == "resist" and effect.get("damage_type", "") not in DAMAGE_TYPES:
+				errors.append("Gabe %s: unbekannte Schadensart %s" % [id, effect.get("damage_type", "")])
 	return errors
 
 
@@ -116,7 +130,7 @@ static func rules_for(difficulty: String) -> Dictionary:
 
 ## Erzeugt die Simulation für ein Level mit allen Daten aus data/.
 static func create_sim(level_id: String, difficulty := "normal", rng_seed := 1) -> GameSim:
-	return GameSim.new(load_level(level_id), load_towers(), load_enemies(), rules_for(difficulty), load_boons(), rng_seed)
+	return GameSim.new(load_level(level_id), load_towers(), load_enemies(), rules_for(difficulty), load_boons(), rng_seed, load_curses())
 
 
 static func load_level(id: String) -> Dictionary:

@@ -1,0 +1,74 @@
+{
+  "swift_dead": {
+    "name_key": "CURSE_SWIFT_DEAD",
+    "desc_key": "CURSE_SWIFT_DEAD_DESC",
+    "effect": {
+      "type": "enemy_speed",
+      "factor": 1.1
+    }
+  },
+  "thick_bones": {
+    "name_key": "CURSE_THICK_BONES",
+    "desc_key": "CURSE_THICK_BONES_DESC",
+    "effect": {
+      "type": "enemy_hp",
+      "factor": 1.15
+    }
+  },
+  "fireproof": {
+    "name_key": "CURSE_FIREPROOF",
+    "desc_key": "CURSE_FIREPROOF_DESC",
+    "effect": {
+      "type": "resist",
+      "damage_type": "fire",
+      "factor": 0.7
+    }
+  },
+  "bolt_ward": {
+    "name_key": "CURSE_BOLT_WARD",
+    "desc_key": "CURSE_BOLT_WARD_DESC",
+    "effect": {
+      "type": "resist",
+      "damage_type": "pierce",
+      "factor": 0.8
+    }
+  },
+  "stone_skin": {
+    "name_key": "CURSE_STONE_SKIN",
+    "desc_key": "CURSE_STONE_SKIN_DESC",
+    "effect": {
+      "type": "resist",
+      "damage_type": "blunt",
+      "factor": 0.85
+    }
+  },
+  "empty_pockets": {
+    "name_key": "CURSE_EMPTY_POCKETS",
+    "desc_key": "CURSE_EMPTY_POCKETS_DESC",
+    "effect": {
+      "type": "bounty",
+      "factor": 0.85
+    }
+  },
+  "weary_miners": {
+    "name_key": "CURSE_WEARY_MINERS",
+    "desc_key": "CURSE_WEARY_MINERS_DESC",
+    "effect": {
+      "type": "rule",
+      "key": "ore_interval",
+      "factor": 1.3
+    }
+  },
+  "dim_light": {
+    "name_key": "CURSE_DIM_LIGHT",
+    "desc_key": "CURSE_DIM_LIGHT_DESC",
+    "effect": {
+      "type": "stat",
+      "towers": [
+        "all"
+      ],
+      "stat": "range",
+      "factor": 0.94
+    }
+  }
+}

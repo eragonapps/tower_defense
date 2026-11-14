@@ -13,6 +13,8 @@ signal retry_requested
 signal next_requested
 ## Eine der angebotenen Gaben wurde gewählt.
 signal boon_requested(index: int)
+## Nach dem Sieg im Endlosmodus weiterkämpfen.
+signal endless_requested
 signal menu_requested
 
 const BUTTON_HEIGHT := 76.0
@@ -42,6 +44,10 @@ var _end_title: Label
 var _end_text: Label
 var _end_next: Button
 var _end_stars: StarRow
+var _end_continue: Button
+var _active_curses: Label
+var _notice: Label
+var _notice_left := 0.0
 var _hint_key := "HUD_HINT_BUILD"
 var _fps: Label
 var _boons: Control
@@ -64,7 +70,10 @@ func show_state(sim: GameSim, paused: bool, speed: float, show_ore: bool) -> voi
 	_gold.text = tr("HUD_GOLD") % sim.gold
 	_ore.visible = show_ore
 	_ore.text = tr("HUD_ORE") % sim.ore
-	_wave.text = tr("HUD_WAVE") % [maxi(sim.wave_index + 1, 0), sim.wave_count]
+	if sim.endless:
+		_wave.text = tr("HUD_WAVE_ENDLESS") % [sim.wave_number(), maxi(sim.endless_wave, 1)]
+	else:
+		_wave.text = tr("HUD_WAVE") % [maxi(sim.wave_index + 1, 0), sim.wave_count]
 	_pause.text = tr("HUD_RESUME") if paused else tr("HUD_PAUSE")
 	_speed.text = "%d×" % int(speed)
 	_wave_button.visible = sim.can_start_wave()
@@ -111,8 +120,19 @@ func hide_context() -> void:
 	_context.visible = false
 
 
-func show_end(won: bool, lives: int, has_next: bool, stars := 0) -> void:
+## endless_waves: bei einem Ende im Endlosmodus die Zahl der überstandenen Endlos-Wellen, sonst -1.
+func show_end(won: bool, lives: int, has_next: bool, stars := 0, endless_waves := -1, record := 0) -> void:
 	hide_context()
+	_end_continue.visible = won
+	if endless_waves >= 0:
+		# Ein Ende im Endlosmodus ist keine Niederlage: Das Level ist längst gewonnen.
+		_end_stars.visible = false
+		_end_next.visible = false
+		_end_title.text = tr("END_ENDLESS") % endless_waves
+		_end_title.add_theme_color_override("font_color", COLOR_GOLD)
+		_end_text.text = tr("END_ENDLESS_NEW_RECORD") if endless_waves >= record and endless_waves > 0 else tr("END_ENDLESS_RECORD") % record
+		_end.visible = true
+		return
 	_end_stars.visible = won
 	_end_stars.earned = stars
 	_end_next.visible = won and has_next
@@ -173,6 +193,35 @@ func tip_text() -> String:
 func show_active_boons(names: Array) -> void:
 	_active_boons.text = " · ".join(names)
 	_active_boons.visible = not names.is_empty()
+
+
+func hide_end() -> void:
+	_end.visible = false
+
+
+## Zeigt für einige Sekunden eine Meldung in der Bildmitte, zum Beispiel einen neuen Fluch.
+func notify(text: String, color := COLOR_TEXT) -> void:
+	_notice.text = text
+	_notice.add_theme_color_override("font_color", color)
+	_notice.visible = true
+	_notice_left = 4.5
+
+
+func notice_text() -> String:
+	return _notice.text if _notice.visible else ""
+
+
+func _process(delta: float) -> void:
+	if _notice_left > 0.0:
+		_notice_left -= delta
+		if _notice_left <= 0.0:
+			_notice.visible = false
+
+
+## Zeigt die Namen der wirkenden Flüche klein unter den Gaben.
+func show_active_curses(names: Array) -> void:
+	_active_curses.text = " · ".join(names)
+	_active_curses.visible = not names.is_empty()
 
 
 func is_end_visible() -> bool:
@@ -286,6 +335,22 @@ func _build() -> void:
 	area.add_child(_active_boons)
 	_active_boons.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
 	_active_boons.position = Vector2(6, 84)
+	_active_curses = _label("", COLOR_LIVES)
+	_active_curses.add_theme_font_size_override("font_size", 17)
+	_active_curses.visible = false
+	area.add_child(_active_curses)
+	_active_curses.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	_active_curses.position = Vector2(6, 108)
+	_notice = _label("", COLOR_TEXT)
+	_notice.add_theme_font_size_override("font_size", 30)
+	_notice.add_theme_color_override("font_outline_color", Color(0, 0, 0))
+	_notice.add_theme_constant_override("outline_size", 8)
+	_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_notice.visible = false
+	area.add_child(_notice)
+	_notice.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+	_notice.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_notice.position.y = 200
 
 	_tip = _panel()
 	_tip.visible = false
@@ -352,13 +417,15 @@ func _build_end_screen() -> void:
 	_end_text = _label("", COLOR_TEXT)
 	_end_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_end_stars = StarRow.new(0, 56.0)
+	_end_continue = _button(tr("END_CONTINUE"))
+	_end_continue.pressed.connect(endless_requested.emit)
 	_end_next = _button(tr("END_NEXT"))
 	_end_next.pressed.connect(next_requested.emit)
 	var retry := _button(tr("END_RETRY"))
 	retry.pressed.connect(retry_requested.emit)
 	var menu := _button(tr("END_MENU"))
 	menu.pressed.connect(menu_requested.emit)
-	for c in [_end_title, _end_stars, _end_text, _end_next, retry, menu]:
+	for c in [_end_title, _end_stars, _end_text, _end_continue, _end_next, retry, menu]:
 		box.add_child(c)
 
 

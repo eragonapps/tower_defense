@@ -6,7 +6,7 @@ const LEVEL_SCENE := "res://scenes/level.tscn"
 const COLOR_BG := Color(0.078, 0.067, 0.059)
 const COLOR_TITLE := Color(0.91, 0.66, 0.31)
 const COLOR_TEXT := Color(0.72, 0.68, 0.62)
-const TILE_SIZE := Vector2(190, 118)
+const TILE_SIZE := Vector2(190, 132)
 
 var _tiles: GridContainer
 var _subtitle: Label
@@ -263,6 +263,16 @@ func _make_tile(number: int, id: String) -> Button:
 	var stars := StarRow.new(Progress.stars(id, Settings.difficulty), 22.0)
 	stars.visible = unlocked
 	box.add_child(stars)
+	# Rekord im Endlosmodus und die dort verdienten Bonus-Sterne.
+	var record := Progress.endless_record(id, Settings.difficulty)
+	if unlocked and (record > 0 or Progress.bonus_stars(id) > 0):
+		var endless := Label.new()
+		endless.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
+		endless.text = tr("MENU_ENDLESS") % [record, Progress.bonus_stars(id)]
+		endless.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		endless.add_theme_font_size_override("font_size", 14)
+		endless.add_theme_color_override("font_color", Color(0.45, 0.8, 0.95))
+		box.add_child(endless)
 	return b
 
 
