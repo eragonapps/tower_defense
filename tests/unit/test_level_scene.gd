@@ -227,7 +227,10 @@ func test_blocking_fill_is_explained_and_disabled() -> void:
 
 
 func test_level_two_can_be_won_through_the_interface() -> void:
+	# Fester Lauf: die Gaben sind sonst Zufall, und der einfache Bot gewinnt nicht jeden.
+	LevelView.run_seed = 1
 	var l := _level_02()
+	LevelView.run_seed = 0
 	# Seit die Ratten Bolzen zur Hälfte abwehren, braucht Level 2 auch den Runenstein.
 	var bot := Bots.MinerBot.new(["crossbow", "sling", "crossbow", "runestone"], [Vector2i(4, 3), Vector2i(4, 2), Vector2i(12, 3)])
 	var guard := 0
