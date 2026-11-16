@@ -74,5 +74,18 @@
       "count": 2,
       "interval": 6.0
     }
+  },
+  "wraith": {
+    "name_key": "ENEMY_WRAITH",
+    "hp": 160,
+    "speed": 1.25,
+    "bounty": 14,
+    "lives": 1,
+    "color": "#9fd8ff",
+    "size": 0.9,
+    "resist": {
+      "blunt": 0.25,
+      "fire": 0.25
+    }
   }
 }

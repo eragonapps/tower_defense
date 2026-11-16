@@ -66,15 +66,16 @@
         {"enemy": "skeleton_warrior", "count": 24, "interval": 0.6},
         {"enemy": "skeleton_minion", "count": 40, "interval": 0.3, "entrance": 1},
         {"enemy": "skeleton_mage", "count": 4, "interval": 3.0, "delay": 4.0},
-        {"enemy": "skeleton_guard", "count": 8, "interval": 1.5, "delay": 8.0, "entrance": 1}
+        {"enemy": "wraith", "count": 6, "interval": 1.2, "delay": 8.0, "entrance": 1}
       ]
     },
     {
       "reward": 0,
       "groups": [
         {"enemy": "skeleton_guard", "count": 16, "interval": 1.0},
-        {"enemy": "skeleton_guard", "count": 16, "interval": 1.0, "entrance": 1},
+        {"enemy": "skeleton_guard", "count": 12, "interval": 1.0, "entrance": 1},
         {"enemy": "skeleton_mage", "count": 5, "interval": 2.5, "delay": 3.0},
+        {"enemy": "wraith", "count": 10, "interval": 0.9, "delay": 6.0},
         {"enemy": "skeleton_rogue", "count": 24, "interval": 0.35, "delay": 8.0, "entrance": 1}
       ]
     }

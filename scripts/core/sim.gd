@@ -11,6 +11,10 @@ signal tower_built(tower: Tower)
 signal tower_sold(tower: Tower)
 signal tower_upgraded(tower: Tower)
 signal tower_specialized(tower: Tower)
+signal tower_refined(tower: Tower)
+signal tower_moved(tower: Tower, from: Vector2i)
+## Im Endlosmodus ist an dieser Randzelle ein neues Tor entstanden.
+signal breached(entrance: Vector2i)
 signal dig_started(job: DigJob)
 ## Eine Zelle wurde zu Stollen oder zu Fels. Die Wege sind schon neu berechnet.
 signal grid_changed(cell: Vector2i)
@@ -54,6 +58,10 @@ enum Result {
 	ALREADY_SPECIALIZED,
 	## Die Zelle grenzt an keinen Stollen.
 	NOT_CONNECTED,
+	## Diesen Umbau gibt es nur im Endlosmodus.
+	ONLY_ENDLESS,
+	## Erst spezialisierte Türme lassen sich veredeln.
+	NOT_SPECIALIZED,
 }
 
 const TICK_RATE := 60
@@ -61,6 +69,8 @@ const DT := 1.0 / TICK_RATE
 ## So nah am Ziel gilt ein Geschoss als angekommen.
 const HIT_DISTANCE := 0.05
 const STUN_IMMUNITY := 2.5
+## Worauf ein Turm schießt: vorderster, stärkster oder schwächster Gegner in Reichweite.
+const TARGET_MODES: Array[String] = ["first", "strong", "weak"]
 const ENDLESS_MAX_ENEMIES := 70
 const WILDFIRE_RADIUS := 1.0
 ## Regeln, die für alle Levels gelten. data/rules.json und das Level können sie überschreiben.
@@ -103,6 +113,20 @@ const DEFAULT_RULES := {
 	"endless_boon_every": 2,
 	"endless_curse_every": 5,
 	"endless_reward": 40,
+	"endless_wraith_from": 6,
+	"endless_breach_every": 10,
+	## Der Weg von einem neuen Tor zum Herz ist mindestens so lang.
+	"breach_min_path": 8,
+	## Veredeln: Preis in Gold und Wachstum je Kauf, Gewinn je Kauf.
+	"refine_base": 150,
+	"refine_growth": 1.25,
+	"refine_gain": 1.04,
+	"move_cost": 60,
+	## Neue Bauplätze im Endlosmodus: Preis des ersten, Wachstum je weiterem, Obergrenze aller Bauplätze.
+	"slot_gold": 300,
+	"slot_ore": 40,
+	"slot_growth": 1.5,
+	"max_slots": 30,
 }
 
 
@@ -142,6 +166,9 @@ class Tower extends RefCounted:
 	var cooldown_left := 0.0
 	var shots := 0
 	var level := 1
+	var target_mode := "first"
+	## Wie oft der Turm veredelt wurde.
+	var refine := 0
 	## Das beim Bau bezahlte Gold. Grundlage für die Erstattung beim Verkauf.
 	var paid := 0
 	## Kennung der gewählten Spezialisierung, leer ohne.
@@ -196,6 +223,7 @@ var projectiles: Array[Projectile] = []
 var dig_jobs: Array[DigJob] = []
 var workers: Array[Worker] = []
 var digs_started := 0
+var slots_created := 0
 var rules := {}
 ## Gewählte Gaben in der Reihenfolge der Wahl, und die gerade angebotenen.
 var active_boons: Array[String] = []
@@ -350,6 +378,17 @@ func _refresh_stats(t: Tower) -> void:
 			for key in spec:
 				if key not in ["id", "name_key", "desc_key", "ore"]:
 					stats[key] = spec[key]
+	if t.refine > 0:
+		# Veredelung: mehr Schaden. Türme ohne Schaden gewinnen stattdessen etwas Reichweite.
+		var gain := pow(float(rules["refine_gain"]), t.refine)
+		if float(stats["damage"]) > 0.0 or stats.has("burn"):
+			stats["damage"] = float(stats["damage"]) * gain
+			if stats.has("burn"):
+				var burn: Dictionary = stats["burn"].duplicate()
+				burn["dps"] = float(burn["dps"]) * gain
+				stats["burn"] = burn
+		else:
+			stats["range"] = float(stats["range"]) * pow(1.0 + (float(rules["refine_gain"]) - 1.0) * 0.5, t.refine)
 	t.stats = _with_boons(t.type, stats)
 
 
@@ -520,6 +559,11 @@ func _make_endless_groups() -> Array:
 		copy["count"] = maxi(1, roundi(int(g["count"]) * scale))
 		copy["entrance"] = _rng.randi_range(0, grid.entrances.size() - 1)
 		groups.append(copy)
+	# Schemen: Flächenschaden prallt an ihnen ab. Sie zwingen zu Türmen, die einzelne Ziele treffen.
+	var wraith_from := int(rules["endless_wraith_from"])
+	if wraith_from > 0 and endless_wave >= wraith_from and _enemy_defs.has("wraith"):
+		groups.append({"enemy": "wraith", "count": mini(14, 4 + endless_wave / 3), "interval": 0.9, "delay": 3.0,
+			"entrance": _rng.randi_range(0, grid.entrances.size() - 1)})
 	var boss_every := int(rules["endless_boss_every"])
 	if boss_every > 0 and endless_wave % boss_every == 0:
 		var boss := _boss_type()
@@ -610,6 +654,217 @@ func upgrade_tower(cell: Vector2i) -> Result:
 	_refresh_stats(t)
 	tower_upgraded.emit(t)
 	return result
+
+
+# --- Zielwahl, Veredeln, Versetzen ----------------------------------------
+
+## Stellt ein, worauf ein Turm schießt. Türme, die auf alles in Reichweite wirken, haben keine Zielwahl.
+func set_target_mode(cell: Vector2i, mode: String) -> Result:
+	var t: Tower = _towers_by_cell.get(cell)
+	if t == null or mode not in TARGET_MODES or t.stats.get("kind", "projectile") != "projectile":
+		return Result.NOT_ALLOWED
+	t.target_mode = mode
+	return Result.OK
+
+
+## Goldpreis der nächsten Veredelung.
+func refine_cost(tower: Tower) -> int:
+	return roundi(float(rules["refine_base"]) * pow(float(rules["refine_growth"]), tower.refine))
+
+
+func can_refine(cell: Vector2i) -> Result:
+	if status != Status.RUNNING:
+		return Result.GAME_OVER
+	var t: Tower = _towers_by_cell.get(cell)
+	if t == null:
+		return Result.NOT_ALLOWED
+	if t.spec == "":
+		return Result.NOT_SPECIALIZED
+	if gold < refine_cost(t):
+		return Result.NOT_ENOUGH_GOLD
+	return Result.OK
+
+
+## Verbessert einen voll ausgebauten Turm weiter. Beliebig oft, jedes Mal teurer.
+func refine_tower(cell: Vector2i) -> Result:
+	var result := can_refine(cell)
+	if result != Result.OK:
+		return result
+	var t: Tower = _towers_by_cell[cell]
+	gold -= refine_cost(t)
+	t.refine += 1
+	_refresh_stats(t)
+	tower_refined.emit(t)
+	return result
+
+
+func can_move_tower(from: Vector2i, to: Vector2i) -> Result:
+	if status != Status.RUNNING:
+		return Result.GAME_OVER
+	if not _towers_by_cell.has(from) or grid.get_cell(to) != MineGrid.Cell.BUILD:
+		return Result.NOT_ALLOWED
+	if _towers_by_cell.has(to):
+		return Result.OCCUPIED
+	if gold < int(rules["move_cost"]):
+		return Result.NOT_ENOUGH_GOLD
+	return Result.OK
+
+
+## Versetzt einen Turm auf einen freien Bauplatz. Er behält alles, was er hat.
+func move_tower(from: Vector2i, to: Vector2i) -> Result:
+	var result := can_move_tower(from, to)
+	if result != Result.OK:
+		return result
+	var t: Tower = _towers_by_cell[from]
+	gold -= int(rules["move_cost"])
+	for e in enemies:
+		if e.held_by == t:
+			e.held_by = null
+			e.hold_left = 0.0
+	t.held_ids.clear()
+	_towers_by_cell.erase(from)
+	_towers_by_cell[to] = t
+	t.cell = to
+	t.pos = MineGrid.center(to)
+	tower_moved.emit(t, from)
+	return result
+
+
+# --- Bauplätze im Endlosmodus ---------------------------------------------
+
+## Preis des nächsten neuen Bauplatzes als [Gold, Erz].
+func slot_cost() -> Array[int]:
+	var factor := pow(float(rules["slot_growth"]), slots_created)
+	return [roundi(float(rules["slot_gold"]) * factor), roundi(float(rules["slot_ore"]) * factor)]
+
+
+func can_create_slot(cell: Vector2i) -> Result:
+	if status != Status.RUNNING:
+		return Result.GAME_OVER
+	if grid.get_cell(cell) != MineGrid.Cell.ROCK:
+		return Result.NOT_ALLOWED
+	if not endless:
+		return Result.ONLY_ENDLESS
+	if dig_job_at(cell) != null:
+		return Result.OCCUPIED
+	if grid.cells_of_type(MineGrid.Cell.BUILD).size() >= int(rules["max_slots"]):
+		return Result.LIMIT_REACHED
+	var cost := slot_cost()
+	if gold < cost[0]:
+		return Result.NOT_ENOUGH_GOLD
+	if ore < cost[1]:
+		return Result.NOT_ENOUGH_ORE
+	return Result.OK
+
+
+## Macht aus Fels einen neuen Bauplatz. Sehr teuer, und jeder weitere kostet mehr.
+func create_slot(cell: Vector2i) -> Result:
+	var result := can_create_slot(cell)
+	if result != Result.OK:
+		return result
+	var cost := slot_cost()
+	gold -= cost[0]
+	ore -= cost[1]
+	slots_created += 1
+	grid.set_cell(cell, MineGrid.Cell.BUILD)
+	grid_changed.emit(cell)
+	return result
+
+
+func can_remove_slot(cell: Vector2i) -> Result:
+	if status != Status.RUNNING:
+		return Result.GAME_OVER
+	if grid.get_cell(cell) != MineGrid.Cell.BUILD:
+		return Result.NOT_ALLOWED
+	if not endless:
+		return Result.ONLY_ENDLESS
+	if _towers_by_cell.has(cell):
+		return Result.OCCUPIED
+	return Result.OK
+
+
+## Macht einen leeren Bauplatz wieder zu Fels. Dort lässt sich dann graben.
+func remove_slot(cell: Vector2i) -> Result:
+	var result := can_remove_slot(cell)
+	if result != Result.OK:
+		return result
+	grid.set_cell(cell, MineGrid.Cell.ROCK)
+	grid_changed.emit(cell)
+	return result
+
+
+# --- Durchbruch -----------------------------------------------------------
+
+## Sucht die Randzellen, an denen ein neues Tor entstehen kann, samt dem Durchstich durch den Fels.
+## Liefert eine Liste aus {"entrance": Zelle, "tunnel": [Zellen]}.
+func breach_candidates() -> Array:
+	var out := []
+	var border: Array[Vector2i] = []
+	for x in range(1, grid.width - 1):
+		border.append(Vector2i(x, 0))
+		border.append(Vector2i(x, grid.height - 1))
+	for y in range(1, grid.height - 1):
+		border.append(Vector2i(0, y))
+		border.append(Vector2i(grid.width - 1, y))
+	for edge in border:
+		if grid.get_cell(edge) != MineGrid.Cell.GRANITE:
+			continue
+		# Breitensuche vom Rand durch Fels bis zur ersten Zelle, die einen Stollen berührt.
+		var came := {edge: edge}
+		var queue: Array[Vector2i] = [edge]
+		var depth := {edge: 0}
+		var goal := Vector2i(-1, -1)
+		while not queue.is_empty() and goal.x < 0:
+			var c: Vector2i = queue.pop_front()
+			if c != edge and grid.touches_walkable(c):
+				goal = c
+				break
+			if int(depth[c]) >= 6:
+				continue
+			for d in MineGrid.DIRS:
+				var n: Vector2i = c + d
+				if came.has(n) or grid.get_cell(n) != MineGrid.Cell.ROCK or n.x <= 0 or n.y <= 0 or n.x >= grid.width - 1 or n.y >= grid.height - 1:
+					continue
+				came[n] = c
+				depth[n] = int(depth[c]) + 1
+				queue.append(n)
+		if goal.x < 0:
+			continue
+		var tunnel: Array[Vector2i] = []
+		var cur := goal
+		while cur != edge:
+			tunnel.append(cur)
+			cur = came[cur]
+		# Weglänge vom neuen Tor zum Herz: Durchstich plus Restweg ab der Anschlusszelle.
+		var join := 9999
+		for d in MineGrid.DIRS:
+			var dist := grid.distance(goal + d)
+			if dist != MineGrid.UNREACHABLE:
+				join = mini(join, dist)
+		if tunnel.size() + join + 1 >= int(rules["breach_min_path"]):
+			out.append({"entrance": edge, "tunnel": tunnel})
+	return out
+
+
+## Bricht an einer zufälligen Stelle ein neues Tor in die Mine. Ohne geeignete Stelle passiert nichts.
+func _breach() -> bool:
+	var candidates := breach_candidates()
+	if candidates.is_empty():
+		return false
+	var pick: Dictionary = candidates[_rng.randi_range(0, candidates.size() - 1)]
+	for cell in pick["tunnel"]:
+		var job := dig_job_at(cell)
+		if job != null:
+			# Dort wurde gerade gegraben: Auftrag streichen, Gold zurück.
+			dig_jobs.erase(job)
+			gold += int(rules["dig_cost"])
+		grid.set_cell(cell, MineGrid.Cell.TUNNEL)
+	grid.add_entrance(pick["entrance"])
+	for e in enemies:
+		if e.alive:
+			_update_remaining(e)
+	breached.emit(pick["entrance"])
+	return true
 
 
 # --- Spezialisierung ------------------------------------------------------
@@ -786,6 +1041,9 @@ func start_next_wave() -> bool:
 		var curse_every := int(rules["endless_curse_every"])
 		if curse_every > 0 and endless_wave % curse_every == 0:
 			_add_curse()
+		var breach_every := int(rules["endless_breach_every"])
+		if breach_every > 0 and endless_wave % breach_every == 0:
+			_breach()
 		groups = _make_endless_groups()
 	for g in groups:
 		for i in int(g["count"]):
@@ -1103,8 +1361,8 @@ func _pulse_aura(t: Tower) -> void:
 		aura_pulsed.emit(t)
 
 
-## Zielwahl "am weitesten vorn": der Gegner in Reichweite mit dem kürzesten Restweg.
-## Türme, die in Brand setzen, bevorzugen Gegner, die noch nicht brennen.
+## Wählt das Ziel nach der Einstellung des Turms: vorderster (kürzester Restweg), stärkster oder
+## schwächster Gegner in Reichweite. Türme, die in Brand setzen, bevorzugen zuerst Gegner, die noch nicht brennen.
 func _pick_target(t: Tower) -> Enemy:
 	var best: Enemy = null
 	var best_fresh := false
@@ -1113,10 +1371,19 @@ func _pick_target(t: Tower) -> Enemy:
 	for e in enemies:
 		if e.alive and t.pos.distance_squared_to(e.pos) <= range_sq:
 			var fresh := prefers_fresh and e.burn_left <= 0.0
-			if best == null or (fresh and not best_fresh) or (fresh == best_fresh and e.remaining < best.remaining):
+			if best == null or (fresh and not best_fresh) or (fresh == best_fresh and _better_target(t.target_mode, e, best)):
 				best = e
 				best_fresh = fresh
 	return best
+
+
+static func _better_target(mode: String, e: Enemy, best: Enemy) -> bool:
+	match mode:
+		"strong":
+			return e.hp > best.hp or (e.hp == best.hp and e.remaining < best.remaining)
+		"weak":
+			return e.hp < best.hp or (e.hp == best.hp and e.remaining < best.remaining)
+	return e.remaining < best.remaining
 
 
 func _step_projectiles() -> void:

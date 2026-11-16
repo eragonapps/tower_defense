@@ -8,6 +8,7 @@ const DIR := "res://assets/"
 const ADVENTURERS := "kaykit_adventurers/"
 const SKELETONS := "kaykit_skeletons/"
 const DUNGEON := "kaykit_dungeon/"
+const MONSTERS := "quaternius_monsters/"
 
 ## Zwerge entstehen aus den Abenteurer-Figuren: kleiner, und in der Höhe stärker gestaucht als in der Breite.
 const DWARF_SCALE := Vector3(0.62, 0.5, 0.62)
@@ -30,6 +31,9 @@ const ENEMIES := {
 	# tint färbt ein vorhandenes Modell um, solange es für diesen Gegner kein eigenes gibt.
 	"skeleton_guard": {"model": SKELETONS + "Skeleton_Warrior", "walk": "Walking_B", "death": "Death_B", "tint": Color(0.55, 0.7, 1.0)},
 	"bone_king": {"model": SKELETONS + "Skeleton_Mage", "walk": "Walking_C", "death": "Death_A", "tint": Color(1.0, 0.45, 0.4)},
+	# scale gleicht den anderen Maßstab des Pakets aus, hover lässt die Figur über dem Boden schweben.
+	"wraith": {"model": MONSTERS + "Ghost", "walk": "Flying_Idle", "death": "Death", "scale": 0.32, "hover": 0.35,
+		"tint": Color(0.7, 0.9, 1.0), "glow": 0.9},
 }
 const WORKER := {"model": ADVENTURERS + "Barbarian", "items": ["1H_Axe"], "work": "1H_Melee_Attack_Chop", "hide": "Sit_Floor_Idle"}
 
@@ -38,13 +42,21 @@ static var _meshes := {}
 static var _tints := {}
 
 
+## Der Dateipfad eines Modells. Die Pakete liefern teils .glb, teils .gltf.
+static func _file(path: String) -> String:
+	for ext in [".glb", ".gltf"]:
+		if ResourceLoader.exists(DIR + path + ext):
+			return DIR + path + ext
+	return ""
+
+
 static func has(path: String) -> bool:
-	return ResourceLoader.exists(DIR + path + ".glb")
+	return _file(path) != ""
 
 
 static func instance(path: String) -> Node3D:
 	if not _scenes.has(path):
-		_scenes[path] = load(DIR + path + ".glb")
+		_scenes[path] = load(_file(path))
 	return _scenes[path].instantiate()
 
 
@@ -79,18 +91,23 @@ static func character(path: String, items: Array, scale: Vector3) -> Node3D:
 
 
 ## Färbt alle Teile einer Figur ein. Die Textur bleibt erhalten, die Farbe wird damit multipliziert.
-static func tint(character_node: Node3D, color: Color) -> void:
+## glow lässt die Figur zusätzlich in dieser Farbe leuchten, damit sie im Dunkeln zu sehen ist.
+static func tint(character_node: Node3D, color: Color, glow := 0.0) -> void:
 	for mi in character_node.find_children("*", "MeshInstance3D", true, false):
 		var mesh: Mesh = mi.mesh
 		if mesh == null or mesh.get_surface_count() == 0:
 			continue
-		var key := "%s/%s" % [mesh.resource_path + str(mesh.get_rid().get_id()), color.to_html()]
+		var key := "%s/%s/%.2f" % [mesh.resource_path + str(mesh.get_rid().get_id()), color.to_html(), glow]
 		if not _tints.has(key):
 			var original := mesh.surface_get_material(0)
 			if not original is StandardMaterial3D:
 				continue
 			var copy: StandardMaterial3D = original.duplicate()
 			copy.albedo_color = color
+			if glow > 0.0:
+				copy.emission_enabled = true
+				copy.emission = color
+				copy.emission_energy_multiplier = glow
 			_tints[key] = copy
 		mi.material_override = _tints[key]
 

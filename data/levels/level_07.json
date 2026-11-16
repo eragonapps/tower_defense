@@ -61,7 +61,8 @@
         {"enemy": "skeleton_guard", "count": 10, "interval": 1.2},
         {"enemy": "skeleton_guard", "count": 10, "interval": 1.2, "entrance": 1},
         {"enemy": "skeleton_mage", "count": 4, "interval": 3.0, "delay": 3.0, "entrance": 2},
-        {"enemy": "skeleton_rogue", "count": 20, "interval": 0.4, "delay": 8.0, "entrance": 2}
+        {"enemy": "wraith", "count": 8, "interval": 1.0, "delay": 6.0, "entrance": 2},
+        {"enemy": "skeleton_rogue", "count": 14, "interval": 0.4, "delay": 8.0, "entrance": 2}
       ]
     },
     {
@@ -81,7 +82,8 @@
         {"enemy": "skeleton_guard", "count": 16, "interval": 1.0, "entrance": 2},
         {"enemy": "skeleton_mage", "count": 4, "interval": 3.0, "delay": 4.0},
         {"enemy": "skeleton_mage", "count": 4, "interval": 3.0, "delay": 6.0, "entrance": 1},
-        {"enemy": "skeleton_rogue", "count": 30, "interval": 0.3, "delay": 10.0, "entrance": 2}
+        {"enemy": "wraith", "count": 12, "interval": 0.8, "delay": 5.0},
+        {"enemy": "skeleton_rogue", "count": 20, "interval": 0.3, "delay": 10.0, "entrance": 2}
       ]
     }
   ],

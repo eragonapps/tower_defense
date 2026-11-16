@@ -1,0 +1,10 @@
+Ultimate Monsters (Quaternius)
+https://quaternius.com/packs/ultimatemonsters.html
+
+Lizenz laut Autor: CC0 1.0 (Public Domain), frei für private und kommerzielle Projekte.
+http://creativecommons.org/publicdomain/zero/1.0/
+
+Hinweis für dieses Projekt:
+Im heruntergeladenen Archiv (Ordner "Flying") lag keine Lizenzdatei.
+Die Lizenz wurde vom Auftraggeber am 14.11.2026 auf der Seite des Autors geprüft.
+Verwendet wird nur die Datei Ghost.gltf, unverändert.

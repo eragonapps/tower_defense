@@ -14,6 +14,7 @@ const SPEEDS: Array[float] = [1.0, 2.0, 3.0]
 const MAX_STEPS_PER_FRAME := 12
 const MENU_SCENE := "res://scenes/main_menu.tscn"
 const NO_CELL := Vector2i(-1, -1)
+const TARGET_KEYS := {"first": "HUD_TARGET_FIRST", "strong": "HUD_TARGET_STRONG", "weak": "HUD_TARGET_WEAK"}
 
 ## Welches Level als Nächstes geladen wird. Wird vom Menü gesetzt.
 static var level_id := "level_01"
@@ -46,6 +47,9 @@ var _has_ore := false
 var _low_graphics := false
 ## Schritt der Einführung in Level 1. -1 bedeutet: keine Einführung.
 var tutorial_step := -1
+## Bauplatz des Turms, der gerade versetzt wird. NO_CELL, wenn kein Versetzen läuft.
+var moving_from := NO_CELL
+var _entrance_views := {}
 var _materials := {}
 
 
@@ -82,6 +86,9 @@ func _ready() -> void:
 	sim.finished.connect(_on_finished)
 	sim.tower_upgraded.connect(_on_tower_upgraded)
 	sim.tower_specialized.connect(_on_tower_specialized)
+	sim.tower_refined.connect(_on_tower_refined)
+	sim.tower_moved.connect(_on_tower_moved)
+	sim.breached.connect(_on_breached)
 	sim.dig_started.connect(_on_dig_started)
 	sim.grid_changed.connect(_on_grid_changed)
 	sim.worker_placed.connect(_on_worker_placed)
@@ -189,6 +196,15 @@ func pick_cell(screen_pos: Vector2) -> Vector2i:
 
 ## Wählt eine Zelle aus und öffnet das passende Menü. Zellen ohne Aktion heben die Auswahl auf.
 func select_cell(cell: Vector2i) -> void:
+	if moving_from != NO_CELL:
+		# Zielplatz für das Versetzen. Alles außer einem freien Bauplatz bricht ab.
+		var from := moving_from
+		moving_from = NO_CELL
+		hud.show_tip("")
+		if cell != from and sim.move_tower(from, cell) == GameSim.Result.OK:
+			Sfx.play("build")
+		else:
+			cell = from
 	if _menu_for(cell).is_empty():
 		cell = NO_CELL
 	selected = cell
@@ -236,6 +252,8 @@ func _menu_for(cell: Vector2i) -> Dictionary:
 						"text": "%s\n%s" % [tr(def["name_key"]), tr("HUD_COST") % sim.tower_cost(type)],
 						"disabled": sim.can_build(cell, type) != GameSim.Result.OK,
 					})
+				if sim.endless:
+					buttons.append({"id": "remove_slot", "text": tr("HUD_REMOVE_SLOT"), "disabled": sim.can_remove_slot(cell) != GameSim.Result.OK})
 				return {"title": tr("HUD_BUILD_TITLE"), "info": "", "buttons": buttons}
 			var cost := sim.upgrade_cost(tower)
 			if cost >= 0:
@@ -260,18 +278,49 @@ func _menu_for(cell: Vector2i) -> Dictionary:
 						"disabled": sim.can_specialize(cell, i) != GameSim.Result.OK,
 					})
 					info += "\n%s: %s" % [tr(specs[i]["name_key"]), tr(specs[i]["desc_key"])]
+			if tower.spec != "":
+				# Voll ausgebaut: Veredeln geht beliebig oft und wird jedes Mal teurer.
+				buttons.append({
+					"id": "refine",
+					"text": "%s\n%s" % [tr("HUD_REFINE"), tr("HUD_COST") % sim.refine_cost(tower)],
+					"disabled": sim.can_refine(cell) != GameSim.Result.OK,
+				})
+				if tower.refine > 0:
+					title += " · " + tr("HUD_REFINED") % tower.refine
+			if tower.stats.get("kind", "projectile") == "projectile":
+				buttons.append({"id": "target", "text": "%s:\n%s" % [tr("HUD_TARGET"), tr(TARGET_KEYS[tower.target_mode])], "disabled": false})
+			buttons.append({
+				"id": "move",
+				"text": "%s\n%s" % [tr("HUD_MOVE"), tr("HUD_COST") % int(rules["move_cost"])],
+				"disabled": sim.gold < int(rules["move_cost"]),
+			})
 			buttons.append({"id": "sell", "text": tr("HUD_SELL") % sim.sell_value(tower), "disabled": false})
 			return {"title": title, "info": info, "buttons": buttons}
 		MineGrid.Cell.ROCK:
-			if not rules["digging"]:
+			var buttons := []
+			var info := ""
+			if rules["digging"]:
+				var result := sim.can_dig(cell)
+				info = tr("HUD_DIGGING") if result == GameSim.Result.OCCUPIED else _reason(result)
+				buttons.append({
+					"id": "dig",
+					"text": "%s\n%s" % [tr("HUD_DIG"), tr("HUD_COST") % int(rules["dig_cost"])],
+					"disabled": result != GameSim.Result.OK,
+				})
+			if sim.endless:
+				# Im Endlosmodus lässt sich aus Fels ein neuer Bauplatz machen. Sehr teuer.
+				var slot := sim.can_create_slot(cell)
+				var cost := sim.slot_cost()
+				buttons.append({
+					"id": "create_slot",
+					"text": "%s\n%s" % [tr("HUD_CREATE_SLOT"), tr("HUD_COST_BOTH") % [cost[0], cost[1]]],
+					"disabled": slot != GameSim.Result.OK,
+				})
+				if slot == GameSim.Result.LIMIT_REACHED:
+					info = tr("REASON_SLOT_LIMIT")
+			if buttons.is_empty():
 				return {}
-			var result := sim.can_dig(cell)
-			var info := tr("HUD_DIGGING") if result == GameSim.Result.OCCUPIED else _reason(result)
-			return {"title": tr("HUD_ROCK"), "info": info, "buttons": [{
-				"id": "dig",
-				"text": "%s\n%s" % [tr("HUD_DIG"), tr("HUD_COST") % int(rules["dig_cost"])],
-				"disabled": result != GameSim.Result.OK,
-			}]}
+			return {"title": tr("HUD_ROCK"), "info": info, "buttons": buttons}
 		MineGrid.Cell.TUNNEL:
 			if not rules["digging"]:
 				return {}
@@ -313,6 +362,8 @@ func _reason(result: GameSim.Result) -> String:
 			return tr("REASON_NOT_CONNECTED")
 		GameSim.Result.LIMIT_REACHED:
 			return tr("REASON_LIMIT")
+		GameSim.Result.ONLY_ENDLESS:
+			return tr("REASON_ONLY_ENDLESS")
 	return ""
 
 
@@ -349,12 +400,29 @@ func _stat(key: String, stats: Dictionary, next: Dictionary, field: String) -> S
 
 
 static func _number(v: Variant) -> String:
-	return String.num(float(v), 2)
+	# Eine Nachkommastelle reicht. Veredelte Werte hätten sonst krumme Zahlen wie 118.98.
+	return String.num(snappedf(float(v), 0.1), 1)
 
 
 func _on_action(id: String) -> void:
 	if selected == NO_CELL:
 		return
+	if id == "move":
+		# Versetzen läuft in zwei Schritten: erst der Knopf, dann das Antippen des Zielplatzes.
+		moving_from = selected
+		hud.hide_context()
+		hud.show_tip(tr("HUD_MOVE_TIP"))
+		return
+	if id == "target":
+		var tower := sim.tower_at(selected)
+		var modes := GameSim.TARGET_MODES
+		sim.set_target_mode(selected, modes[(modes.find(tower.target_mode) + 1) % modes.size()])
+	elif id == "refine":
+		sim.refine_tower(selected)
+	elif id == "create_slot":
+		sim.create_slot(selected)
+	elif id == "remove_slot":
+		sim.remove_slot(selected)
 	if id.begins_with("build:"):
 		sim.build_tower(selected, id.trim_prefix("build:"))
 	elif id == "sell":
@@ -369,7 +437,8 @@ func _on_action(id: String) -> void:
 		sim.fill(selected)
 	elif id == "worker":
 		sim.place_worker(selected)
-	select_cell(selected)
+	if id not in ["target", "refine", "create_slot", "remove_slot"] or sim.grid.in_bounds(selected):
+		select_cell(selected)
 
 
 func _on_speed_requested() -> void:
@@ -588,6 +657,41 @@ func _on_tower_specialized(t: GameSim.Tower) -> void:
 	_burst(view.position + Vector3(0, 1.0, 0), Color(1.0, 0.8, 0.3), 18)
 	if selected == t.cell:
 		_show_range(t)
+
+
+func _on_tower_refined(t: GameSim.Tower) -> void:
+	var view: Node3D = _tower_views.get(t.id)
+	if view == null:
+		return
+	Sfx.play("upgrade", -4.0)
+	_burst(view.position + Vector3(0, 1.0, 0), Color(1.0, 0.8, 0.3), 8)
+	if selected == t.cell:
+		_show_range(t)
+
+
+func _on_tower_moved(t: GameSim.Tower, from: Vector2i) -> void:
+	var view: Node3D = _tower_views.get(t.id)
+	if view == null:
+		return
+	_burst(to_world(MineGrid.center(from), SLOT_HEIGHT + 0.3), Color(0.6, 0.55, 0.5), 8)
+	view.position = to_world(t.pos, SLOT_HEIGHT)
+	_burst(view.position + Vector3(0, 0.3, 0), Color(0.6, 0.55, 0.5), 10)
+
+
+## Ein neues Tor ist entstanden: Gelände neu bauen, Tor aufstellen, den Spieler hinweisen.
+func _on_breached(entrance: Vector2i) -> void:
+	_rebuild_terrain()
+	_build_entrance(to_world(MineGrid.center(entrance)))
+	hud.notify(tr("HUD_BREACH"), Hud.COLOR_LIVES)
+	Sfx.play("fill")
+	Sfx.play("defeat", -6.0)
+	_burst(to_world(MineGrid.center(entrance), 0.6), Color(0.4, 0.34, 0.28), 30)
+	# Die Kamera schwenkt kurz zum neuen Tor.
+	var target := to_world(MineGrid.center(entrance))
+	var tween := rig.create_tween()
+	tween.tween_property(rig, "position", Vector3(clampf(target.x, rig.bounds.position.x, rig.bounds.end.x), 0, clampf(target.z, rig.bounds.position.y, rig.bounds.end.y)), 0.6).set_trans(Tween.TRANS_SINE)
+	if selected != NO_CELL:
+		select_cell(selected)
 
 
 func _on_dig_started(job: GameSim.DigJob) -> void:
@@ -818,10 +922,11 @@ func _make_enemy(e: GameSim.Enemy) -> Node3D:
 	var height := 1.35 * size
 	var visual: Dictionary = Models.ENEMIES.get(e.type, {})
 	if visual.has("model") and Models.has(visual["model"]):
-		var figure := Models.character(visual["model"], [], Vector3.ONE * Models.ENEMY_SCALE * size)
+		var figure := Models.character(visual["model"], [], Vector3.ONE * float(visual.get("scale", Models.ENEMY_SCALE)) * size)
 		figure.name = "Figure"
+		figure.position.y = float(visual.get("hover", 0.0))
 		if visual.has("tint"):
-			Models.tint(figure, visual["tint"])
+			Models.tint(figure, visual["tint"], float(visual.get("glow", 0.0)))
 		root.add_child(figure)
 		root.set_meta("anim", Models.player(figure))
 		# Schnelle Gegner bewegen die Beine schneller.
@@ -1452,6 +1557,36 @@ func demo(state: String) -> void:
 			sim.upgrade_tower(slots[i])
 	if state == "build":
 		select_cell(slots[9])
+		return
+	if state == "rebuild" or state == "wraith":
+		# Endlosmodus mit Durchbruch, Schemen und einem voll ausgebauten, veredelten Turm.
+		sim.wave_index = sim.wave_count - 1
+		sim.status = GameSim.Status.WON
+		sim.continue_endless()
+		if state == "rebuild":
+			sim._breach()
+		sim.wave_active = true
+		for i in 5:
+			sim._spawn("wraith", 0)
+			for k in 40:
+				sim.step()
+		sim._spawn("skeleton_warrior", 0)
+		for k in 30:
+			sim.step()
+		var cell: Vector2i = slots[1]
+		sim.gold = 9000
+		sim.ore = 900
+		while sim.upgrade_tower(cell) == GameSim.Result.OK:
+			pass
+		sim.specialize(cell, 0)
+		sim.refine_tower(cell)
+		sim.refine_tower(cell)
+		select_cell(cell)
+		_sync_views(1.0)
+		if state == "wraith":
+			rig.distance *= 0.45
+			rig.position = to_world(sim.enemies[2].pos)
+			rig._apply()
 		return
 	if state == "won" or state == "endless":
 		sim.wave_index = sim.wave_count - 1

@@ -89,6 +89,14 @@ func set_cell(c: Vector2i, type: int) -> void:
 	_rebuild_distances()
 
 
+## Macht eine Zelle zu einem weiteren Eingang. Für den Durchbruch im Endlosmodus.
+func add_entrance(c: Vector2i) -> void:
+	if not in_bounds(c) or c in entrances:
+		return
+	entrances.append(c)
+	set_cell(c, Cell.ENTRANCE)
+
+
 ## Wahr, wenn eine der vier Nachbarzellen begehbar ist.
 func touches_walkable(c: Vector2i) -> bool:
 	for d in DIRS:

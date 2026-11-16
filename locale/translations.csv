@@ -217,3 +217,18 @@ CURSE_WEARY_MINERS,Müde Hauer,Weary Miners
 CURSE_WEARY_MINERS_DESC,Arbeiter bauen 30 % langsamer ab,Workers mine 30 % slower
 CURSE_DIM_LIGHT,Trübes Licht,Dim Light
 CURSE_DIM_LIGHT_DESC,Alle Türme haben 6 % weniger Reichweite,All towers have 6 % less range
+ENEMY_WRAITH,Schemen,Wraith
+HUD_TARGET,Ziel,Target
+HUD_TARGET_FIRST,Vorderster,First
+HUD_TARGET_STRONG,Stärkster,Strongest
+HUD_TARGET_WEAK,Schwächster,Weakest
+HUD_REFINE,Veredeln (+4 %),Refine (+4 %)
+HUD_REFINED,veredelt ×%d,refined ×%d
+HUD_MOVE,Versetzen,Move
+HUD_MOVE_TIP,"Tippe auf einen freien Bauplatz, um den Turm dorthin zu versetzen. Jedes andere Feld bricht ab.","Tap a free build site to move the tower there. Any other tile cancels."
+HUD_CREATE_SLOT,Bauplatz anlegen,Create build site
+HUD_COST_BOTH,%d Gold · %d Erz,%d gold · %d ore
+HUD_REMOVE_SLOT,Bauplatz abreißen,Remove build site
+HUD_BREACH,Durchbruch! Die Gegner haben ein neues Tor in die Mine gebrochen.,Breach! The enemies have broken a new gate into the mine.
+REASON_ONLY_ENDLESS,Neue Bauplätze gibt es nur im Endlosmodus.,New build sites are only available in endless mode.
+REASON_SLOT_LIMIT,Mehr Bauplätze fasst diese Mine nicht.,This mine cannot hold more build sites.
