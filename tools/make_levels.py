@@ -52,8 +52,8 @@ def write(name, level, g, scale=1.0):
     print('\n'.join(level["grid"]))
 
 
-MINION, WARRIOR, ROGUE, MAGE = "skeleton_minion", "skeleton_warrior", "skeleton_rogue", "skeleton_mage"
-GUARD, KING = "skeleton_guard", "bone_king"
+MINION, WARRIOR, ROGUE, MAGE = "goblin", "draugr", "kobold_sapper", "goblin_shaman"
+GUARD, KING = "stone_golem", "fallen_king"
 WRAITH = "wraith"
 
 # --- Level 2: Die Erzader -------------------------------------------------

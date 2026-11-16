@@ -88,15 +88,23 @@ Stand 13.11.2026. Alle Dateien sind unverändert übernommen. Die Lizenzdatei de
 
 | Ordner im Repo | Verwendet für | Paket | Autor | Quelle | Lizenz |
 |---|---|---|---|---|---|
-| `assets/kaykit_adventurers/` (4 Figuren) | Zwerge auf den Türmen und Arbeiter: Rogue_Hooded (Armbrustschütze), Barbarian (Steinschleuder, Arbeiter), Mage (Runenstein), Knight (Schmiedefeuer) | KayKit Adventurers 1.0, Stand `672074b` | Kay Lousberg | [GitHub](https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0) | CC0 |
-| `assets/kaykit_skeletons/` (4 Figuren) | Gegner: Skeleton_Minion, Skeleton_Warrior, Skeleton_Rogue, Skeleton_Mage | KayKit Skeletons 1.0, Stand `15b62b9` | Kay Lousberg | [GitHub](https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0) | CC0 |
+| `assets/dwarf_towers/` (30 Modelle) | Alle sechs Türme in Stufe 1 bis 3 und beiden Spezialisierungen: Armbrust-, Kanonen-, Runen-, Feuer- und Bombenturm, Berserker-Lager (Schildwall) | eigene Modelle | Auftraggeber | Blender-Skripte in `tools/blender/` | eigene Werke |
+| `assets/dwarf_enemies/` (10 Modelle) | Gegner mit Animationen: Goblin, Draugr, Kobold-Sappeur, Goblin-Schamane, Steingolem, Gefallener König. Noch ohne Rolle im Spiel: Rattenschwarm, Schattenspinne, Höhlentroll, Tiefenwurm | eigene Modelle | Auftraggeber | `tools/blender/dwarf_enemies.py` | eigene Werke |
+| `assets/dwarf_projectiles/` (9 Modelle) | Bolzen, Kanonenkugel, Mörserbombe, Schnellfeuer-Geschoss, Bomben | eigene Modelle | Auftraggeber | `tools/blender/` | eigene Werke |
+| `assets/dwarf_fx/` (6 Modelle) | Explosion, Feuerball, Flammenstoß, Frostring, Eissplitter, Lavalache | eigene Modelle | Auftraggeber | `tools/blender/` | eigene Werke |
+| `assets/quaternius_monsters/Ghost.gltf` | Schemen | Quaternius Ultimate Monsters | Quaternius | [quaternius.com](https://quaternius.com/packs/ultimatemonsters.html) | CC0 laut Autor, vom Auftraggeber am 14.11.2026 geprüft, siehe `LICENSE.txt` im Ordner |
+| `assets/kaykit_adventurers/` (1 Figur) | Arbeiter an den Erzadern: Barbarian | KayKit Adventurers 1.0, Stand `672074b` | Kay Lousberg | [GitHub](https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0) | CC0 |
 | `assets/kaykit_dungeon/` (21 Modelle) | Stollenboden, Fackeln, Fässer, Kisten, Geröll, Truhe und Münzen am Herz, Tor am Eingang | KayKit Dungeon Remastered 1.0, Stand `b0ca9bd` | Kay Lousberg | [GitHub](https://github.com/KayKit-Game-Assets/KayKit-Dungeon-Remastered-1.0) | CC0 |
 | `assets/audio/kenney_impact_sounds/` (15 Töne) | Armbrustschuss, Treffer, Einschläge, Graben, Bauen, Runenstein, Wellenbeginn | Kenney Impact Sounds 1.0 | Kenney | [kenney.nl](https://kenney.nl/assets/impact-sounds) | CC0 |
 | `assets/audio/kenney_rpg_audio/` (9 Töne) | Würfe, Knöpfe, Verkauf, Ausbau, Sieg, Niederlage | Kenney RPG Audio | Kenney | [kenney.nl](https://kenney.nl/assets/rpg-audio) | CC0 |
 
 Welche Datei wofür steht, legen zwei Tabellen im Code fest: `scripts/view/models.gd` für Modelle und `scripts/core/audio.gd` für Töne.
 
-Nicht aus einem Paket, sondern im Spiel erzeugt: Felsblöcke, Turmsockel, Erzbrocken, Geschosse, Leuchteffekte und die Schrift (Standardschrift von Godot).
+Nicht aus einem Paket, sondern im Spiel erzeugt: Felsblöcke, Erzbrocken, einfache Leuchteffekte und die Schrift (Standardschrift von Godot).
+
+Die eigenen Modelle (`dwarf_*`) hat der Auftraggeber am 16.11.2026 hochgeladen. Sie entstehen aus den Blender-Skripten in `tools/blender/`, die Vorschaubilder liegen in `tools/blender/previews/`. Beim Laden fasst das Spiel die Einzelteile je Material zusammen (`Models.baked` in `scripts/view/models.gd`), weil die Türme aus bis zu 370 Teilen bestehen.
+
+Nicht mehr verwendet und am 16.11.2026 entfernt: KayKit Skeletons (die Skelett-Gegner) und die Abenteurer-Figuren Knight, Mage und Rogue_Hooded (früher die Zwerge auf den Türmen).
 
 Noch nicht verwendet: Kenney Tower Defense Kit, Quaternius Ultimate Monsters, Free Mine Assets Pack. Die Archive wurden am 13.11.2026 aus dem Hauptordner von `main` entfernt und bleiben über die Git-Historie abrufbar (Commit `9bbfd66`).
 

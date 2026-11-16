@@ -17,65 +17,65 @@
     {
       "reward": 50,
       "groups": [
-        {"enemy": "skeleton_minion", "count": 24, "interval": 0.5},
-        {"enemy": "skeleton_warrior", "count": 8, "interval": 1.2, "delay": 6.0}
+        {"enemy": "goblin", "count": 24, "interval": 0.5},
+        {"enemy": "draugr", "count": 8, "interval": 1.2, "delay": 6.0}
       ]
     },
     {
       "reward": 55,
       "groups": [
-        {"enemy": "skeleton_rogue", "count": 20, "interval": 0.5},
-        {"enemy": "skeleton_guard", "count": 6, "interval": 1.8, "delay": 4.0}
+        {"enemy": "kobold_sapper", "count": 20, "interval": 0.5},
+        {"enemy": "stone_golem", "count": 6, "interval": 1.8, "delay": 4.0}
       ]
     },
     {
       "reward": 60,
       "groups": [
-        {"enemy": "skeleton_warrior", "count": 24, "interval": 0.6},
-        {"enemy": "skeleton_mage", "count": 4, "interval": 3.0, "delay": 4.0}
+        {"enemy": "draugr", "count": 24, "interval": 0.6},
+        {"enemy": "goblin_shaman", "count": 4, "interval": 3.0, "delay": 4.0}
       ]
     },
     {
       "reward": 65,
       "groups": [
-        {"enemy": "skeleton_guard", "count": 16, "interval": 1.0},
+        {"enemy": "stone_golem", "count": 16, "interval": 1.0},
         {"enemy": "wraith", "count": 8, "interval": 1.0, "delay": 4.0},
-        {"enemy": "skeleton_rogue", "count": 18, "interval": 0.4, "delay": 6.0},
-        {"enemy": "skeleton_mage", "count": 4, "interval": 3.0, "delay": 8.0}
+        {"enemy": "kobold_sapper", "count": 18, "interval": 0.4, "delay": 6.0},
+        {"enemy": "goblin_shaman", "count": 4, "interval": 3.0, "delay": 8.0}
       ]
     },
     {
       "reward": 70,
       "groups": [
-        {"enemy": "bone_king", "count": 1, "interval": 1.0},
-        {"enemy": "skeleton_warrior", "count": 30, "interval": 0.7, "delay": 4.0}
+        {"enemy": "fallen_king", "count": 1, "interval": 1.0},
+        {"enemy": "draugr", "count": 30, "interval": 0.7, "delay": 4.0}
       ]
     },
     {
       "reward": 75,
       "groups": [
-        {"enemy": "skeleton_guard", "count": 24, "interval": 0.8},
-        {"enemy": "skeleton_mage", "count": 8, "interval": 2.0, "delay": 4.0},
+        {"enemy": "stone_golem", "count": 24, "interval": 0.8},
+        {"enemy": "goblin_shaman", "count": 8, "interval": 2.0, "delay": 4.0},
         {"enemy": "wraith", "count": 12, "interval": 0.8, "delay": 6.0},
-        {"enemy": "skeleton_minion", "count": 40, "interval": 0.2, "delay": 10.0}
+        {"enemy": "goblin", "count": 40, "interval": 0.2, "delay": 10.0}
       ]
     },
     {
       "reward": 80,
       "groups": [
-        {"enemy": "skeleton_warrior", "count": 50, "interval": 0.4},
-        {"enemy": "skeleton_guard", "count": 20, "interval": 0.9, "delay": 5.0},
-        {"enemy": "skeleton_rogue", "count": 40, "interval": 0.3, "delay": 12.0},
-        {"enemy": "skeleton_mage", "count": 8, "interval": 2.0, "delay": 6.0}
+        {"enemy": "draugr", "count": 50, "interval": 0.4},
+        {"enemy": "stone_golem", "count": 20, "interval": 0.9, "delay": 5.0},
+        {"enemy": "kobold_sapper", "count": 40, "interval": 0.3, "delay": 12.0},
+        {"enemy": "goblin_shaman", "count": 8, "interval": 2.0, "delay": 6.0}
       ]
     },
     {
       "reward": 0,
       "groups": [
-        {"enemy": "bone_king", "count": 2, "interval": 14.0},
-        {"enemy": "skeleton_guard", "count": 30, "interval": 1.0, "delay": 4.0},
-        {"enemy": "skeleton_mage", "count": 10, "interval": 2.5, "delay": 6.0},
-        {"enemy": "skeleton_warrior", "count": 40, "interval": 0.6, "delay": 10.0}
+        {"enemy": "fallen_king", "count": 2, "interval": 14.0},
+        {"enemy": "stone_golem", "count": 30, "interval": 1.0, "delay": 4.0},
+        {"enemy": "goblin_shaman", "count": 10, "interval": 2.5, "delay": 6.0},
+        {"enemy": "draugr", "count": 40, "interval": 0.6, "delay": 10.0}
       ]
     }
   ],

@@ -6,38 +6,75 @@ extends RefCounted
 
 const DIR := "res://assets/"
 const ADVENTURERS := "kaykit_adventurers/"
-const SKELETONS := "kaykit_skeletons/"
 const DUNGEON := "kaykit_dungeon/"
 const MONSTERS := "quaternius_monsters/"
+const TOWERS_DIR := "dwarf_towers/"
+const ENEMIES_DIR := "dwarf_enemies/"
+const PROJECTILES_DIR := "dwarf_projectiles/"
+const FX_DIR := "dwarf_fx/"
+## Die eigenen Turmmodelle sind etwa 3,1 m breit, ein Feld ist 2 m. So passen sie auf einen Bauplatz.
+const TOWER_SCALE := 0.57
+## Knoten, die beim Zusammenfassen der Teile erhalten bleiben, weil sie sich bewegen.
+const PIVOTS := ["Turret", "Barrel", "Spin", "Muzzle", "Crystal", "Orb"]
 
 ## Zwerge entstehen aus den Abenteurer-Figuren: kleiner, und in der Höhe stärker gestaucht als in der Breite.
 const DWARF_SCALE := Vector3(0.62, 0.5, 0.62)
 const ENEMY_SCALE := 0.62
 
-## items: Ausrüstung in den Händen, die sichtbar bleibt. Alle anderen Teile werden ausgeblendet.
+## Je Turmtyp: Modell je Ausbaustufe und je Spezialisierung, Geschoss und Effekte.
+## shot: Geschossmodell je Spezialisierung ("" für Stufe 1 bis 3), fx: Effekt beim Treffer oder Puls.
 const TOWERS := {
-	"crossbow": {"model": ADVENTURERS + "Rogue_Hooded", "items": ["2H_Crossbow"], "idle": "2H_Ranged_Aiming", "attack": "2H_Ranged_Shoot"},
-	"sling": {"model": ADVENTURERS + "Barbarian", "items": [], "idle": "Idle", "attack": "Throw"},
-	"runestone": {"model": ADVENTURERS + "Mage", "items": ["2H_Staff"], "idle": "Idle", "attack": "Spellcast_Raise"},
-	"forge": {"model": ADVENTURERS + "Knight", "items": [], "idle": "Idle", "attack": "Throw"},
-	"bomb": {"model": ADVENTURERS + "Barbarian", "items": ["Mug"], "idle": "Idle", "attack": "Throw"},
-	"shieldwall": {"model": ADVENTURERS + "Knight", "items": ["1H_Sword", "Rectangle_Shield"], "idle": "Blocking", "attack": "1H_Melee_Attack_Chop"},
+	"crossbow": {
+		"levels": ["crossbow_tower_lvl1", "crossbow_tower_lvl2", "crossbow_tower_lvl3"],
+		"specs": {"sniper": "crossbow_tower_sniper", "repeater": "crossbow_tower_rapid"},
+		"shot": {"": "projectile_bolt", "sniper": "projectile_bolt_sniper", "repeater": "projectile_bolt_rapid"},
+	},
+	"sling": {
+		"levels": ["cannon_tower_lvl1", "cannon_tower_lvl2", "cannon_tower_lvl3"],
+		"specs": {"boulder": "cannon_tower_heavy", "hail": "cannon_tower_rapid"},
+		"shot": {"": "projectile_cannonball", "boulder": "projectile_mortar_bomb", "hail": "projectile_rapid_slug"},
+	},
+	"runestone": {
+		"levels": ["rune_tower_lvl1", "rune_tower_lvl2", "rune_tower_lvl3"],
+		"specs": {"frost": "rune_tower_permafrost", "storm": "rune_tower_froststurm"},
+		"fx": "fx_frost_pulse_ring", "fx_hit": "fx_ice_shard",
+	},
+	"forge": {
+		"levels": ["fire_tower_lvl1", "fire_tower_lvl2", "fire_tower_lvl3"],
+		"specs": {"inferno": "fire_tower_inferno", "ember": "fire_tower_rapid"},
+		"shot": {"": "fx_firebolt"}, "fx": "fx_lava_pool", "muzzle_fx": "fx_flame_stream",
+	},
+	"bomb": {
+		"levels": ["bomb_tower_lvl1", "bomb_tower_lvl2", "bomb_tower_lvl3"],
+		"specs": {"mega": "bomb_tower_big", "cluster": "bomb_tower_cluster"},
+		"shot": {"": "projectile_bomb", "mega": "projectile_bomb_big", "cluster": "projectile_bomb_cluster"},
+		"fx": "fx_bomb_blast",
+	},
+	"shieldwall": {
+		"levels": ["berserker_camp_lvl1", "berserker_camp_lvl2", "berserker_camp_lvl3"],
+		"specs": {"bulwark": "berserker_camp_ironwall", "berserker": "berserker_camp_bloodrage"},
+		# Das Lager ist länglich und wird längs zum Weg gedreht. Etwas kleiner, damit es auf ein Feld passt.
+		"scale": 0.5, "along_path": true,
+	},
 }
+## scale: Maßstab des Modells, unabhängig von der Größe in den Spieldaten. hover: Abstand zum Boden.
 const ENEMIES := {
-	"skeleton_minion": {"model": SKELETONS + "Skeleton_Minion", "walk": "Walking_A", "death": "Death_A"},
-	"skeleton_warrior": {"model": SKELETONS + "Skeleton_Warrior", "walk": "Walking_B", "death": "Death_B"},
-	"skeleton_rogue": {"model": SKELETONS + "Skeleton_Rogue", "walk": "Running_A", "death": "Death_A"},
-	"skeleton_mage": {"model": SKELETONS + "Skeleton_Mage", "walk": "Walking_A", "death": "Death_B"},
-	# tint färbt ein vorhandenes Modell um, solange es für diesen Gegner kein eigenes gibt.
-	"skeleton_guard": {"model": SKELETONS + "Skeleton_Warrior", "walk": "Walking_B", "death": "Death_B", "tint": Color(0.55, 0.7, 1.0)},
-	"bone_king": {"model": SKELETONS + "Skeleton_Mage", "walk": "Walking_C", "death": "Death_A", "tint": Color(1.0, 0.45, 0.4)},
+	"goblin": {"model": ENEMIES_DIR + "enemy_goblin", "scale": 1.5},
+	"draugr": {"model": ENEMIES_DIR + "enemy_draugr", "scale": 1.45},
+	"kobold_sapper": {"model": ENEMIES_DIR + "enemy_kobold_sapper", "scale": 1.6},
+	"goblin_shaman": {"model": ENEMIES_DIR + "enemy_goblin_shaman", "scale": 1.4, "cast": "Cast"},
+	"stone_golem": {"model": ENEMIES_DIR + "enemy_stone_golem", "scale": 1.15},
+	"fallen_king": {"model": ENEMIES_DIR + "enemy_fallen_king", "scale": 1.6},
 	# scale gleicht den anderen Maßstab des Pakets aus, hover lässt die Figur über dem Boden schweben.
-	"wraith": {"model": MONSTERS + "Ghost", "walk": "Flying_Idle", "death": "Death", "scale": 0.32, "hover": 0.35,
+	"wraith": {"model": MONSTERS + "Ghost", "walk": "Flying_Idle", "death": "Death", "scale": 0.29, "hover": 0.35,
 		"tint": Color(0.7, 0.9, 1.0), "glow": 0.9},
 }
+## Die Animationen der eigenen Gegner-Modelle.
+const ENEMY_ANIMS := {"walk": "Walk", "death": "Death", "hit": "Hit", "held": "Held"}
 const WORKER := {"model": ADVENTURERS + "Barbarian", "items": ["1H_Axe"], "work": "1H_Melee_Attack_Chop", "hide": "Sit_Floor_Idle"}
 
 static var _scenes := {}
+static var _baked := {}
 static var _meshes := {}
 static var _tints := {}
 
@@ -127,3 +164,196 @@ static func animate(character_node: Node3D, anim: String, loop := true, speed :=
 	if then != "" and ap.has_animation(then):
 		ap.get_animation(then).loop_mode = Animation.LOOP_LINEAR
 		ap.queue(then)
+
+
+# --- Zusammengefasste Modelle ---------------------------------------------
+
+## Eine Kopie des Modells, in der alle unbeweglichen Teile je Material zu einem Netz zusammengefasst sind.
+## Beweglich bleiben die Knoten aus PIVOTS und alle, die eine Animation bewegt, samt ihren Eltern.
+## Das senkt die Zahl der Zeichenaufrufe von mehreren hundert auf wenige je Modell.
+static func baked(path: String) -> Node3D:
+	if not _baked.has(path):
+		_baked[path] = _bake(instance(path))
+	return _baked[path].duplicate()
+
+
+static func _bake(src: Node3D) -> Node3D:
+	# 1. Welche Knoten bleiben erhalten?
+	var keep := {src: true}
+	for n in src.find_children("*", "Node3D", true, false):
+		if String(n.name) in PIVOTS:
+			keep[n] = true
+	var player := src.find_child("AnimationPlayer", true, false) as AnimationPlayer
+	if player != null:
+		var anim_root := player.get_node(player.root_node)
+		for anim_name in player.get_animation_list():
+			var anim := player.get_animation(anim_name)
+			for i in anim.get_track_count():
+				var path := anim.track_get_path(i)
+				var target := anim_root.get_node_or_null(NodePath(String(path.get_concatenated_names())))
+				if target != null:
+					keep[target] = true
+	for n in keep.keys():
+		var p: Node = n.get_parent()
+		while p != null and p != src.get_parent():
+			keep[p] = true
+			p = p.get_parent()
+	# 2. Neue Knoten für die erhaltenen, mit derselben Lage und denselben Namen.
+	var made := {}
+	var root := Node3D.new()
+	root.name = src.name
+	made[src] = root
+	_copy_kept(src, src, Transform3D(), keep, made)
+	# 3. Alle Netze je nächstem erhaltenen Vorfahren und Material sammeln.
+	var groups := {}
+	_collect(src, src, Transform3D(), keep, groups)
+	for owner_node in groups:
+		var mesh := ArrayMesh.new()
+		for mat in groups[owner_node]:
+			var st: SurfaceTool = groups[owner_node][mat]
+			st.set_material(mat)
+			mesh = st.commit(mesh)
+		var mi := MeshInstance3D.new()
+		mi.name = "Mesh"
+		mi.mesh = mesh
+		made[owner_node].add_child(mi)
+	if player != null:
+		var copy := player.duplicate() as AnimationPlayer
+		root.add_child(copy)
+		copy.root_node = copy.get_path_to(root) if copy.is_inside_tree() else NodePath("..")
+	src.free()
+	return root
+
+
+## Legt für jeden erhaltenen Knoten einen leeren Node3D an der richtigen Stelle des neuen Baums an.
+static func _copy_kept(node: Node, src: Node3D, xf: Transform3D, keep: Dictionary, made: Dictionary) -> void:
+	for c in node.get_children():
+		if not c is Node3D:
+			continue
+		var here: Transform3D = xf * (c as Node3D).transform
+		if keep.has(c):
+			var n := Node3D.new()
+			n.name = c.name
+			# Lage relativ zum nächsten erhaltenen Vorfahren.
+			var anc: Node = c.get_parent()
+			var rel: Transform3D = (c as Node3D).transform
+			while not keep.has(anc):
+				rel = (anc as Node3D).transform * rel
+				anc = anc.get_parent()
+			n.transform = rel
+			made[anc].add_child(n)
+			made[c] = n
+			_copy_kept(c, src, Transform3D(), keep, made)
+		else:
+			_copy_kept(c, src, here, keep, made)
+
+
+static func _collect(node: Node, owner_node: Node, xf: Transform3D, keep: Dictionary, groups: Dictionary) -> void:
+	if node is MeshInstance3D and node.mesh != null:
+		var mesh: Mesh = node.mesh
+		var own: Transform3D = xf if keep.has(node) and node != owner_node else xf
+		for i in mesh.get_surface_count():
+			var mat: Material = (node as MeshInstance3D).get_active_material(i)
+			if not groups.has(owner_node):
+				groups[owner_node] = {}
+			if not groups[owner_node].has(mat):
+				var st := SurfaceTool.new()
+				groups[owner_node][mat] = st
+			(groups[owner_node][mat] as SurfaceTool).append_from(mesh, i, own)
+	for c in node.get_children():
+		if not c is Node3D:
+			continue
+		if keep.has(c):
+			# Ein erhaltener Knoten sammelt seine eigenen Netze. Sein eigenes Netz liegt in seinem Ursprung.
+			_collect(c, c, Transform3D() if not c is MeshInstance3D else Transform3D(), keep, groups)
+		else:
+			_collect(c, owner_node, xf * (c as Node3D).transform, keep, groups)
+
+
+## Ein Turm im Spiel: zusammengefasstes Modell, verkleinert, mit Drehkopf und Mündung.
+## Liefert den Knoten. Metadaten: "turret" (Node3D oder null), "aim_offset" (Winkel der Mündung).
+static func tower(type: String, level: int, spec: String) -> Node3D:
+	var def: Dictionary = TOWERS.get(type, {})
+	var file: String = def["specs"][spec] if spec != "" and def.get("specs", {}).has(spec) else def["levels"][clampi(level - 1, 0, 2)]
+	var node := baked(TOWERS_DIR + file)
+	node.scale = Vector3.ONE * float(def.get("scale", TOWER_SCALE))
+	var turret := node.find_child("Turret", true, false) as Node3D
+	var muzzle := node.find_child("Muzzle", true, false) as Node3D
+	node.set_meta("turret", turret)
+	node.set_meta("barrel", node.find_child("Barrel", true, false))
+	node.set_meta("spin", node.find_child("Spin", true, false))
+	node.set_meta("crystal", node.find_child("Crystal", true, false))
+	# Wohin zeigt die Mündung in Ruhe? Danach richtet sich das Zielen.
+	var offset := 0.0
+	if turret != null and muzzle != null:
+		var local := _offset_in(turret, muzzle)
+		offset = atan2(local.x, local.z)
+	node.set_meta("aim_offset", offset)
+	node.set_meta("muzzle_height", _height_of(node, muzzle) if muzzle != null else 1.2)
+	if def.get("along_path", false):
+		# Das Lager ist nicht um seinen Ursprung herum gebaut: mittig auf das Feld schieben.
+		var box := _aabb(node, Transform3D())
+		var center := box.get_center() * node.scale
+		node.position = Vector3(-center.x, 0.0, -center.z)
+	return node
+
+
+static func _offset_in(ancestor: Node3D, node: Node3D) -> Vector3:
+	var xf := Transform3D()
+	var n: Node = node
+	while n != ancestor and n != null:
+		xf = (n as Node3D).transform * xf
+		n = n.get_parent()
+	return xf.origin
+
+
+static func _height_of(root: Node3D, node: Node3D) -> float:
+	return (_offset_in(root, node) * root.scale).y
+
+
+## Ein Gegner: zusammengefasstes Modell mit Animationen.
+static func enemy(type: String) -> Node3D:
+	var visual: Dictionary = ENEMIES.get(type, {})
+	var node: Node3D
+	if String(visual.get("model", "")).begins_with(ENEMIES_DIR):
+		node = baked(visual["model"])
+	else:
+		node = character(visual["model"], [], Vector3.ONE)
+	node.scale = Vector3.ONE * float(visual.get("scale", 1.0))
+	node.position.y = float(visual.get("hover", 0.0))
+	return node
+
+
+## Name einer Animation eines Gegners: die eigenen Modelle haben einheitliche Namen.
+static func enemy_anim(type: String, what: String) -> String:
+	var visual: Dictionary = ENEMIES.get(type, {})
+	if visual.has(what):
+		return visual[what]
+	return ENEMY_ANIMS.get(what, "")
+
+
+## Geschoss- oder Effektmodell. Leer, wenn es keines gibt.
+static func prop(file: String) -> Node3D:
+	for dir in [PROJECTILES_DIR, FX_DIR]:
+		if has(dir + file):
+			return baked(dir + file)
+	return null
+
+
+
+## Höhe eines Modells über seinem Ursprung, mit Maßstab. Für die Lage der Lebensanzeige.
+static func height(node: Node3D) -> float:
+	var box := _aabb(node, Transform3D())
+	return box.end.y * node.scale.y if box.size != Vector3.ZERO else 1.0
+
+
+static func _aabb(node: Node, xf: Transform3D) -> AABB:
+	var box := AABB()
+	if node is MeshInstance3D and node.mesh != null:
+		box = xf * node.mesh.get_aabb()
+	for c in node.get_children():
+		if c is Node3D:
+			var b := _aabb(c, xf * (c as Node3D).transform)
+			if b.size != Vector3.ZERO:
+				box = b if box.size == Vector3.ZERO else box.merge(b)
+	return box

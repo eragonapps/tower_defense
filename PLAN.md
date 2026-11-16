@@ -1,6 +1,6 @@
 # Plan: Durnhal: Wacht der Tiefe – 3D Tower Defense für Android
 
-Stand: 12.11.2026 · Status: **Meilensteine 0 bis 5 umgesetzt. Endlosmodus, Flüche und 16 weitere Gaben sind dazugekommen und warten auf den Gerätetest. Die Veröffentlichung (M6) ist zurückgestellt.**
+Stand: 12.11.2026 · Status: **Meilensteine 0 bis 5 umgesetzt, dazu Endlosmodus, Umbau im Endlosmodus (`PLAN_UMBAU.md`) und eigene Modelle. Gerätetest offen. Die Veröffentlichung (M6) ist zurückgestellt.**
 
 ## 1. Festgelegte Entscheidungen
 
@@ -224,6 +224,14 @@ Bekannte Schwächen:
 - Mit den Bonus-Sternen lässt sich die Zwergenhalle komplett ausbauen. Die Levels sind ohne Halle eingestellt.
 - Welche Gaben zu stark oder zu schwach sind, ist nicht untersucht.
 - Im Endlosmodus gibt es keinen Knopf, um den Lauf freiwillig zu beenden. Man geht über „Menü" hinaus, der Rekord ist dann schon gespeichert.
+
+### Eigene Modelle (16.11.2026)
+**Stand:** eingebaut, Gerätetest offen.
+- Alle sechs Türme zeigen je Stufe und Spezialisierung ein eigenes Modell. Der Drehkopf zielt auf den Gegner, die Schnellfeuerkanone dreht ihre Läufe, die Runenkristalle drehen sich.
+- Geschosse und Treffereffekte je Turm und Spezialisierung: Bolzen, Kanonenkugel, Mörserbombe, Feuerball, Bomben, Explosion, Lavalache, Frostring, Eissplitter, Flammenstoß.
+- Die Skelette sind ersetzt: Goblin, Draugr, Kobold-Sappeur, Goblin-Schamane (zaubert beim Heilen), Steingolem, Gefallener König. Gegner im Schildwall zeigen eine eigene Halte-Pose.
+- Rattenschwarm, Schattenspinne, Höhlentroll und Tiefenwurm sind als Modelle da, haben aber noch keine Rolle im Spiel.
+- Die vielen Einzelteile werden beim Laden zusammengefasst (Armbrustturm Stufe 3: 158 Teile werden zu 3 Netzen).
 
 ### M6 – Veröffentlichung
 Signierter App-Bundle-Build, Store-Eintrag (Texte de/en, Bilder, Datenschutzerklärung, Alterseinstufung), geschlossener Test, Produktion.

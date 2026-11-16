@@ -1,6 +1,6 @@
 {
-  "skeleton_minion": {
-    "name_key": "ENEMY_SKELETON_MINION",
+  "goblin": {
+    "name_key": "ENEMY_GOBLIN",
     "hp": 45,
     "speed": 1.6,
     "bounty": 4,
@@ -8,8 +8,8 @@
     "color": "#cfc8b4",
     "size": 0.75
   },
-  "skeleton_warrior": {
-    "name_key": "ENEMY_SKELETON_WARRIOR",
+  "draugr": {
+    "name_key": "ENEMY_DRAUGR",
     "hp": 180,
     "speed": 1.0,
     "bounty": 10,
@@ -17,8 +17,8 @@
     "color": "#8f9aa3",
     "size": 1.0
   },
-  "skeleton_rogue": {
-    "name_key": "ENEMY_SKELETON_ROGUE",
+  "kobold_sapper": {
+    "name_key": "ENEMY_KOBOLD_SAPPER",
     "hp": 45,
     "speed": 2.2,
     "bounty": 6,
@@ -30,8 +30,8 @@
       "radius": 1.6
     }
   },
-  "skeleton_mage": {
-    "name_key": "ENEMY_SKELETON_MAGE",
+  "goblin_shaman": {
+    "name_key": "ENEMY_GOBLIN_SHAMAN",
     "hp": 220,
     "speed": 0.9,
     "bounty": 22,
@@ -44,8 +44,8 @@
       "radius": 1.6
     }
   },
-  "skeleton_guard": {
-    "name_key": "ENEMY_SKELETON_GUARD",
+  "stone_golem": {
+    "name_key": "ENEMY_STONE_GOLEM",
     "hp": 300,
     "speed": 0.85,
     "bounty": 18,
@@ -56,8 +56,8 @@
       "pierce": 0.35
     }
   },
-  "bone_king": {
-    "name_key": "ENEMY_BONE_KING",
+  "fallen_king": {
+    "name_key": "ENEMY_FALLEN_KING",
     "hp": 11000,
     "speed": 0.45,
     "bounty": 250,
@@ -70,7 +70,7 @@
       "fire": 0.7
     },
     "summon": {
-      "enemy": "skeleton_minion",
+      "enemy": "goblin",
       "count": 2,
       "interval": 6.0
     }

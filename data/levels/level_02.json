@@ -13,47 +13,47 @@
     {
       "reward": 25,
       "groups": [
-        {"enemy": "skeleton_minion", "count": 8, "interval": 1.0}
+        {"enemy": "goblin", "count": 8, "interval": 1.0}
       ]
     },
     {
       "reward": 30,
       "groups": [
-        {"enemy": "skeleton_minion", "count": 14, "interval": 0.7}
+        {"enemy": "goblin", "count": 14, "interval": 0.7}
       ]
     },
     {
       "reward": 35,
       "groups": [
-        {"enemy": "skeleton_warrior", "count": 6, "interval": 1.8},
-        {"enemy": "skeleton_rogue", "count": 5, "interval": 1.0, "delay": 4.0}
+        {"enemy": "draugr", "count": 6, "interval": 1.8},
+        {"enemy": "kobold_sapper", "count": 5, "interval": 1.0, "delay": 4.0}
       ]
     },
     {
       "reward": 40,
       "groups": [
-        {"enemy": "skeleton_warrior", "count": 12, "interval": 1.2}
+        {"enemy": "draugr", "count": 12, "interval": 1.2}
       ]
     },
     {
       "reward": 45,
       "groups": [
-        {"enemy": "skeleton_warrior", "count": 16, "interval": 0.9},
-        {"enemy": "skeleton_rogue", "count": 12, "interval": 0.6, "delay": 2.0}
+        {"enemy": "draugr", "count": 16, "interval": 0.9},
+        {"enemy": "kobold_sapper", "count": 12, "interval": 0.6, "delay": 2.0}
       ]
     },
     {
       "reward": 50,
       "groups": [
-        {"enemy": "skeleton_warrior", "count": 30, "interval": 0.6}
+        {"enemy": "draugr", "count": 30, "interval": 0.6}
       ]
     },
     {
       "reward": 0,
       "groups": [
-        {"enemy": "skeleton_warrior", "count": 50, "interval": 0.42},
-        {"enemy": "skeleton_rogue", "count": 24, "interval": 0.3, "delay": 3.0},
-        {"enemy": "skeleton_minion", "count": 40, "interval": 0.25, "delay": 6.0}
+        {"enemy": "draugr", "count": 50, "interval": 0.42},
+        {"enemy": "kobold_sapper", "count": 24, "interval": 0.3, "delay": 3.0},
+        {"enemy": "goblin", "count": 40, "interval": 0.25, "delay": 6.0}
       ]
     }
   ],

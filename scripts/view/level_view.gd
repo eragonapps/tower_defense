@@ -50,6 +50,9 @@ var tutorial_step := -1
 ## Bauplatz des Turms, der gerade versetzt wird. NO_CELL, wenn kein Versetzen läuft.
 var moving_from := NO_CELL
 var _entrance_views := {}
+## Sich drehende Teile der Türme: Läufe der Schnellfeuerkanone und Runenkristalle.
+var _spinners: Array[Node3D] = []
+var _fx_time := 0.0
 var _materials := {}
 
 
@@ -122,6 +125,13 @@ func _process(delta: float) -> void:
 		advance(delta * SPEEDS[speed_index])
 	if _heart_crystal:
 		_heart_crystal.rotate_y(delta * 0.6)
+	_fx_time += delta
+	for n in _spinners:
+		if is_instance_valid(n):
+			if String(n.name) == "Spin":
+				n.rotate_object_local(Vector3.FORWARD, delta * 9.0)
+			else:
+				n.rotate_y(delta * 1.2)
 	_refresh_menu()
 	hud.show_state(sim, paused, SPEEDS[speed_index], _has_ore)
 	_update_tutorial()
@@ -501,11 +511,21 @@ func _sync_views(alpha: float) -> void:
 			view.rotation.y = atan2(dir.x, dir.y)
 		view.get_node("Slow").visible = e.slow_left > 0.0
 		view.get_node("Burn").visible = e.burn_left > 0.0
-		if view.has_meta("anim"):
+		if view.has_meta("anim") and view.get_meta("anim") != null:
 			var ap: AnimationPlayer = view.get_meta("anim")
+			# Vom Schildwall gehaltene Gegner wechseln in die Halte-Pose, sonst laufen sie.
+			var pose := "held" if e.hold_left > 0.0 else "walk"
+			var anim := Models.enemy_anim(e.type, pose)
+			if pose != view.get_meta("pose", "") and ap.has_animation(anim):
+				view.set_meta("pose", pose)
+				Models.animate(view.get_node("Figure"), anim, true, 1.0)
 			# Die Schritte passen zum Tempo: verlangsamte Gegner laufen sichtbar langsamer.
-			# Vom Schildwall gehaltene Gegner stehen still.
-			ap.speed_scale = 0.0 if e.hold_left > 0.0 else view.get_meta("walk_speed", 1.0) * (e.slow_factor if e.slow_left > 0.0 else 1.0)
+			if pose == "walk" and ap.current_animation == anim:
+				ap.speed_scale = view.get_meta("walk_speed", 1.0) * (e.slow_factor if e.slow_left > 0.0 else 1.0)
+			elif ap.has_animation(Models.enemy_anim(e.type, "held")) or pose == "walk":
+				ap.speed_scale = 1.0
+			else:
+				ap.speed_scale = 0.0
 		var bar: Node3D = view.get_node("Bar")
 		bar.visible = e.hp < e.max_hp
 		if bar.visible:
@@ -519,7 +539,16 @@ func _sync_views(alpha: float) -> void:
 	for p in sim.projectiles:
 		var view: Node3D = _projectile_views.get(p.id)
 		if view != null:
-			view.position = to_world(p.prev_pos.lerp(p.pos, alpha), 1.1)
+			# Höhe: von der Mündung zum Ziel absinken. Flächengeschosse fliegen im Bogen.
+			var left := p.pos.distance_to(p.target_pos) / float(view.get_meta("distance", 1.0))
+			var progress := clampf(1.0 - left, 0.0, 1.0)
+			var h := lerpf(float(view.get_meta("start_height", 1.1)), 0.6, progress)
+			if float(p.def["splash"]) > 0.0:
+				h += sin(progress * PI) * 1.2
+			view.position = to_world(p.prev_pos.lerp(p.pos, alpha), h)
+			var dir := p.target_pos - p.pos
+			if dir.length_squared() > 0.0001:
+				view.rotation.y = atan2(dir.x, dir.y)
 	for cell in _dig_views:
 		var job := sim.dig_job_at(cell)
 		if job != null:
@@ -567,9 +596,9 @@ func _on_enemy_removed(e: GameSim.Enemy, reason: String) -> void:
 	Sfx.play("bones", -6.0)
 	_burst(view.position + Vector3(0, 0.5, 0), Color(0.85, 0.82, 0.72), 8)
 	var figure: Node3D = view.get_node_or_null("Figure")
-	var visual: Dictionary = Models.ENEMIES.get(e.type, {})
-	if figure != null and visual.has("death"):
-		Models.animate(figure, visual["death"], false, 1.4)
+	var death := Models.enemy_anim(e.type, "death")
+	if figure != null and death != "":
+		Models.animate(figure, death, false, 1.4)
 		var tween := view.create_tween()
 		tween.tween_interval(0.7)
 		tween.tween_property(view, "position:y", -0.8, 0.35)
@@ -592,9 +621,9 @@ func _take_enemy_view(e: GameSim.Enemy) -> Node3D:
 		view = pool.pop_back()
 		view.scale = Vector3.ONE
 	var figure: Node3D = view.get_node_or_null("Figure")
-	var visual: Dictionary = Models.ENEMIES.get(e.type, {})
 	if figure != null:
-		Models.animate(figure, visual["walk"], true, view.get_meta("walk_speed", 1.0))
+		Models.animate(figure, Models.enemy_anim(e.type, "walk"), true, view.get_meta("walk_speed", 1.0))
+		view.set_meta("pose", "walk")
 	return view
 
 
@@ -619,17 +648,7 @@ func _on_tower_upgraded(t: GameSim.Tower) -> void:
 	var view: Node3D = _tower_views.get(t.id)
 	if view == null:
 		return
-	# Jede Stufe macht den Zwerg größer und setzt einen leuchtenden Stein auf den Sockel.
-	view.get_node("Head").scale = Vector3.ONE * (1.0 + 0.14 * (t.level - 1))
-	var gem := MeshInstance3D.new()
-	var mesh := BoxMesh.new()
-	mesh.size = Vector3(0.16, 0.16, 0.16)
-	gem.mesh = mesh
-	gem.material_override = _material(Color(0.45, 0.85, 1.0), 2.2)
-	gem.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	var angle := (t.level - 2) * TAU / 3.0
-	gem.position = Vector3(sin(angle) * 0.66, 0.62, cos(angle) * 0.66)
-	view.add_child(gem)
+	_set_tower_model(view, t)
 	Sfx.play("upgrade")
 	_burst(view.position + Vector3(0, 1.0, 0), Color(0.45, 0.85, 1.0), 12)
 	if selected == t.cell:
@@ -640,19 +659,7 @@ func _on_tower_specialized(t: GameSim.Tower) -> void:
 	var view: Node3D = _tower_views.get(t.id)
 	if view == null:
 		return
-	# Ein goldener Ring um den Sockel zeigt den Meister seines Fachs.
-	view.get_node("Head").scale = Vector3.ONE * 1.42
-	var ring := MeshInstance3D.new()
-	var mesh := TorusMesh.new()
-	mesh.inner_radius = 0.8
-	mesh.outer_radius = 0.9
-	mesh.rings = 20
-	mesh.ring_segments = 6
-	ring.mesh = mesh
-	ring.position.y = 0.3
-	ring.material_override = _material(Color(1.0, 0.8, 0.3), 2.0)
-	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	view.add_child(ring)
+	_set_tower_model(view, t)
 	Sfx.play("upgrade")
 	_burst(view.position + Vector3(0, 1.0, 0), Color(1.0, 0.8, 0.3), 18)
 	if selected == t.cell:
@@ -731,10 +738,21 @@ func _on_tower_sold(t: GameSim.Tower) -> void:
 
 
 func _on_projectile_fired(p: GameSim.Projectile) -> void:
-	var view := _make_projectile(p)
-	view.position = to_world(p.pos, 1.1)
+	var tower: GameSim.Tower = null
+	for t in sim.towers:
+		if t.pos == p.pos:
+			tower = t
+			break
 	var dir := p.target_pos - p.pos
+	var start_height := 1.1
+	if tower != null and _tower_views.has(tower.id):
+		_tower_attack(tower, dir)
+		start_height = float(_tower_views[tower.id].get_node("Model").get_meta("muzzle_height", 1.1)) + SLOT_HEIGHT
+	var view := _make_projectile(p, tower)
+	view.position = to_world(p.pos, start_height)
 	view.rotation.y = atan2(dir.x, dir.y)
+	view.set_meta("start_height", start_height)
+	view.set_meta("distance", maxf(p.pos.distance_to(p.target_pos), 0.01))
 	add_child(view)
 	_projectile_views[p.id] = view
 	if p.def.has("burn"):
@@ -743,39 +761,53 @@ func _on_projectile_fired(p: GameSim.Projectile) -> void:
 		Sfx.play("shoot_stone", -5.0)
 	else:
 		Sfx.play("shoot_bolt", -9.0)
-	# Der Zwerg dreht sich zum Ziel und schießt.
-	for t in sim.towers:
-		if t.pos == p.pos and _tower_views.has(t.id):
-			_tower_attack(t, dir)
-			break
 
 
 func _tower_attack(t: GameSim.Tower, dir: Vector2) -> void:
 	var view: Node3D = _tower_views[t.id]
-	var head: Node3D = view.get_node("Head")
-	if dir.length_squared() > 0.0001:
-		head.rotation.y = atan2(dir.x, dir.y)
-	var figure: Node3D = head.get_node_or_null("Figure")
-	var visual: Dictionary = Models.TOWERS.get(t.type, {})
-	if figure != null:
-		Models.animate(figure, visual["attack"], false, 1.6, visual["idle"])
+	var model: Node3D = view.get_node("Model")
+	var turret: Node3D = model.get_meta("turret")
+	if turret != null and dir.length_squared() > 0.0001:
+		# Der Drehkopf richtet die Mündung aufs Ziel. Das Lager kann gedreht stehen, das rechnet die Elternlage heraus.
+		turret.rotation.y = atan2(dir.x, dir.y) - float(model.get_meta("aim_offset")) - view.rotation.y
+	# Kurzer Rückstoß: der Turm federt ein wenig.
+	var tween := model.create_tween()
+	model.scale = Vector3.ONE * float(Models.TOWERS.get(t.type, {}).get("scale", Models.TOWER_SCALE))
+	var base := model.scale
+	tween.tween_property(model, "scale", base * Vector3(1.04, 0.96, 1.04), 0.05)
+	tween.tween_property(model, "scale", base, 0.12)
+	var muzzle_fx: String = Models.TOWERS.get(t.type, {}).get("muzzle_fx", "")
+	if muzzle_fx != "" and not _low_graphics and dir.length_squared() > 0.0001:
+		_spawn_fx(muzzle_fx, view.position + Vector3(0, float(model.get_meta("muzzle_height", 1.0)) + SLOT_HEIGHT - 0.6, 0), 0.45, 0.25, atan2(dir.x, dir.y))
 
 
 func _on_aura_pulsed(t: GameSim.Tower) -> void:
 	if not _tower_views.has(t.id):
 		return
+	var view: Node3D = _tower_views[t.id]
 	if t.stats.get("kind", "") == "block":
-		# Der Schildwall schlägt auf einen der Gehaltenen ein.
-		var dir := Vector2.ZERO
-		for e in sim.enemies:
-			if e.held_by == t:
-				dir = e.pos - t.pos
-				break
-		_tower_attack(t, dir)
+		# Das Lager schlägt zu: kurzes Federn und ein Schlag.
+		_tower_attack(t, Vector2.ZERO)
 		Sfx.play("hit", -8.0)
 		return
-	_tower_attack(t, Vector2.ZERO)
-	_show_ring(to_world(t.pos, 0.12), float(t.stats["range"]) * CELL, Color(0.45, 0.75, 1.0, 0.35))
+	var radius := float(t.stats["range"]) * CELL
+	var fx: String = Models.TOWERS.get(t.type, {}).get("fx", "")
+	if fx != "" and Models.prop(fx) != null:
+		# Der Frostring breitet sich bis zum Rand der Reichweite aus.
+		# Etwas kleiner als die Reichweite: der volle Ring überstrahlt sonst die ganze Szene.
+		_spawn_fx(fx, to_world(t.pos, 0.1), radius * 0.7 / 1.03, 0.35, 0.0, true)
+	else:
+		_show_ring(to_world(t.pos, 0.12), radius, Color(0.45, 0.75, 1.0, 0.35))
+	var shard: String = Models.TOWERS.get(t.type, {}).get("fx_hit", "")
+	if shard != "" and not _low_graphics and t.stats.has("slow"):
+		# Eissplitter auf einigen getroffenen Gegnern.
+		var count := 0
+		for e in sim.enemies:
+			if count >= 5:
+				break
+			if e.alive and e.pos.distance_to(t.pos) <= float(t.stats["range"]):
+				_spawn_fx(shard, to_world(e.pos, 0.6), 1.2, 0.4)
+				count += 1
 	Sfx.play("rune", -16.0)
 
 
@@ -835,6 +867,10 @@ func _on_ore_stolen(_thief: GameSim.Enemy, worker: GameSim.Worker, _amount: int)
 
 
 func _on_enemies_healed(healer: GameSim.Enemy) -> void:
+	var view: Node3D = _enemy_views.get(healer.id)
+	var cast := Models.enemy_anim(healer.type, "cast")
+	if view != null and cast != "" and view.get_node_or_null("Figure") != null:
+		Models.animate(view.get_node("Figure"), cast, false, 1.2, Models.enemy_anim(healer.type, "walk"))
 	var heal: Dictionary = healer.def["heal"]
 	_show_ring(to_world(healer.pos, 0.12), float(heal["radius"]) * CELL, Color(0.4, 1.0, 0.5, 0.4))
 
@@ -846,14 +882,39 @@ func _on_projectile_hit(p: GameSim.Projectile) -> void:
 		_projectile_views.erase(p.id)
 	var splash := float(p.def["splash"])
 	var fire: bool = p.def.has("burn")
+	var at := to_world(p.pos, 0.05)
 	if splash > 0.0:
-		_show_ring(to_world(p.pos, 0.15), splash * CELL, Color(1.0, 0.45, 0.15, 0.6) if fire else Color(0.8, 0.75, 0.65, 0.55))
+		var radius := splash * CELL
+		if fire and Models.prop("fx_lava_pool") != null:
+			_spawn_fx("fx_lava_pool", at, radius / 1.05, 1.0)
+		elif float(p.def["damage"]) >= 40.0 and Models.prop("fx_bomb_blast") != null:
+			# Bomben und schwere Steine: Explosion in der Größe der Trefferfläche.
+			_spawn_fx("fx_bomb_blast", at, radius / 1.05, 0.45)
+		else:
+			_show_ring(to_world(p.pos, 0.15), radius, Color(1.0, 0.45, 0.15, 0.6) if fire else Color(0.8, 0.75, 0.65, 0.55))
 		_burst(to_world(p.pos, 0.3), Color(1.0, 0.5, 0.15) if fire else Color(0.55, 0.5, 0.45), 12)
 		Sfx.play("blast", -4.0)
 	else:
 		if fire:
 			_burst(to_world(p.pos, 0.7), Color(1.0, 0.5, 0.15), 6)
 		Sfx.play("hit", -12.0)
+
+
+## Zeigt ein Effektmodell kurz an: es wächst auf seine Größe und schrumpft dann wieder weg.
+## flat: wächst nur in der Breite, für Ringe und Lachen am Boden.
+func _spawn_fx(file: String, at: Vector3, size: float, seconds: float, yaw := 0.0, flat := false) -> void:
+	var node := Models.prop(file)
+	if node == null:
+		return
+	node.position = at
+	node.rotation.y = yaw
+	var start := Vector3(size * 0.2, size if flat else size * 0.2, size * 0.2)
+	node.scale = start
+	add_child(node)
+	var tween := node.create_tween()
+	tween.tween_property(node, "scale", Vector3.ONE * size, seconds * 0.35).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+	tween.tween_property(node, "scale", Vector3(size, 0.02, size) if flat else Vector3.ONE * 0.01, seconds * 0.65).set_ease(Tween.EASE_IN)
+	tween.tween_callback(node.queue_free)
 
 
 func _show_range(tower: GameSim.Tower) -> void:
@@ -922,15 +983,15 @@ func _make_enemy(e: GameSim.Enemy) -> Node3D:
 	var height := 1.35 * size
 	var visual: Dictionary = Models.ENEMIES.get(e.type, {})
 	if visual.has("model") and Models.has(visual["model"]):
-		var figure := Models.character(visual["model"], [], Vector3.ONE * float(visual.get("scale", Models.ENEMY_SCALE)) * size)
+		var figure := Models.enemy(e.type)
 		figure.name = "Figure"
-		figure.position.y = float(visual.get("hover", 0.0))
 		if visual.has("tint"):
 			Models.tint(figure, visual["tint"], float(visual.get("glow", 0.0)))
 		root.add_child(figure)
 		root.set_meta("anim", Models.player(figure))
 		# Schnelle Gegner bewegen die Beine schneller.
 		root.set_meta("walk_speed", clampf(float(e.def["speed"]) * 0.9, 0.7, 1.8))
+		height = maxf(Models.height(figure) + float(visual.get("hover", 0.0)), 0.6)
 	else:
 		# Ersatzform für Gegner ohne Modell.
 		var body := MeshInstance3D.new()
@@ -960,7 +1021,7 @@ func _make_enemy(e: GameSim.Enemy) -> Node3D:
 
 	var bar := Node3D.new()
 	bar.name = "Bar"
-	bar.position.y = height + 0.5
+	bar.position.y = height + 0.45
 	bar.visible = false
 	var back := _quad(Vector2(0.96, 0.16), Color(0.03, 0.03, 0.03))
 	var fill := _quad(Vector2(0.9, 0.1), Color(0.85, 0.2, 0.15), 11)
@@ -973,88 +1034,43 @@ func _make_enemy(e: GameSim.Enemy) -> Node3D:
 
 
 func _make_tower(t: GameSim.Tower) -> Node3D:
-	var color := Color(String(t.def["color"]))
 	var root := Node3D.new()
-	# Steinsockel.
-	var base := MeshInstance3D.new()
-	var base_mesh := CylinderMesh.new()
-	base_mesh.top_radius = 0.7
-	base_mesh.bottom_radius = 0.8
-	base_mesh.height = 0.55
-	base_mesh.radial_segments = 10
-	base.mesh = base_mesh
-	base.position.y = 0.275
-	base.material_override = _rock_mat(Color(0.5, 0.47, 0.44))
-	root.add_child(base)
-	var band := MeshInstance3D.new()
-	var band_mesh := CylinderMesh.new()
-	band_mesh.top_radius = 0.74
-	band_mesh.bottom_radius = 0.74
-	band_mesh.height = 0.07
-	band_mesh.radial_segments = 10
-	band.mesh = band_mesh
-	band.position.y = 0.5
-	band.material_override = _material(color, 0.5)
-	root.add_child(band)
-
-	var head := Node3D.new()
-	head.name = "Head"
-	head.position.y = 0.55
-	root.add_child(head)
-	var visual: Dictionary = Models.TOWERS.get(t.type, {})
-	if visual.has("model") and Models.has(visual["model"]):
-		var figure := Models.character(visual["model"], visual["items"], Models.DWARF_SCALE)
-		figure.name = "Figure"
-		head.add_child(figure)
-		Models.animate(figure, visual["idle"])
-	else:
-		var body := MeshInstance3D.new()
-		var body_mesh := CylinderMesh.new()
-		body_mesh.top_radius = 0.34
-		body_mesh.bottom_radius = 0.42
-		body_mesh.height = 0.7
-		body.mesh = body_mesh
-		body.position.y = 0.35
-		body.material_override = _material(color)
-		head.add_child(body)
-
-	# Beiwerk, das den Turmtyp auch von Weitem erkennbar macht.
-	if t.stats.get("kind", "") == "aura":
-		var stone := MeshInstance3D.new()
-		var stone_mesh := BoxMesh.new()
-		stone_mesh.size = Vector3(0.3, 0.95, 0.16)
-		stone.mesh = stone_mesh
-		stone.position = Vector3(-0.42, 1.0, -0.3)
-		stone.rotation.y = 0.5
-		stone.material_override = _material(Color(0.35, 0.7, 1.0), 1.8)
-		stone.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		root.add_child(stone)
-	elif t.type == "bomb" and Models.has(Models.DUNGEON + "keg"):
-		var keg := Models.instance(Models.DUNGEON + "keg")
-		keg.scale = Vector3.ONE * 0.26
-		keg.position = Vector3(-0.42, 0.55, -0.3)
-		root.add_child(keg)
-	elif t.stats.has("burn"):
-		var bowl := MeshInstance3D.new()
-		var bowl_mesh := CylinderMesh.new()
-		bowl_mesh.top_radius = 0.24
-		bowl_mesh.bottom_radius = 0.14
-		bowl_mesh.height = 0.5
-		bowl_mesh.radial_segments = 8
-		bowl.mesh = bowl_mesh
-		bowl.position = Vector3(-0.44, 0.8, -0.3)
-		bowl.material_override = _material(Color(0.16, 0.15, 0.15))
-		root.add_child(bowl)
-		var embers := MeshInstance3D.new()
-		var ember_mesh := SphereMesh.new()
-		ember_mesh.radius = 0.2
-		ember_mesh.height = 0.3
-		embers.mesh = ember_mesh
-		embers.position = Vector3(-0.44, 1.08, -0.3)
-		embers.material_override = _material(Color(1.0, 0.45, 0.1), 3.0)
-		embers.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		root.add_child(embers)
+	_set_tower_model(root, t)
+	if Models.TOWERS.get(t.type, {}).get("along_path", false):
+		root.rotation.y = _along_path_angle(t.cell)
 	return root
+
+
+## Setzt das Modell passend zu Stufe und Spezialisierung ein. Beim Ausbau wird es getauscht.
+func _set_tower_model(root: Node3D, t: GameSim.Tower) -> void:
+	var old := root.get_node_or_null("Model")
+	var yaw := 0.0
+	if old != null:
+		var old_turret: Node3D = old.get_meta("turret")
+		if old_turret != null:
+			yaw = old_turret.rotation.y
+		for n in [old.get_meta("spin"), old.get_meta("crystal")]:
+			if n != null:
+				_spinners.erase(n)
+		root.remove_child(old)
+		old.queue_free()
+	var model := Models.tower(t.type, t.level, t.spec)
+	model.name = "Model"
+	root.add_child(model)
+	var turret: Node3D = model.get_meta("turret")
+	if turret != null:
+		turret.rotation.y = yaw
+	for n in [model.get_meta("spin"), model.get_meta("crystal")]:
+		if n != null:
+			_spinners.append(n)
+
+
+## Das längliche Lager liegt parallel zum Stollen neben ihm.
+func _along_path_angle(cell: Vector2i) -> float:
+	for d in MineGrid.DIRS:
+		if sim.grid.is_walkable(cell + d):
+			return 0.0 if d.x != 0 else PI / 2.0
+	return 0.0
 
 
 ## Ein Zwerg mit Axt und Laterne, der auf der Erzader steht.
@@ -1085,33 +1101,22 @@ func _make_worker() -> Node3D:
 	return root
 
 
-func _make_projectile(p: GameSim.Projectile) -> Node3D:
+func _make_projectile(p: GameSim.Projectile, tower: GameSim.Tower) -> Node3D:
+	if tower != null:
+		var shots: Dictionary = Models.TOWERS.get(tower.type, {}).get("shot", {})
+		var file: String = shots.get(tower.spec, shots.get("", ""))
+		if file != "":
+			var model := Models.prop(file)
+			if model != null:
+				model.scale = Vector3.ONE * (1.2 if file == "fx_firebolt" else 1.0)
+				return model
 	var m := MeshInstance3D.new()
 	m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	if p.def.has("burn"):
-		# Feuerkugel.
-		var ball := SphereMesh.new()
-		ball.radius = 0.17
-		ball.height = 0.34
-		ball.radial_segments = 8
-		ball.rings = 4
-		m.mesh = ball
-		m.material_override = _material(Color(1.0, 0.5, 0.12), 3.5)
-	elif float(p.def["splash"]) > 0.0:
-		# Steinbrocken. Je größer die Fläche, desto größer das Geschoss.
-		var rock := SphereMesh.new()
-		rock.radius = 0.2 if float(p.def["splash"]) < 1.5 else 0.32
-		rock.height = rock.radius * 1.8
-		rock.radial_segments = 6
-		rock.rings = 3
-		m.mesh = rock
-		m.material_override = _material(Color(0.5, 0.48, 0.46))
-	else:
-		# Armbrustbolzen, zeigt in Flugrichtung.
-		var bolt := BoxMesh.new()
-		bolt.size = Vector3(0.05, 0.05, 0.55)
-		m.mesh = bolt
-		m.material_override = _material(Color(1.0, 0.9, 0.65), 1.6)
+	var ball := SphereMesh.new()
+	ball.radius = 0.15
+	ball.height = 0.3
+	m.mesh = ball
+	m.material_override = _material(Color(1.0, 0.85, 0.5), 2.0)
 	return m
 
 
@@ -1558,6 +1563,32 @@ func demo(state: String) -> void:
 	if state == "build":
 		select_cell(slots[9])
 		return
+	if state == "towers":
+		# Jeder Turmtyp in Stufe 1, 2, 3 und beiden Spezialisierungen, für einen Überblick.
+		sim.gold = 99999
+		sim.ore = 9999
+		var all_types := ["crossbow", "sling", "runestone", "forge", "bomb", "shieldwall"]
+		sim._level["towers"] = all_types
+		var i := 0
+		for slot in slots:
+			if i >= 15:
+				break
+			var type: String = all_types[i % all_types.size()]
+			sim.build_tower(slot, type)
+			var stage := i / all_types.size()
+			for u in mini(stage, 2):
+				sim.upgrade_tower(slot)
+			if stage >= 2:
+				sim.specialize(slot, i % 2)
+			i += 1
+		sim.start_next_wave()
+		for k in 400:
+			sim.step()
+		_sync_views(1.0)
+		rig.distance *= 0.42
+		rig.position = to_world(MineGrid.center(slots[4]))
+		rig._apply()
+		return
 	if state == "rebuild" or state == "wraith":
 		# Endlosmodus mit Durchbruch, Schemen und einem voll ausgebauten, veredelten Turm.
 		sim.wave_index = sim.wave_count - 1
@@ -1570,7 +1601,7 @@ func demo(state: String) -> void:
 			sim._spawn("wraith", 0)
 			for k in 40:
 				sim.step()
-		sim._spawn("skeleton_warrior", 0)
+		sim._spawn("draugr", 0)
 		for k in 30:
 			sim.step()
 		var cell: Vector2i = slots[1]
@@ -1626,7 +1657,7 @@ func demo(state: String) -> void:
 	sim.start_next_wave()
 	if state == "boss":
 		# Alle besonderen Gegner auf einmal, zum Ansehen.
-		for type in ["bone_king", "skeleton_guard", "skeleton_guard", "skeleton_mage", "skeleton_rogue"]:
+		for type in ["fallen_king", "stone_golem", "goblin", "goblin_shaman", "kobold_sapper", "draugr", "wraith"]:
 			sim._spawn(type, 0)
 			for i in 50:
 				sim.step()

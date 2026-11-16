@@ -1,6 +1,6 @@
 # Umsetzungsplan: Umbau im Endlosmodus, Schemen, Durchbruch, Zielwahl
 
-Stand: 14.11.2026 · Status: **geplant, noch nicht umgesetzt**
+Stand: 16.11.2026 · Status: **umgesetzt, Gerätetest offen.** Abweichung: Das Geist-Modell schwebt 0,35 m und leuchtet bläulich, damit es im Dunkeln zu sehen ist.
 
 Entschieden mit dem Auftraggeber:
 - Alle vier Umbau-Bausteine: Bauplatz anlegen, Bauplatz abreißen, Turm versetzen, Veredeln.
