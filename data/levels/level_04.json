@@ -44,6 +44,7 @@
     {
       "reward": 55,
       "groups": [
+        {"enemy": "cave_troll", "count": 2, "interval": 6.0, "delay": 4.0},
         {"enemy": "draugr", "count": 20, "interval": 0.7},
         {"enemy": "stone_golem", "count": 8, "interval": 1.4, "delay": 4.0},
         {"enemy": "goblin_shaman", "count": 3, "interval": 3.0, "delay": 6.0}
@@ -52,6 +53,7 @@
     {
       "reward": 60,
       "groups": [
+        {"enemy": "shadow_spider", "count": 8, "interval": 0.8, "delay": 3.0},
         {"enemy": "stone_golem", "count": 16, "interval": 1.0},
         {"enemy": "kobold_sapper", "count": 20, "interval": 0.4, "delay": 5.0},
         {"enemy": "goblin_shaman", "count": 4, "interval": 3.0, "delay": 5.0}
@@ -60,7 +62,7 @@
     {
       "reward": 0,
       "groups": [
-        {"enemy": "fallen_king", "count": 1, "interval": 1.0},
+        {"enemy": "deep_worm", "count": 1, "interval": 1.0},
         {"enemy": "stone_golem", "count": 10, "interval": 2.5, "delay": 5.0},
         {"enemy": "draugr", "count": 20, "interval": 1.2, "delay": 8.0}
       ]

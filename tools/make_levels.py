@@ -43,7 +43,7 @@ def write(name, level, g, scale=1.0):
     if scale != 1.0:
         for wave in level["waves"]:
             for grp in wave["groups"]:
-                if grp["enemy"] != KING:
+                if grp["enemy"] not in (KING, WORM):
                     grp["count"] = max(1, round(grp["count"] * scale))
     s = json.dumps(level, indent=2, ensure_ascii=False)
     s = re.sub(r'\{\s*\n\s*"enemy": ([^}]*?)\n\s*\}', lambda m: '{"enemy": ' + re.sub(r'\s*\n\s*', ' ', m.group(1)) + '}', s)
@@ -55,6 +55,7 @@ def write(name, level, g, scale=1.0):
 MINION, WARRIOR, ROGUE, MAGE = "goblin", "draugr", "kobold_sapper", "goblin_shaman"
 GUARD, KING = "stone_golem", "fallen_king"
 WRAITH = "wraith"
+RAT, TROLL, SPIDER, BATS, WORM = "rat_swarm", "cave_troll", "shadow_spider", "cave_bats", "deep_worm"
 
 # --- Level 2: Die Erzader -------------------------------------------------
 g = new_grid()
@@ -69,11 +70,11 @@ write('level_02', {
     "waves": [
         {"reward": 25, "groups": [group(MINION, 8, 1.0)]},
         {"reward": 30, "groups": [group(MINION, 14, 0.7)]},
-        {"reward": 35, "groups": [group(WARRIOR, 6, 1.8), group(ROGUE, 5, 1.0, 4.0)]},
+        {"reward": 35, "groups": [group(WARRIOR, 6, 1.8), group(RAT, 8, 0.5, 4.0)]},
         {"reward": 40, "groups": [group(WARRIOR, 12, 1.2)]},
-        {"reward": 45, "groups": [group(WARRIOR, 16, 0.9), group(ROGUE, 12, 0.6, 2.0)]},
+        {"reward": 45, "groups": [group(WARRIOR, 16, 0.9), group(RAT, 16, 0.35, 2.0)]},
         {"reward": 50, "groups": [group(WARRIOR, 30, 0.6)]},
-        {"reward": 0, "groups": [group(WARRIOR, 50, 0.42), group(ROGUE, 24, 0.3, 3.0), group(MINION, 40, 0.25, 6.0)]},
+        {"reward": 0, "groups": [group(WARRIOR, 50, 0.42), group(RAT, 30, 0.25, 3.0), group(MINION, 40, 0.25, 6.0)]},
     ]}, g)
 
 # --- Level 3: Zwei Tore ---------------------------------------------------
@@ -91,11 +92,11 @@ write('level_03', {
         {"reward": 30, "groups": [group(MINION, 8, 1.0), group(MINION, 6, 1.2, 6.0, 1)]},
         {"reward": 35, "groups": [group(ROGUE, 6, 1.0), group(WARRIOR, 4, 1.8, 2.0, 1)]},
         {"reward": 40, "groups": [group(WARRIOR, 6, 1.5), group(MAGE, 1, 4.0, 3.0), group(MINION, 12, 0.7, 2.0, 1)]},
-        {"reward": 45, "groups": [group(WARRIOR, 8, 1.2, 0.0, 1), group(MAGE, 2, 3.0, 2.0, 1), group(ROGUE, 10, 0.6, 5.0)]},
+        {"reward": 45, "groups": [group(BATS, 6, 0.8, 6.0), group(WARRIOR, 8, 1.2, 0.0, 1), group(MAGE, 2, 3.0, 2.0, 1), group(ROGUE, 10, 0.6, 5.0)]},
         {"reward": 50, "groups": [group(WARRIOR, 10, 1.0), group(WARRIOR, 10, 1.0, 0.0, 1), group(MAGE, 2, 3.0, 3.0)]},
         {"reward": 55, "groups": [group(ROGUE, 18, 0.45), group(MINION, 26, 0.4, 0.0, 1), group(MAGE, 3, 2.5, 4.0, 1)]},
         {"reward": 60, "groups": [group(WARRIOR, 16, 0.8), group(WARRIOR, 16, 0.8, 0.0, 1), group(MAGE, 3, 2.5, 3.0), group(MAGE, 3, 2.5, 3.0, 1)]},
-        {"reward": 0, "groups": [group(WARRIOR, 22, 0.65), group(WARRIOR, 22, 0.65, 0.0, 1), group(ROGUE, 20, 0.35, 5.0), group(MAGE, 5, 2.0, 4.0, 1)]},
+        {"reward": 0, "groups": [group(BATS, 10, 0.6, 8.0, 1), group(WARRIOR, 22, 0.65), group(WARRIOR, 22, 0.65, 0.0, 1), group(ROGUE, 20, 0.35, 5.0), group(MAGE, 5, 2.0, 4.0, 1)]},
     ]}, g)
 
 # --- Level 4: Der Knochenkönig --------------------------------------------
@@ -113,9 +114,9 @@ write('level_04', {
         {"reward": 40, "groups": [group(WARRIOR, 8, 1.3), group(ROGUE, 6, 0.8, 5.0)]},
         {"reward": 45, "groups": [group(GUARD, 5, 2.0), group(MINION, 16, 0.5, 3.0)]},
         {"reward": 50, "groups": [group(GUARD, 8, 1.5), group(MAGE, 2, 4.0, 4.0), group(ROGUE, 10, 0.6, 8.0)]},
-        {"reward": 55, "groups": [group(WARRIOR, 20, 0.7), group(GUARD, 8, 1.4, 4.0), group(MAGE, 3, 3.0, 6.0)]},
-        {"reward": 60, "groups": [group(GUARD, 16, 1.0), group(ROGUE, 20, 0.4, 5.0), group(MAGE, 4, 3.0, 5.0)]},
-        {"reward": 0, "groups": [group(KING, 1, 1.0), group(GUARD, 10, 2.5, 5.0), group(WARRIOR, 20, 1.2, 8.0)]},
+        {"reward": 55, "groups": [group(TROLL, 2, 6.0, 4.0), group(WARRIOR, 20, 0.7), group(GUARD, 8, 1.4, 4.0), group(MAGE, 3, 3.0, 6.0)]},
+        {"reward": 60, "groups": [group(SPIDER, 8, 0.8, 3.0), group(GUARD, 16, 1.0), group(ROGUE, 20, 0.4, 5.0), group(MAGE, 4, 3.0, 5.0)]},
+        {"reward": 0, "groups": [group(WORM, 1, 1.0), group(GUARD, 10, 2.5, 5.0), group(WARRIOR, 20, 1.2, 8.0)]},
     ]}, g)
 
 ALL = ["crossbow", "sling", "runestone", "forge", "bomb", "shieldwall"]
@@ -134,9 +135,9 @@ write('level_05', {
         {"reward": 40, "groups": [group(MINION, 10, 0.9), group(MINION, 10, 0.9, 4.0, 1)]},
         {"reward": 45, "groups": [group(WARRIOR, 6, 1.5), group(ROGUE, 8, 0.7, 3.0, 1)]},
         {"reward": 50, "groups": [group(GUARD, 4, 2.2), group(WARRIOR, 8, 1.2, 0.0, 1), group(MAGE, 1, 1.0, 6.0, 1)]},
-        {"reward": 55, "groups": [group(ROGUE, 14, 0.5), group(GUARD, 6, 1.8, 2.0, 1), group(MINION, 20, 0.4, 8.0)]},
+        {"reward": 55, "groups": [group(SPIDER, 8, 0.7, 4.0, 1), group(ROGUE, 14, 0.5), group(GUARD, 6, 1.8, 2.0, 1), group(MINION, 20, 0.4, 8.0)]},
         {"reward": 60, "groups": [group(WARRIOR, 14, 0.9), group(WARRIOR, 14, 0.9, 0.0, 1), group(MAGE, 2, 4.0, 3.0), group(MAGE, 2, 4.0, 5.0, 1)]},
-        {"reward": 65, "groups": [group(GUARD, 10, 1.3), group(GUARD, 10, 1.3, 0.0, 1), group(ROGUE, 16, 0.4, 6.0)]},
+        {"reward": 65, "groups": [group(TROLL, 2, 8.0, 6.0), group(GUARD, 10, 1.3), group(GUARD, 10, 1.3, 0.0, 1), group(ROGUE, 16, 0.4, 6.0)]},
         {"reward": 70, "groups": [group(WARRIOR, 24, 0.6), group(MINION, 40, 0.3, 0.0, 1), group(MAGE, 4, 3.0, 4.0), group(WRAITH, 6, 1.2, 8.0, 1)]},
         {"reward": 0, "groups": [group(GUARD, 16, 1.0), group(GUARD, 12, 1.0, 0.0, 1), group(MAGE, 5, 2.5, 3.0), group(WRAITH, 10, 0.9, 6.0), group(ROGUE, 24, 0.35, 8.0, 1)]},
     ]}, g)
@@ -152,14 +153,14 @@ write('level_06', {
     "rules": {"max_digs": 7},
     "waves": [
         {"reward": 40, "groups": [group(MINION, 14, 0.8)]},
-        {"reward": 45, "groups": [group(ROGUE, 10, 0.8), group(WARRIOR, 6, 1.5, 4.0)]},
-        {"reward": 50, "groups": [group(ROGUE, 16, 0.5), group(GUARD, 4, 2.0, 3.0)]},
-        {"reward": 55, "groups": [group(WARRIOR, 16, 0.8), group(MAGE, 3, 3.0, 4.0), group(ROGUE, 12, 0.5, 10.0)]},
-        {"reward": 60, "groups": [group(GUARD, 12, 1.2), group(ROGUE, 20, 0.4, 5.0)]},
-        {"reward": 65, "groups": [group(WARRIOR, 30, 0.5), group(MAGE, 5, 2.5, 5.0), group(WRAITH, 8, 1.0, 8.0), group(ROGUE, 14, 0.4, 12.0)]},
-        {"reward": 70, "groups": [group(GUARD, 18, 0.9), group(MAGE, 5, 2.5, 4.0), group(WRAITH, 10, 0.9, 6.0), group(ROGUE, 24, 0.3, 10.0)]},
-        {"reward": 0, "groups": [group(KING, 1, 1.0), group(GUARD, 14, 1.8, 6.0), group(ROGUE, 30, 0.5, 10.0)]},
-    ]}, g)
+        {"reward": 45, "groups": [group(RAT, 10, 0.8), group(WARRIOR, 6, 1.5, 4.0)]},
+        {"reward": 50, "groups": [group(RAT, 16, 0.5), group(GUARD, 4, 2.0, 3.0)]},
+        {"reward": 55, "groups": [group(WARRIOR, 16, 0.8), group(MAGE, 3, 3.0, 4.0), group(RAT, 12, 0.5, 10.0)]},
+        {"reward": 60, "groups": [group(BATS, 5, 0.9, 6.0), group(GUARD, 12, 1.2), group(RAT, 20, 0.4, 5.0)]},
+        {"reward": 65, "groups": [group(WARRIOR, 30, 0.5), group(MAGE, 5, 2.5, 5.0), group(WRAITH, 8, 1.0, 8.0), group(RAT, 14, 0.4, 12.0)]},
+        {"reward": 70, "groups": [group(GUARD, 18, 0.9), group(MAGE, 5, 2.5, 4.0), group(WRAITH, 10, 0.9, 6.0), group(RAT, 24, 0.3, 10.0)]},
+        {"reward": 0, "groups": [group(WORM, 1, 1.0), group(GUARD, 14, 1.8, 6.0), group(RAT, 30, 0.5, 10.0)]},
+    ]}, g, scale=0.7)
 
 # --- Level 7: Belagerung --------------------------------------------------
 g = new_grid()
@@ -175,11 +176,11 @@ write('level_07', {
     "waves": [
         {"reward": 45, "groups": [group(MINION, 10, 0.9), group(MINION, 10, 0.9, 3.0, 1), group(MINION, 10, 0.9, 6.0, 2)]},
         {"reward": 50, "groups": [group(WARRIOR, 8, 1.2), group(ROGUE, 8, 0.7, 2.0, 2), group(WARRIOR, 8, 1.2, 5.0, 1)]},
-        {"reward": 55, "groups": [group(GUARD, 5, 2.0, 0.0, 2), group(WARRIOR, 10, 1.0), group(MAGE, 2, 4.0, 4.0, 1), group(MINION, 16, 0.5, 4.0, 1)]},
+        {"reward": 55, "groups": [group(BATS, 8, 0.7, 4.0, 2), group(GUARD, 5, 2.0, 0.0, 2), group(WARRIOR, 10, 1.0), group(MAGE, 2, 4.0, 4.0, 1), group(MINION, 16, 0.5, 4.0, 1)]},
         {"reward": 60, "groups": [group(ROGUE, 14, 0.5), group(ROGUE, 14, 0.5, 0.0, 1), group(GUARD, 8, 1.5, 3.0, 2)]},
-        {"reward": 65, "groups": [group(WARRIOR, 16, 0.8), group(WARRIOR, 16, 0.8, 0.0, 1), group(WARRIOR, 16, 0.8, 0.0, 2), group(MAGE, 3, 3.0, 4.0, 2)]},
+        {"reward": 65, "groups": [group(TROLL, 2, 7.0, 5.0, 1), group(WARRIOR, 16, 0.8), group(WARRIOR, 16, 0.8, 0.0, 1), group(WARRIOR, 16, 0.8, 0.0, 2), group(MAGE, 3, 3.0, 4.0, 2)]},
         {"reward": 70, "groups": [group(GUARD, 10, 1.2), group(GUARD, 10, 1.2, 0.0, 1), group(MAGE, 4, 3.0, 3.0, 2), group(WRAITH, 8, 1.0, 6.0, 2), group(ROGUE, 14, 0.4, 8.0, 2)]},
-        {"reward": 75, "groups": [group(WARRIOR, 24, 0.6), group(GUARD, 12, 1.1, 0.0, 1), group(MINION, 50, 0.25, 0.0, 2), group(MAGE, 5, 2.5, 5.0)]},
+        {"reward": 75, "groups": [group(SPIDER, 12, 0.6, 3.0), group(WARRIOR, 24, 0.6), group(GUARD, 12, 1.1, 0.0, 1), group(MINION, 50, 0.25, 0.0, 2), group(MAGE, 5, 2.5, 5.0)]},
         {"reward": 0, "groups": [group(GUARD, 16, 1.0), group(GUARD, 16, 1.0, 0.0, 1), group(GUARD, 16, 1.0, 0.0, 2), group(MAGE, 4, 3.0, 4.0), group(MAGE, 4, 3.0, 6.0, 1), group(WRAITH, 12, 0.8, 5.0), group(ROGUE, 20, 0.3, 10.0, 2)]},
     ]}, g)
 
@@ -195,10 +196,10 @@ write('level_08', {
     "waves": [
         {"reward": 50, "groups": [group(MINION, 24, 0.5), group(WARRIOR, 8, 1.2, 6.0)]},
         {"reward": 55, "groups": [group(ROGUE, 20, 0.5), group(GUARD, 6, 1.8, 4.0)]},
-        {"reward": 60, "groups": [group(WARRIOR, 24, 0.6), group(MAGE, 4, 3.0, 4.0)]},
+        {"reward": 60, "groups": [group(BATS, 10, 0.6, 6.0), group(TROLL, 2, 8.0, 10.0), group(WARRIOR, 24, 0.6), group(MAGE, 4, 3.0, 4.0)]},
         {"reward": 65, "groups": [group(GUARD, 16, 1.0), group(WRAITH, 8, 1.0, 4.0), group(ROGUE, 18, 0.4, 6.0), group(MAGE, 4, 3.0, 8.0)]},
         {"reward": 70, "groups": [group(KING, 1, 1.0), group(WARRIOR, 30, 0.7, 4.0)]},
         {"reward": 75, "groups": [group(GUARD, 24, 0.8), group(MAGE, 8, 2.0, 4.0), group(WRAITH, 12, 0.8, 6.0), group(MINION, 40, 0.2, 10.0)]},
         {"reward": 80, "groups": [group(WARRIOR, 50, 0.4), group(GUARD, 20, 0.9, 5.0), group(ROGUE, 40, 0.3, 12.0), group(MAGE, 8, 2.0, 6.0)]},
-        {"reward": 0, "groups": [group(KING, 2, 14.0), group(GUARD, 30, 1.0, 4.0), group(MAGE, 10, 2.5, 6.0), group(WARRIOR, 40, 0.6, 10.0)]},
+        {"reward": 0, "groups": [group(KING, 1, 1.0), group(WORM, 1, 1.0, 16.0), group(GUARD, 30, 1.0, 4.0), group(MAGE, 10, 2.5, 6.0), group(WARRIOR, 40, 0.6, 10.0)]},
     ]}, g)

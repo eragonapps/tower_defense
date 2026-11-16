@@ -40,7 +40,8 @@
         "cooldown": 0.22,
         "damage": 22
       }
-    ]
+    ],
+    "anti_air": true
   },
   "sling": {
     "name_key": "TOWER_SLING",
@@ -139,7 +140,8 @@
         "damage": 24,
         "range": 3.5
       }
-    ]
+    ],
+    "anti_air": true
   },
   "forge": {
     "name_key": "TOWER_FORGE",

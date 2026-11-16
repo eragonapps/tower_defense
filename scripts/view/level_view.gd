@@ -102,6 +102,7 @@ func _ready() -> void:
 	sim.boon_chosen.connect(_on_boon_chosen)
 	sim.curse_added.connect(_on_curse_added)
 	sim.leak_warded.connect(_on_leak_warded)
+	sim.enemy_exploded.connect(_on_enemy_exploded)
 	sim.wave_cleared.connect(_on_wave_cleared)
 	sim.wave_started.connect(func(_i: int) -> void: Sfx.play("wave", -4.0))
 	hud.set_hint(level.get("hint_key", "HUD_HINT_BUILD"))
@@ -882,6 +883,14 @@ func _on_curse_added(id: String) -> void:
 	Sfx.play("defeat", -6.0)
 
 
+func _on_enemy_exploded(e: GameSim.Enemy) -> void:
+	var radius := float(e.def["death_blast"]["radius"]) * CELL
+	if Models.prop("fx_bomb_blast") != null:
+		_spawn_fx("fx_bomb_blast", to_world(e.pos, 0.05), radius / 1.05 * 0.8, 0.4)
+	_burst(to_world(e.pos, 0.5), Color(1.0, 0.6, 0.2), 14)
+	Sfx.play("blast", -2.0)
+
+
 func _on_leak_warded(_enemy: GameSim.Enemy) -> void:
 	_show_ring(to_world(MineGrid.center(sim.grid.heart), 0.15), CELL * 1.2, Color(0.5, 0.85, 1.0, 0.7))
 	Sfx.play("rune", -6.0)
@@ -1092,29 +1101,56 @@ func _set_tower_model(root: Node3D, t: GameSim.Tower) -> void:
 			_spinners.append(n)
 
 
-## Stellt das Berserker-Lager an den Stollen: Ursprung in die Mitte des Stollenfelds neben dem Bauplatz,
+## Stellt das Berserker-Lager an den Stollen: Ursprung in die Mitte eines Stollenfelds neben dem Bauplatz,
 ## das Lager zeigt zum Bauplatz (im Modell -Z), die Gegner kommen von +X. Kommen sie von der anderen
 ## Seite, wird das Modell gespiegelt.
+## An Ecken liegt die Sperre immer auf dem Wegstück, das näher am Eingang ist, nie auf dem zur Schatzkammer.
 func _place_on_path(model: Node3D, cell: Vector2i) -> void:
 	var g := sim.grid
-	var path := cell
-	var on_route := g.path_cells()
+	# Alle Stollenfelder neben dem Bauplatz prüfen. Bewertet wird, woher die Gegner an diesem Feld kommen.
+	var best := {}
 	for d in MineGrid.DIRS:
-		if g.is_walkable(cell + d) and (path == cell or (cell + d) in on_route):
-			path = cell + d
-	if path == cell:
+		var path: Vector2i = cell + d
+		if not g.is_walkable(path):
+			continue
+		var to_camp := cell - path
+		var side := Vector2i(-to_camp.y, to_camp.x)
+		var here := g.distance(path)
+		for option in [side, -side, -to_camp]:
+			var from: Vector2i = path + option
+			var dist := g.distance(from)
+			if dist == MineGrid.UNREACHABLE or (here != MineGrid.UNREACHABLE and dist <= here):
+				continue
+			# Kommen die Gegner längs am Lager vorbei, passt das Modell direkt. Kommen sie von gegenüber,
+			# muss die Sperre gedreht werden. Unter mehreren Möglichkeiten gewinnt das Feld näher am Eingang.
+			var score := dist * 2 + (1 if option != -to_camp else 0)
+			if best.is_empty() or score > int(best["score"]):
+				best = {"score": score, "path": path, "to_camp": to_camp, "from": option}
+	if best.is_empty():
 		return
-	var to_camp := Vector3(cell.x - path.x, 0, cell.y - path.y)
-	var side := Vector2i(-(cell.y - path.y), cell.x - path.x)
-	# Gegner kommen von der Seite, die weiter vom Herz entfernt ist.
-	var a := g.distance(path + side)
-	var b := g.distance(path - side)
-	if b != MineGrid.UNREACHABLE and (a == MineGrid.UNREACHABLE or b > a):
-		side = -side
-	var upstream := Vector3(side.x, 0, side.y)
+	var path: Vector2i = best["path"]
+	var to_camp: Vector2i = best["to_camp"]
+	var from: Vector2i = best["from"]
+	var turn := from == -to_camp
+	var upstream := Vector2i(-to_camp.y, to_camp.x) if turn else from
+	if turn:
+		# Für die gedrehte Sperre zeigt +X zur Rückseite der Ecke, damit der Kampftrupp nicht im Weg nach unten steht.
+		var down := path + upstream
+		if g.is_walkable(down):
+			upstream = -upstream
 	var scale := float(Models.TOWERS["shieldwall"]["scale"])
-	model.transform = Transform3D(Basis(upstream, Vector3.UP, -to_camp).scaled(Vector3.ONE * scale),
+	var x := Vector3(upstream.x, 0, upstream.y)
+	model.transform = Transform3D(Basis(x, Vector3.UP, -Vector3(to_camp.x, 0, to_camp.y)).scaled(Vector3.ONE * scale),
 		to_world(MineGrid.center(path)) - to_world(MineGrid.center(cell)))
+	var barricade := model.find_child("Barricade", true, false) as Node3D
+	model.set_meta("barricade_hold", 0.0)
+	model.set_meta("barricade_open", -PI / 2.0)
+	if turn and barricade != null:
+		# Die Gegner kommen von der Seite gegenüber dem Lager (im Modell +Z). Die Sperre steht dann quer auf
+		# dieser Seite des Feldes, ihr Drehpunkt am Rand ohne Weg.
+		barricade.position = Vector3(-1.2, barricade.position.y, 0.35)
+		model.set_meta("barricade_hold", PI / 2.0)
+		model.set_meta("barricade_open", 0.0)
 
 
 ## Schaltet das Lager zwischen offen und festhaltend um: Sperre schwenken, Trupps tauschen, Wutring zeigen.
@@ -1125,7 +1161,7 @@ func _set_camp_state(model: Node3D, holding: bool, instant := false) -> void:
 	model.set_meta("holding", holding)
 	var barricade := model.find_child("Barricade", true, false) as Node3D
 	if barricade != null:
-		var target := 0.0 if holding else -PI / 2.0
+		var target := float(model.get_meta("barricade_hold", 0.0)) if holding else float(model.get_meta("barricade_open", -PI / 2.0))
 		if instant:
 			barricade.rotation.y = target
 		else:
@@ -1651,8 +1687,13 @@ func demo(state: String) -> void:
 				break
 			for d in MineGrid.DIRS:
 				var side := Vector2i(-d.y, d.x)
-				if sim.grid.is_walkable(slot + d) and sim.grid.is_walkable(slot + d + side) and sim.grid.is_walkable(slot + d - side):
-					if sim.build_tower(slot, "shieldwall") == GameSim.Result.OK:
+				var corner := OS.get_environment("CAMP_CORNER") != ""
+				var straight := sim.grid.is_walkable(slot + d + side) and sim.grid.is_walkable(slot + d - side)
+				if sim.grid.is_walkable(slot + d) and straight != corner:
+					if sim.tower_at(slot) != null:
+						sim.sell_tower(slot)
+					var res := sim.build_tower(slot, "shieldwall")
+					if res == GameSim.Result.OK:
 						placed.append(slot)
 					break
 		sim.start_next_wave()
@@ -1773,7 +1814,7 @@ func demo(state: String) -> void:
 	sim.start_next_wave()
 	if state == "boss":
 		# Alle besonderen Gegner auf einmal, zum Ansehen.
-		for type in ["fallen_king", "stone_golem", "goblin", "goblin_shaman", "kobold_sapper", "draugr", "wraith"]:
+		for type in ["deep_worm", "cave_troll", "shadow_spider", "rat_swarm", "cave_bats", "fallen_king", "stone_golem", "goblin_shaman"]:
 			sim._spawn(type, 0)
 			for i in 50:
 				sim.step()

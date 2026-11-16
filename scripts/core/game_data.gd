@@ -15,7 +15,7 @@ const LEVEL_ORDER: Array[String] = [
 
 const TOWER_FIELDS := ["name_key", "cost", "range", "cooldown", "damage", "splash", "projectile_speed", "color"]
 ## Zusatzwirkungen eines Turms: kind (projectile oder aura), slow {factor, duration}, burn {dps, duration}.
-const TOWER_OPTIONAL := ["kind", "slow", "burn", "damage_type", "capacity", "hold_time", "falloff", "pierce", "stun"]
+const TOWER_OPTIONAL := ["kind", "slow", "burn", "damage_type", "capacity", "hold_time", "falloff", "pierce", "stun", "anti_air"]
 const BOONS_PATH := "res://data/boons.json"
 const HALL_PATH := "res://data/hall.json"
 const CURSES_PATH := "res://data/curses.json"
@@ -195,6 +195,8 @@ static func validate(level: Dictionary, towers: Dictionary, enemies: Dictionary)
 		for type in enemies[id].get("resist", {}):
 			if type not in DAMAGE_TYPES:
 				errors.append("Gegner %s: unbekannte Schadensart %s in resist" % [id, type])
+		if enemies[id].has("death_blast") and not (enemies[id]["death_blast"].has("radius") and enemies[id]["death_blast"].has("damage")):
+			errors.append("Gegner %s: death_blast braucht radius und damage" % id)
 		if enemies[id].has("summon") and not enemies.has(enemies[id]["summon"].get("enemy", "")):
 			errors.append("Gegner %s: ruft unbekannten Gegner" % id)
 		if enemies[id].has("heal"):

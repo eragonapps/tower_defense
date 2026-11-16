@@ -231,7 +231,20 @@ Bekannte Schwächen:
 - Geschosse und Treffereffekte je Turm und Spezialisierung: Bolzen, Kanonenkugel, Mörserbombe, Feuerball, Bomben, Explosion, Lavalache, Frostring, Eissplitter, Flammenstoß.
 - Die Skelette sind ersetzt: Goblin, Draugr, Kobold-Sappeur, Goblin-Schamane (zaubert beim Heilen), Steingolem, Gefallener König. Gegner im Schildwall zeigen eine eigene Halte-Pose.
 - Das Berserker-Lager (Schildwall) steht neben dem Stollen auf Weghöhe. Hält es Gegner fest, schwenkt die Sperre quer über den Weg, der Kampftrupp tritt vor, der Wutring pulsiert und das Kriegshorn leuchtet. Sein Bauplatz wird dafür flach dargestellt.
-- Rattenschwarm, Schattenspinne, Höhlentroll und Tiefenwurm sind als Modelle da, haben aber noch keine Rolle im Spiel.
+- An einer Wegecke richtet sich die Sperre immer nach dem Wegarm, der näher am Eingang liegt, nie nach der Schatzkammer.
+
+### Neue Gegner (16.11.2026)
+**Stand:** eingebaut, Gerätetest offen.
+- Grubengoblin: klein, zahlreich, der Standardgegner der ersten Level.
+- Tunnelratten-Schwarm: schnell, sehr schwach, in Gruppen. Prüft Flächenschaden. Stiehlt Erz (statt des Kobolds).
+- Kobold-Sprengmeister: explodiert beim Tod und schadet den Gegnern um ihn herum.
+- Höhlentroll: Tank, kostet 3 Leben.
+- Draugr (gefallener Zwerg): Rüstung gegen Armbrustbolzen, Konter sind Kanone, Bomben oder Feuer.
+- Steingolem: sehr langsam, fast immun gegen Verlangsamung, Gegenstück zum Runenstein.
+- Schattenspinne: schnell, der Schildwall hält sie nur ein Viertel so lange.
+- Höhlenfledermaus-Schwarm: fliegt, nur Armbrust und Runenstein treffen ihn. Flächenschaden anderer Türme geht an ihm vorbei. Noch ein Platzhalter-Modell.
+- Goblin-Schamane: heilt.
+- Bosse: Tiefenwurm (Level 4 und 6, kann nicht festgehalten werden) und der Verderbte Bergkönig als Endboss (Level 8, ruft Draugr). Im Endlosmodus wechseln sie sich alle 10 Wellen ab.
 - Die vielen Einzelteile werden beim Laden zusammengefasst (Armbrustturm Stufe 3: 158 Teile werden zu 3 Netzen).
 
 ### M6 – Veröffentlichung

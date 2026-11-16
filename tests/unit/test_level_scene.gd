@@ -228,7 +228,8 @@ func test_blocking_fill_is_explained_and_disabled() -> void:
 
 func test_level_two_can_be_won_through_the_interface() -> void:
 	var l := _level_02()
-	var bot := Bots.MinerBot.new(["crossbow", "crossbow", "sling"], [Vector2i(4, 3), Vector2i(4, 2), Vector2i(12, 3)])
+	# Seit die Ratten Bolzen zur Hälfte abwehren, braucht Level 2 auch den Runenstein.
+	var bot := Bots.MinerBot.new(["crossbow", "sling", "crossbow", "runestone"], [Vector2i(4, 3), Vector2i(4, 2), Vector2i(12, 3)])
 	var guard := 0
 	var chosen := 0
 	var acted_at := -1

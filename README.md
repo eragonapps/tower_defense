@@ -6,7 +6,7 @@
 - Quellen und Lizenzen der Assets: [`ASSETS.md`](ASSETS.md)
 
 ## Stand
-Acht Levels, sechs Türme mit eigenen Modellen je Ausbaustufe und Spezialisierung, Zielwahl und Veredeln, sieben Gegner samt Boss, 28 zufällige Gaben, Endlosmodus mit Flüchen, Durchbrüchen und Umbau, Zwergenhalle, Einführung, drei Schwierigkeitsgrade und zwei Grafikstufen.
+Acht Levels, sechs Türme mit eigenen Modellen je Ausbaustufe und Spezialisierung, Zielwahl und Veredeln, zwölf Gegner samt zwei Bossen, 28 zufällige Gaben, Endlosmodus mit Flüchen, Durchbrüchen und Umbau, Zwergenhalle, Einführung, drei Schwierigkeitsgrade und zwei Grafikstufen.
 
 ## Bedienung
 - Ein Finger ziehen: Karte verschieben. Zwei Finger: zoomen.

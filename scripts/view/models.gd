@@ -75,6 +75,12 @@ const ENEMIES := {
 	"goblin_shaman": {"model": ENEMIES_DIR + "enemy_goblin_shaman", "scale": 1.4, "cast": "Cast"},
 	"stone_golem": {"model": ENEMIES_DIR + "enemy_stone_golem", "scale": 1.15},
 	"fallen_king": {"model": ENEMIES_DIR + "enemy_fallen_king", "scale": 1.6},
+	"rat_swarm": {"model": ENEMIES_DIR + "enemy_rat_swarm", "scale": 1.5},
+	"cave_troll": {"model": ENEMIES_DIR + "enemy_cave_troll", "scale": 1.25},
+	"shadow_spider": {"model": ENEMIES_DIR + "enemy_shadow_spider", "scale": 1.2},
+	"deep_worm": {"model": ENEMIES_DIR + "enemy_deep_worm", "scale": 0.8},
+	# Noch kein eigenes Modell: einfache Fledermäuse, im Spiel erzeugt. hover: Flughöhe.
+	"cave_bats": {"model": "", "builtin": "bats", "hover": 1.3},
 	# scale gleicht den anderen Maßstab des Pakets aus, hover lässt die Figur über dem Boden schweben.
 	"wraith": {"model": MONSTERS + "Ghost", "walk": "Flying_Idle", "death": "Death", "scale": 0.29, "hover": 0.35,
 		"tint": Color(0.7, 0.9, 1.0), "glow": 0.9},
@@ -98,7 +104,7 @@ static func _file(path: String) -> String:
 
 
 static func has(path: String) -> bool:
-	return _file(path) != ""
+	return path != "" and _file(path) != ""
 
 
 static func instance(path: String) -> Node3D:
@@ -320,7 +326,9 @@ static func _height_of(root: Node3D, node: Node3D) -> float:
 static func enemy(type: String) -> Node3D:
 	var visual: Dictionary = ENEMIES.get(type, {})
 	var node: Node3D
-	if String(visual.get("model", "")).begins_with(ENEMIES_DIR):
+	if visual.get("builtin", "") == "bats":
+		node = bat_swarm()
+	elif String(visual.get("model", "")).begins_with(ENEMIES_DIR):
 		node = baked(visual["model"])
 	else:
 		node = character(visual["model"], [], Vector3.ONE)
@@ -362,3 +370,79 @@ static func _aabb(node: Node, xf: Transform3D) -> AABB:
 			if b.size != Vector3.ZERO:
 				box = b if box.size == Vector3.ZERO else box.merge(b)
 	return box
+
+
+
+## Platzhalter für den Fledermaus-Schwarm, bis ein eigenes Modell da ist: drei Fledermäuse aus
+## einfachen Formen mit schlagenden Flügeln. Hat dieselben Animationen wie die eigenen Gegner.
+static func bat_swarm() -> Node3D:
+	var root := Node3D.new()
+	root.name = "BatSwarm"
+	var body_mat := StandardMaterial3D.new()
+	body_mat.albedo_color = Color(0.13, 0.11, 0.14)
+	var wing_mat := StandardMaterial3D.new()
+	wing_mat.albedo_color = Color(0.2, 0.15, 0.2)
+	wing_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var eye_mat := StandardMaterial3D.new()
+	eye_mat.albedo_color = Color(1.0, 0.3, 0.2)
+	eye_mat.emission_enabled = true
+	eye_mat.emission = Color(1.0, 0.3, 0.2)
+	eye_mat.emission_energy_multiplier = 2.5
+	var walk := Animation.new()
+	walk.length = 0.3
+	walk.loop_mode = Animation.LOOP_LINEAR
+	var death := Animation.new()
+	death.length = 0.5
+	var offsets := [Vector3(0, 0, 0), Vector3(-0.35, 0.2, -0.3), Vector3(0.35, -0.15, -0.25)]
+	for i in offsets.size():
+		var bat := Node3D.new()
+		bat.name = "Bat%d" % i
+		bat.position = offsets[i]
+		root.add_child(bat)
+		var body := MeshInstance3D.new()
+		var sphere := SphereMesh.new()
+		sphere.radius = 0.09
+		sphere.height = 0.2
+		sphere.radial_segments = 8
+		sphere.rings = 4
+		body.mesh = sphere
+		body.material_override = body_mat
+		bat.add_child(body)
+		var eyes := MeshInstance3D.new()
+		var eye_mesh := BoxMesh.new()
+		eye_mesh.size = Vector3(0.1, 0.03, 0.03)
+		eyes.mesh = eye_mesh
+		eyes.position = Vector3(0, 0.03, 0.08)
+		eyes.material_override = eye_mat
+		bat.add_child(eyes)
+		for side in [-1, 1]:
+			var wing := MeshInstance3D.new()
+			wing.name = "Wing%s" % ("L" if side < 0 else "R")
+			var wing_mesh := PrismMesh.new()
+			wing_mesh.size = Vector3(0.36, 0.2, 0.02)
+			wing.mesh = wing_mesh
+			wing.material_override = wing_mat
+			var pivot := Node3D.new()
+			pivot.name = "Pivot%s" % ("L" if side < 0 else "R")
+			pivot.rotation.x = -PI / 2.0
+			bat.add_child(pivot)
+			wing.position = Vector3(side * 0.18, 0, 0)
+			pivot.add_child(wing)
+			var track := walk.add_track(Animation.TYPE_ROTATION_3D)
+			walk.track_set_path(track, NodePath("Bat%d/%s" % [i, pivot.name]))
+			var phase := float(i) * 0.07
+			walk.rotation_track_insert_key(track, 0.0, Quaternion.from_euler(Vector3(-PI / 2.0, 0, side * (0.5 + phase))))
+			walk.rotation_track_insert_key(track, 0.15, Quaternion.from_euler(Vector3(-PI / 2.0, 0, -side * 0.6)))
+			walk.rotation_track_insert_key(track, 0.3, Quaternion.from_euler(Vector3(-PI / 2.0, 0, side * (0.5 + phase))))
+		var fall := death.add_track(Animation.TYPE_POSITION_3D)
+		death.track_set_path(fall, NodePath("Bat%d" % i))
+		death.position_track_insert_key(fall, 0.0, offsets[i])
+		death.position_track_insert_key(fall, 0.5, offsets[i] + Vector3(0, -1.2, 0))
+	var library := AnimationLibrary.new()
+	library.add_animation("Walk", walk)
+	library.add_animation("Death", death)
+	var player := AnimationPlayer.new()
+	player.name = "AnimationPlayer"
+	root.add_child(player)
+	player.add_animation_library("", library)
+	return root

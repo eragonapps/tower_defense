@@ -32,6 +32,7 @@
     {
       "reward": 55,
       "groups": [
+        {"enemy": "cave_bats", "count": 8, "interval": 0.7, "delay": 4.0, "entrance": 2},
         {"enemy": "stone_golem", "count": 5, "interval": 2.0, "entrance": 2},
         {"enemy": "draugr", "count": 10, "interval": 1.0},
         {"enemy": "goblin_shaman", "count": 2, "interval": 4.0, "delay": 4.0, "entrance": 1},
@@ -49,6 +50,7 @@
     {
       "reward": 65,
       "groups": [
+        {"enemy": "cave_troll", "count": 2, "interval": 7.0, "delay": 5.0, "entrance": 1},
         {"enemy": "draugr", "count": 16, "interval": 0.8},
         {"enemy": "draugr", "count": 16, "interval": 0.8, "entrance": 1},
         {"enemy": "draugr", "count": 16, "interval": 0.8, "entrance": 2},
@@ -68,6 +70,7 @@
     {
       "reward": 75,
       "groups": [
+        {"enemy": "shadow_spider", "count": 12, "interval": 0.6, "delay": 3.0},
         {"enemy": "draugr", "count": 24, "interval": 0.6},
         {"enemy": "stone_golem", "count": 12, "interval": 1.1, "entrance": 1},
         {"enemy": "goblin", "count": 50, "interval": 0.25, "entrance": 2},

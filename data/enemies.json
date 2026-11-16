@@ -10,24 +10,27 @@
   },
   "draugr": {
     "name_key": "ENEMY_DRAUGR",
-    "hp": 180,
+    "hp": 150,
     "speed": 1.0,
     "bounty": 10,
     "lives": 1,
     "color": "#8f9aa3",
-    "size": 1.0
+    "size": 1.0,
+    "resist": {
+      "pierce": 0.55
+    }
   },
   "kobold_sapper": {
     "name_key": "ENEMY_KOBOLD_SAPPER",
-    "hp": 45,
-    "speed": 2.2,
-    "bounty": 6,
+    "hp": 60,
+    "speed": 1.7,
+    "bounty": 7,
     "lives": 1,
     "color": "#9a3d4a",
     "size": 0.85,
-    "steal": {
-      "ore": 6,
-      "radius": 1.6
+    "death_blast": {
+      "radius": 1.3,
+      "damage": 60
     }
   },
   "goblin_shaman": {
@@ -46,15 +49,13 @@
   },
   "stone_golem": {
     "name_key": "ENEMY_STONE_GOLEM",
-    "hp": 300,
-    "speed": 0.85,
+    "hp": 320,
+    "speed": 0.7,
     "bounty": 18,
     "lives": 1,
     "color": "#7f8fa6",
     "size": 1.2,
-    "resist": {
-      "pierce": 0.35
-    }
+    "slow_resist": 0.85
   },
   "fallen_king": {
     "name_key": "ENEMY_FALLEN_KING",
@@ -70,9 +71,9 @@
       "fire": 0.7
     },
     "summon": {
-      "enemy": "goblin",
+      "enemy": "draugr",
       "count": 2,
-      "interval": 6.0
+      "interval": 7.0
     }
   },
   "wraith": {
@@ -86,6 +87,65 @@
     "resist": {
       "blunt": 0.25,
       "fire": 0.25
+    }
+  },
+  "rat_swarm": {
+    "name_key": "ENEMY_RAT_SWARM",
+    "hp": 20,
+    "speed": 2.2,
+    "bounty": 2,
+    "lives": 1,
+    "color": "#7a5a4a",
+    "size": 0.6,
+    "resist": {
+      "pierce": 0.5
+    },
+    "steal": {
+      "ore": 5,
+      "radius": 1.6
+    }
+  },
+  "cave_troll": {
+    "name_key": "ENEMY_CAVE_TROLL",
+    "hp": 900,
+    "speed": 0.55,
+    "bounty": 30,
+    "lives": 3,
+    "color": "#4a6a5a",
+    "size": 1.6
+  },
+  "shadow_spider": {
+    "name_key": "ENEMY_SHADOW_SPIDER",
+    "hp": 90,
+    "speed": 2.2,
+    "bounty": 8,
+    "lives": 1,
+    "color": "#3a2a4a",
+    "size": 1.0,
+    "hold_factor": 0.25
+  },
+  "cave_bats": {
+    "name_key": "ENEMY_CAVE_BATS",
+    "hp": 45,
+    "speed": 1.9,
+    "bounty": 5,
+    "lives": 1,
+    "color": "#2a2a30",
+    "size": 0.8,
+    "flying": true
+  },
+  "deep_worm": {
+    "name_key": "ENEMY_DEEP_WORM",
+    "hp": 7000,
+    "speed": 0.4,
+    "bounty": 220,
+    "lives": 20,
+    "color": "#5a5048",
+    "size": 2.0,
+    "unblockable": true,
+    "slow_resist": 0.6,
+    "resist": {
+      "pierce": 0.5
     }
   }
 }

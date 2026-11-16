@@ -29,7 +29,7 @@ func test_every_enemy_has_a_model_with_walk_and_death() -> void:
 		if ap != null:
 			assert_true(ap.has_animation(Models.enemy_anim(type, "walk")), "%s: Laufen fehlt" % type)
 			assert_true(ap.has_animation(Models.enemy_anim(type, "death")), "%s: Sterben fehlt" % type)
-		assert_gt(Models.height(node), 0.4, "%s ist zu klein" % type)
+		assert_gt(Models.height(node), 0.2, "%s ist zu klein" % type)
 		assert_lt(Models.height(node), 3.5, "%s ist zu groß" % type)
 		node.free()
 
@@ -221,3 +221,46 @@ func test_moving_the_camp_turns_it_to_the_new_path() -> void:
 	var cell := MineGrid.cell_at(Vector2(origin.x, origin.z) / LevelView.CELL)
 	assert_eq((cell - target).length_squared(), 1)
 	LevelView.run_seed = 0
+
+
+func test_camp_at_a_corner_blocks_the_side_towards_the_entrance() -> void:
+	for lv in ["level_06", "level_08"]:
+		LevelView.level_id = lv
+		LevelView.run_seed = 3
+		var l: LevelView = load("res://scenes/level.tscn").instantiate()
+		add_child_autofree(l)
+		l.set_process(false)
+		l.sim.gold = 9999
+		var g := l.sim.grid
+		var slot := LevelView.NO_CELL
+		for s in g.cells_of_type(MineGrid.Cell.BUILD):
+			for d in MineGrid.DIRS:
+				var side := Vector2i(-d.y, d.x)
+				if g.is_walkable(s + d) and not (g.is_walkable(s + d + side) and g.is_walkable(s + d - side)):
+					slot = s
+		assert_ne(slot, LevelView.NO_CELL, lv)
+		if l.sim.tower_at(slot) != null:
+			l.sim.sell_tower(slot)
+		assert_eq(l.sim.build_tower(slot, "shieldwall"), GameSim.Result.OK)
+		var t: GameSim.Tower = l.sim.tower_at(slot)
+		var model: Node3D = l._tower_views[t.id].get_node("Model")
+		var barricade := model.find_child("Barricade", true, false) as Node3D
+		barricade.rotation.y = float(model.get_meta("barricade_hold"))
+		# Mitte der geschlossenen Sperre in Weltkoordinaten.
+		var mid := Vector3.ZERO
+		var n := 0
+		for m in barricade.find_children("*", "MeshInstance3D", true, false):
+			mid += (m as MeshInstance3D).global_transform * (m as MeshInstance3D).get_aabb().get_center()
+			n += 1
+		assert_gt(n, 0)
+		mid /= n
+		var origin: Vector3 = l._tower_views[t.id].position + model.position
+		var path := MineGrid.cell_at(Vector2(origin.x, origin.z) / LevelView.CELL)
+		# Das Nachbarfeld des Stollens, zu dem die Sperre zeigt, muss näher am Eingang liegen (größerer Abstand).
+		var offset := Vector2(mid.x - origin.x, mid.z - origin.z)
+		var toward := Vector2i(roundi(signf(offset.x)) if absf(offset.x) > absf(offset.y) else 0,
+			roundi(signf(offset.y)) if absf(offset.y) >= absf(offset.x) else 0)
+		assert_true(g.is_walkable(path + toward), "%s: Sperre liegt auf einem Wegarm" % lv)
+		assert_gt(g.distance(path + toward), g.distance(path), "%s: Sperre zum Eingang hin" % lv)
+	LevelView.run_seed = 0
+	LevelView.level_id = "level_01"

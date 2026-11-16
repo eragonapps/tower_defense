@@ -4,7 +4,10 @@
   "lives": 20,
   "wave_pause": 8.0,
   "tutorial": true,
-  "rules": {"digging": false, "boon_every": 0},
+  "rules": {
+    "digging": false,
+    "boon_every": 0
+  },
   "towers": [
     "crossbow",
     "sling"
@@ -31,7 +34,8 @@
     {
       "reward": 25,
       "groups": [
-        {"enemy": "goblin", "count": 14, "interval": 0.7}
+        {"enemy": "goblin", "count": 14, "interval": 0.7},
+        {"enemy": "rat_swarm", "count": 6, "interval": 0.6, "delay": 5.0}
       ]
     },
     {
@@ -45,7 +49,8 @@
       "reward": 35,
       "groups": [
         {"enemy": "goblin", "count": 24, "interval": 0.4},
-        {"enemy": "draugr", "count": 6, "interval": 1.5, "delay": 3.0}
+        {"enemy": "draugr", "count": 6, "interval": 1.5, "delay": 3.0},
+        {"enemy": "rat_swarm", "count": 10, "interval": 0.4, "delay": 6.0}
       ]
     },
     {

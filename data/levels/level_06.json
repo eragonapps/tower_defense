@@ -19,62 +19,63 @@
     {
       "reward": 40,
       "groups": [
-        {"enemy": "goblin", "count": 14, "interval": 0.8}
+        {"enemy": "goblin", "count": 10, "interval": 0.8}
       ]
     },
     {
       "reward": 45,
       "groups": [
-        {"enemy": "kobold_sapper", "count": 10, "interval": 0.8},
-        {"enemy": "draugr", "count": 6, "interval": 1.5, "delay": 4.0}
+        {"enemy": "rat_swarm", "count": 7, "interval": 0.8},
+        {"enemy": "draugr", "count": 4, "interval": 1.5, "delay": 4.0}
       ]
     },
     {
       "reward": 50,
       "groups": [
-        {"enemy": "kobold_sapper", "count": 16, "interval": 0.5},
-        {"enemy": "stone_golem", "count": 4, "interval": 2.0, "delay": 3.0}
+        {"enemy": "rat_swarm", "count": 11, "interval": 0.5},
+        {"enemy": "stone_golem", "count": 3, "interval": 2.0, "delay": 3.0}
       ]
     },
     {
       "reward": 55,
       "groups": [
-        {"enemy": "draugr", "count": 16, "interval": 0.8},
-        {"enemy": "goblin_shaman", "count": 3, "interval": 3.0, "delay": 4.0},
-        {"enemy": "kobold_sapper", "count": 12, "interval": 0.5, "delay": 10.0}
+        {"enemy": "draugr", "count": 11, "interval": 0.8},
+        {"enemy": "goblin_shaman", "count": 2, "interval": 3.0, "delay": 4.0},
+        {"enemy": "rat_swarm", "count": 8, "interval": 0.5, "delay": 10.0}
       ]
     },
     {
       "reward": 60,
       "groups": [
-        {"enemy": "stone_golem", "count": 12, "interval": 1.2},
-        {"enemy": "kobold_sapper", "count": 20, "interval": 0.4, "delay": 5.0}
+        {"enemy": "cave_bats", "count": 4, "interval": 0.9, "delay": 6.0},
+        {"enemy": "stone_golem", "count": 8, "interval": 1.2},
+        {"enemy": "rat_swarm", "count": 14, "interval": 0.4, "delay": 5.0}
       ]
     },
     {
       "reward": 65,
       "groups": [
-        {"enemy": "draugr", "count": 30, "interval": 0.5},
-        {"enemy": "goblin_shaman", "count": 5, "interval": 2.5, "delay": 5.0},
-        {"enemy": "wraith", "count": 8, "interval": 1.0, "delay": 8.0},
-        {"enemy": "kobold_sapper", "count": 14, "interval": 0.4, "delay": 12.0}
+        {"enemy": "draugr", "count": 21, "interval": 0.5},
+        {"enemy": "goblin_shaman", "count": 4, "interval": 2.5, "delay": 5.0},
+        {"enemy": "wraith", "count": 6, "interval": 1.0, "delay": 8.0},
+        {"enemy": "rat_swarm", "count": 10, "interval": 0.4, "delay": 12.0}
       ]
     },
     {
       "reward": 70,
       "groups": [
-        {"enemy": "stone_golem", "count": 18, "interval": 0.9},
-        {"enemy": "goblin_shaman", "count": 5, "interval": 2.5, "delay": 4.0},
-        {"enemy": "wraith", "count": 10, "interval": 0.9, "delay": 6.0},
-        {"enemy": "kobold_sapper", "count": 24, "interval": 0.3, "delay": 10.0}
+        {"enemy": "stone_golem", "count": 13, "interval": 0.9},
+        {"enemy": "goblin_shaman", "count": 4, "interval": 2.5, "delay": 4.0},
+        {"enemy": "wraith", "count": 7, "interval": 0.9, "delay": 6.0},
+        {"enemy": "rat_swarm", "count": 17, "interval": 0.3, "delay": 10.0}
       ]
     },
     {
       "reward": 0,
       "groups": [
-        {"enemy": "fallen_king", "count": 1, "interval": 1.0},
-        {"enemy": "stone_golem", "count": 14, "interval": 1.8, "delay": 6.0},
-        {"enemy": "kobold_sapper", "count": 30, "interval": 0.5, "delay": 10.0}
+        {"enemy": "deep_worm", "count": 1, "interval": 1.0},
+        {"enemy": "stone_golem", "count": 10, "interval": 1.8, "delay": 6.0},
+        {"enemy": "rat_swarm", "count": 21, "interval": 0.5, "delay": 10.0}
       ]
     }
   ],

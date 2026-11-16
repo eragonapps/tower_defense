@@ -35,6 +35,8 @@ signal boon_chosen(id: String)
 signal curse_added(id: String)
 ## Der erste Gegner einer Welle am Herz wurde von der Schutzrune aufgehalten.
 signal leak_warded(enemy: Enemy)
+## Ein Gegner mit Pulverfass ist explodiert und hat Gegner im Umkreis getroffen.
+signal enemy_exploded(enemy: Enemy)
 signal projectile_fired(projectile: Projectile)
 signal projectile_hit(projectile: Projectile)
 signal wave_started(index: int)
@@ -577,13 +579,18 @@ func _is_boss(type: String) -> bool:
 	return _enemy_defs.get(type, {}).get("unblockable", false)
 
 
+## Im Endlosmodus wechseln sich die Bosse ab, die das Spiel kennt.
 func _boss_type() -> String:
+	var bosses: Array[String] = []
 	var ids := _enemy_defs.keys()
 	ids.sort()
 	for id in ids:
 		if _is_boss(id):
-			return id
-	return ""
+			bosses.append(id)
+	if bosses.is_empty():
+		return ""
+	var every := maxi(1, int(rules["endless_boss_every"]))
+	return bosses[(endless_wave / every - 1 + bosses.size()) % bosses.size()]
 
 
 ## Wählt zufällig einen Fluch. Jeder kann mehrfach kommen und wirkt dann stärker.
@@ -1329,11 +1336,12 @@ func _step_block(t: Tower) -> void:
 		for e in enemies:
 			if held.size() >= capacity:
 				break
-			if not e.alive or e.hold_left > 0.0 or t.held_ids.has(e.id) or e.def.get("unblockable", false):
+			if not e.alive or e.hold_left > 0.0 or t.held_ids.has(e.id) or e.def.get("unblockable", false) or _flies(e):
 				continue
 			if t.pos.distance_squared_to(e.pos) <= range_sq:
 				e.held_by = t
-				e.hold_left = float(t.stats["hold_time"])
+				# Manche Gegner krabbeln schnell über die Sperre: hold_factor kürzt die Haltezeit.
+				e.hold_left = float(t.stats["hold_time"]) * float(e.def.get("hold_factor", 1.0))
 				t.held_ids[e.id] = true
 				held.append(e)
 				enemy_held.emit(t, e)
@@ -1349,8 +1357,9 @@ func _step_block(t: Tower) -> void:
 func _pulse_aura(t: Tower) -> void:
 	var range_sq := float(t.stats["range"]) ** 2
 	var hit := false
+	var anti_air: bool = t.stats.get("anti_air", false)
 	for e in enemies:
-		if e.alive and t.pos.distance_squared_to(e.pos) <= range_sq:
+		if e.alive and (anti_air or not _flies(e)) and t.pos.distance_squared_to(e.pos) <= range_sq:
 			hit = true
 			if float(t.stats["damage"]) > 0.0:
 				_damage(e, float(t.stats["damage"]), t.stats.get("damage_type", ""))
@@ -1368,13 +1377,19 @@ func _pick_target(t: Tower) -> Enemy:
 	var best_fresh := false
 	var prefers_fresh: bool = t.stats.has("burn")
 	var range_sq := float(t.stats["range"]) ** 2
+	var anti_air: bool = t.stats.get("anti_air", false)
 	for e in enemies:
-		if e.alive and t.pos.distance_squared_to(e.pos) <= range_sq:
+		if e.alive and (anti_air or not _flies(e)) and t.pos.distance_squared_to(e.pos) <= range_sq:
 			var fresh := prefers_fresh and e.burn_left <= 0.0
 			if best == null or (fresh and not best_fresh) or (fresh == best_fresh and _better_target(t.target_mode, e, best)):
 				best = e
 				best_fresh = fresh
 	return best
+
+
+## Fliegende Gegner treffen nur Türme mit anti_air (Armbrust und Runenstein).
+static func _flies(e: Enemy) -> bool:
+	return e.def.get("flying", false)
 
 
 static func _better_target(mode: String, e: Enemy, best: Enemy) -> bool:
@@ -1411,7 +1426,7 @@ func _apply_hit(p: Projectile, splash: float) -> void:
 		var r_sq := splash * splash
 		for e in enemies:
 			var d_sq := e.pos.distance_squared_to(p.pos)
-			if e.alive and d_sq <= r_sq:
+			if e.alive and d_sq <= r_sq and (not _flies(e) or p.def.get("anti_air", false)):
 				# falloff: Anteil des Schadens am Rand der Fläche. 1.0 bedeutet überall voller Schaden.
 				var share := lerpf(1.0, float(p.def.get("falloff", 1.0)), sqrt(d_sq) / splash)
 				_damage(e, damage * share, type)
@@ -1465,6 +1480,14 @@ func _damage(e: Enemy, amount: float, type := "") -> void:
 		if endless_wave > 0:
 			bounty *= 1.0 + float(rules["endless_bounty_growth"]) * endless_wave
 		gold += roundi(bounty)
+		if e.def.has("death_blast"):
+			# Pulverfass: trifft beim Tod alle anderen Gegner im Umkreis.
+			var blast: Dictionary = e.def["death_blast"]
+			var r_sq := float(blast["radius"]) ** 2
+			enemy_exploded.emit(e)
+			for other in enemies:
+				if other != e and other.alive and other.pos.distance_squared_to(e.pos) <= r_sq:
+					_damage(other, float(blast["damage"]), "blunt")
 		if flags.get("wildfire", false) and e.burn_left > 0.0:
 			# Lauffeuer: Das Feuer springt auf Gegner in der Nähe über.
 			for other in enemies:

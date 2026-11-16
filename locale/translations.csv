@@ -4,8 +4,8 @@ MENU_QUIT,Beenden,Quit
 LEVEL_01_NAME,Der alte Stollen,The Old Gallery
 TOWER_CROSSBOW,Armbrustschütze,Crossbow Dwarf
 TOWER_SLING,Steinschleuder,Stone Sling
-ENEMY_GOBLIN,Goblin,Goblin
-ENEMY_DRAUGR,Draugr,Draugr
+ENEMY_GOBLIN,Grubengoblin,Pit Goblin
+ENEMY_DRAUGR,Draugr (gefallener Zwerg),Draugr (Fallen Dwarf)
 HUD_LIVES,Leben: %d,Lives: %d
 HUD_GOLD,Gold: %d,Gold: %d
 HUD_WAVE,Welle %d/%d,Wave %d/%d
@@ -55,7 +55,7 @@ LEVEL_03_NAME,Zwei Tore,Two Gates
 HINT_LEVEL_03,"Die Gegner kommen durch zwei Tore. Runensteine bremsen, Schmiedefeuer setzt in Brand.","Enemies come through two gates. Rune stones slow them, forge fire sets them ablaze."
 TOWER_RUNESTONE,Runenstein,Rune Stone
 TOWER_FORGE,Schmiedefeuer,Forge Fire
-ENEMY_KOBOLD_SAPPER,Kobold-Sappeur,Kobold Sapper
+ENEMY_KOBOLD_SAPPER,Kobold-Sprengmeister,Kobold Blastmaster
 ENEMY_GOBLIN_SHAMAN,Goblin-Schamane,Goblin Shaman
 HUD_STAT_SLOW,Bremst auf,Slows to
 HUD_STAT_BURN,Brand,Burn
@@ -69,11 +69,11 @@ DIFF_HARD,Schwer,Hard
 TOWER_BOMB,Bombenwerfer,Bomb Thrower
 TOWER_SHIELDWALL,Schildwall,Shield Wall
 ENEMY_STONE_GOLEM,Steingolem,Stone Golem
-ENEMY_FALLEN_KING,Gefallener König,Fallen King
+ENEMY_FALLEN_KING,Verderbter Bergkönig,Corrupted Mountain King
 HUD_STAT_CAPACITY,Hält,Holds
 HUD_STAT_HOLD,Haltezeit,Hold time
-LEVEL_04_NAME,Der gefallene König,The Fallen King
-HINT_LEVEL_04,"Steingolems sind gegen Bolzen gepanzert. Der Schildwall hält Gegner auf, der Bombenwerfer trifft ganze Gruppen. Am Ende kommt der gefallene König.","Stone golems are armored against bolts. The shield wall holds enemies, the bomb thrower hits whole groups. The Fallen King comes last."
+LEVEL_04_NAME,Der Tiefenwurm,The Deep Worm
+HINT_LEVEL_04,"Draugr sind gegen Bolzen gepanzert. Der Schildwall hält Gegner auf, der Bombenwerfer trifft ganze Gruppen. Am Ende schiebt sich der Tiefenwurm heran.","Draugr are armored against bolts. The shield wall holds enemies, the bomb thrower hits whole groups. The Deep Worm comes last."
 SPEC_SNIPER,Scharfschütze,Sharpshooter
 SPEC_SNIPER_DESC,"sehr weit, sehr stark, langsam","very long range, very strong, slow"
 SPEC_REPEATER,Schnellfeuer,Rapid Fire
@@ -105,7 +105,7 @@ HINT_LEVEL_06,"Viel Erz, aber viele Diebe. Du darfst nur siebenmal graben, also 
 LEVEL_07_NAME,Belagerung,Siege
 HINT_LEVEL_07,"Die Gegner kommen durch drei Tore, auch von Norden.","Enemies come through three gates, including from the north."
 LEVEL_08_NAME,Der Thronsaal,The Throne Room
-HINT_LEVEL_08,"Die letzte Schlacht. Die Gegner sind hier zäher als je zuvor, und der gefallene König kommt nicht allein.","The final battle. Enemies are tougher here than ever, and the Fallen King does not come alone."
+HINT_LEVEL_08,"Die letzte Schlacht. Die Gegner sind hier zäher als je zuvor, und der verderbte Bergkönig kommt nicht allein.","The final battle. Enemies are tougher here than ever, and the Corrupted Mountain King does not come alone."
 HUD_WORKER_WAITING,Der Arbeiter wartet. Erz wird nur während einer Welle abgebaut.,The worker is waiting. Ore is only mined while a wave is running.
 HUD_BOON_TITLE,Gabe der Ahnen,Gift of the Ancestors
 HUD_BOON_TEXT,Wähle eine Gabe. Sie gilt bis zum Ende dieses Levels.,Choose a gift. It lasts until the end of this level.
@@ -232,3 +232,8 @@ HUD_REMOVE_SLOT,Bauplatz abreißen,Remove build site
 HUD_BREACH,Durchbruch! Die Gegner haben ein neues Tor in die Mine gebrochen.,Breach! The enemies have broken a new gate into the mine.
 REASON_ONLY_ENDLESS,Neue Bauplätze gibt es nur im Endlosmodus.,New build sites are only available in endless mode.
 REASON_SLOT_LIMIT,Mehr Bauplätze fasst diese Mine nicht.,This mine cannot hold more build sites.
+ENEMY_RAT_SWARM,Tunnelratten-Schwarm,Tunnel Rat Swarm
+ENEMY_CAVE_TROLL,Höhlentroll,Cave Troll
+ENEMY_SHADOW_SPIDER,Schattenspinne,Shadow Spider
+ENEMY_CAVE_BATS,Höhlenfledermaus-Schwarm,Cave Bat Swarm
+ENEMY_DEEP_WORM,Tiefenwurm,Deep Worm
