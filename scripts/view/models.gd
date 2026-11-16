@@ -15,7 +15,16 @@ const FX_DIR := "dwarf_fx/"
 ## Die eigenen Turmmodelle sind etwa 3,1 m breit, ein Feld ist 2 m. So passen sie auf einen Bauplatz.
 const TOWER_SCALE := 0.57
 ## Knoten, die beim Zusammenfassen der Teile erhalten bleiben, weil sie sich bewegen.
-const PIVOTS := ["Turret", "Barrel", "Spin", "Muzzle", "Crystal", "Orb"]
+const PIVOTS := ["Turret", "Barrel", "Spin", "Muzzle", "Crystal", "Orb",
+	# Berserker-Lager: Sperre, beide Trupps, Wutring, Hornleuchten, Haltepunkt.
+	"Barricade", "Squad_Fight", "Squad_Idle", "RageAura", "HornBlast", "HoldPoint"]
+
+
+## Einzelne Berserker des Kampftrupps (Berserker_F0, Berserker_F1, …) bleiben beweglich, ihre Körperteile nicht.
+static func _is_pivot(name: String) -> bool:
+	if name in PIVOTS:
+		return true
+	return name.begins_with("Berserker_F") and name.trim_prefix("Berserker_F").is_valid_int()
 
 ## Zwerge entstehen aus den Abenteurer-Figuren: kleiner, und in der Höhe stärker gestaucht als in der Breite.
 const DWARF_SCALE := Vector3(0.62, 0.5, 0.62)
@@ -53,8 +62,9 @@ const TOWERS := {
 	"shieldwall": {
 		"levels": ["berserker_camp_lvl1", "berserker_camp_lvl2", "berserker_camp_lvl3"],
 		"specs": {"bulwark": "berserker_camp_ironwall", "berserker": "berserker_camp_bloodrage"},
-		# Das Lager ist länglich und wird längs zum Weg gedreht. Etwas kleiner, damit es auf ein Feld passt.
-		"scale": 0.5, "along_path": true,
+		# Das Lager steht mit seinem Ursprung in der Mitte des Stollens daneben, die Sperre schwenkt über den Weg.
+		# Der Weg im Modell ist 2,4 m breit, ein Feld 2 m.
+		"scale": 0.8, "on_path": true,
 	},
 }
 ## scale: Maßstab des Modells, unabhängig von der Größe in den Spieldaten. hover: Abstand zum Boden.
@@ -181,7 +191,7 @@ static func _bake(src: Node3D) -> Node3D:
 	# 1. Welche Knoten bleiben erhalten?
 	var keep := {src: true}
 	for n in src.find_children("*", "Node3D", true, false):
-		if String(n.name) in PIVOTS:
+		if _is_pivot(String(n.name)):
 			keep[n] = true
 	var player := src.find_child("AnimationPlayer", true, false) as AnimationPlayer
 	if player != null:
@@ -290,11 +300,6 @@ static func tower(type: String, level: int, spec: String) -> Node3D:
 		offset = atan2(local.x, local.z)
 	node.set_meta("aim_offset", offset)
 	node.set_meta("muzzle_height", _height_of(node, muzzle) if muzzle != null else 1.2)
-	if def.get("along_path", false):
-		# Das Lager ist nicht um seinen Ursprung herum gebaut: mittig auf das Feld schieben.
-		var box := _aabb(node, Transform3D())
-		var center := box.get_center() * node.scale
-		node.position = Vector3(-center.x, 0.0, -center.z)
 	return node
 
 

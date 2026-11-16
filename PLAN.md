@@ -230,6 +230,7 @@ Bekannte Schwächen:
 - Alle sechs Türme zeigen je Stufe und Spezialisierung ein eigenes Modell. Der Drehkopf zielt auf den Gegner, die Schnellfeuerkanone dreht ihre Läufe, die Runenkristalle drehen sich.
 - Geschosse und Treffereffekte je Turm und Spezialisierung: Bolzen, Kanonenkugel, Mörserbombe, Feuerball, Bomben, Explosion, Lavalache, Frostring, Eissplitter, Flammenstoß.
 - Die Skelette sind ersetzt: Goblin, Draugr, Kobold-Sappeur, Goblin-Schamane (zaubert beim Heilen), Steingolem, Gefallener König. Gegner im Schildwall zeigen eine eigene Halte-Pose.
+- Das Berserker-Lager (Schildwall) steht neben dem Stollen auf Weghöhe. Hält es Gegner fest, schwenkt die Sperre quer über den Weg, der Kampftrupp tritt vor, der Wutring pulsiert und das Kriegshorn leuchtet. Sein Bauplatz wird dafür flach dargestellt.
 - Rattenschwarm, Schattenspinne, Höhlentroll und Tiefenwurm sind als Modelle da, haben aber noch keine Rolle im Spiel.
 - Die vielen Einzelteile werden beim Laden zusammengefasst (Armbrustturm Stufe 3: 158 Teile werden zu 3 Netzen).
 

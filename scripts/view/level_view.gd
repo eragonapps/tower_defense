@@ -549,6 +549,18 @@ func _sync_views(alpha: float) -> void:
 			var dir := p.target_pos - p.pos
 			if dir.length_squared() > 0.0001:
 				view.rotation.y = atan2(dir.x, dir.y)
+	for t in sim.towers:
+		if t.stats.get("kind", "") == "block" and _tower_views.has(t.id):
+			var holding := false
+			for e in sim.enemies:
+				if e.held_by == t and e.hold_left > 0.0:
+					holding = true
+					break
+			var model: Node3D = _tower_views[t.id].get_node("Model")
+			_set_camp_state(model, holding)
+			var aura := model.find_child("RageAura", true, false) as Node3D
+			if aura != null and holding:
+				aura.scale = Vector3.ONE * (1.0 + 0.08 * sin(_fx_time * 8.0))
 	for cell in _dig_views:
 		var job := sim.dig_job_at(cell)
 		if job != null:
@@ -636,8 +648,10 @@ func _release_enemy_view(view: Node3D) -> void:
 
 
 func _on_tower_built(t: GameSim.Tower) -> void:
+	if Models.TOWERS.get(t.type, {}).get("on_path", false):
+		_rebuild_terrain()
 	var view := _make_tower(t)
-	view.position = to_world(t.pos, SLOT_HEIGHT)
+	view.position = to_world(t.pos, cell_height(t.cell))
 	add_child(view)
 	_tower_views[t.id] = view
 	Sfx.play("build")
@@ -681,7 +695,11 @@ func _on_tower_moved(t: GameSim.Tower, from: Vector2i) -> void:
 	if view == null:
 		return
 	_burst(to_world(MineGrid.center(from), SLOT_HEIGHT + 0.3), Color(0.6, 0.55, 0.5), 8)
-	view.position = to_world(t.pos, SLOT_HEIGHT)
+	if Models.TOWERS.get(t.type, {}).get("on_path", false):
+		# Das Lager richtet sich am neuen Stollen aus, der alte Bauplatz wird wieder ein Block.
+		_rebuild_terrain()
+		_set_tower_model(view, t)
+	view.position = to_world(t.pos, cell_height(t.cell))
 	_burst(view.position + Vector3(0, 0.3, 0), Color(0.6, 0.55, 0.5), 10)
 
 
@@ -734,6 +752,8 @@ func _on_tower_sold(t: GameSim.Tower) -> void:
 	if view != null:
 		view.queue_free()
 		_tower_views.erase(t.id)
+	if Models.TOWERS.get(t.type, {}).get("on_path", false):
+		_rebuild_terrain()
 	Sfx.play("sell")
 
 
@@ -786,8 +806,14 @@ func _on_aura_pulsed(t: GameSim.Tower) -> void:
 		return
 	var view: Node3D = _tower_views[t.id]
 	if t.stats.get("kind", "") == "block":
-		# Das Lager schlägt zu: kurzes Federn und ein Schlag.
-		_tower_attack(t, Vector2.ZERO)
+		# Die Berserker vor der Sperre stoßen zu.
+		var squad := view.find_child("Squad_Fight", true, false) as Node3D
+		if squad != null:
+			for b in squad.get_children():
+				if b is Node3D and String(b.name).begins_with("Berserker_F"):
+					var tween := (b as Node3D).create_tween()
+					tween.tween_property(b, "rotation:z", -0.35, 0.08)
+					tween.tween_property(b, "rotation:z", 0.0, 0.18)
 		Sfx.play("hit", -8.0)
 		return
 	var radius := float(t.stats["range"]) * CELL
@@ -1036,8 +1062,6 @@ func _make_enemy(e: GameSim.Enemy) -> Node3D:
 func _make_tower(t: GameSim.Tower) -> Node3D:
 	var root := Node3D.new()
 	_set_tower_model(root, t)
-	if Models.TOWERS.get(t.type, {}).get("along_path", false):
-		root.rotation.y = _along_path_angle(t.cell)
 	return root
 
 
@@ -1057,6 +1081,9 @@ func _set_tower_model(root: Node3D, t: GameSim.Tower) -> void:
 	var model := Models.tower(t.type, t.level, t.spec)
 	model.name = "Model"
 	root.add_child(model)
+	if Models.TOWERS.get(t.type, {}).get("on_path", false):
+		_place_on_path(model, t.cell)
+		_set_camp_state(model, false, true)
 	var turret: Node3D = model.get_meta("turret")
 	if turret != null:
 		turret.rotation.y = yaw
@@ -1065,12 +1092,56 @@ func _set_tower_model(root: Node3D, t: GameSim.Tower) -> void:
 			_spinners.append(n)
 
 
-## Das längliche Lager liegt parallel zum Stollen neben ihm.
-func _along_path_angle(cell: Vector2i) -> float:
+## Stellt das Berserker-Lager an den Stollen: Ursprung in die Mitte des Stollenfelds neben dem Bauplatz,
+## das Lager zeigt zum Bauplatz (im Modell -Z), die Gegner kommen von +X. Kommen sie von der anderen
+## Seite, wird das Modell gespiegelt.
+func _place_on_path(model: Node3D, cell: Vector2i) -> void:
+	var g := sim.grid
+	var path := cell
+	var on_route := g.path_cells()
 	for d in MineGrid.DIRS:
-		if sim.grid.is_walkable(cell + d):
-			return 0.0 if d.x != 0 else PI / 2.0
-	return 0.0
+		if g.is_walkable(cell + d) and (path == cell or (cell + d) in on_route):
+			path = cell + d
+	if path == cell:
+		return
+	var to_camp := Vector3(cell.x - path.x, 0, cell.y - path.y)
+	var side := Vector2i(-(cell.y - path.y), cell.x - path.x)
+	# Gegner kommen von der Seite, die weiter vom Herz entfernt ist.
+	var a := g.distance(path + side)
+	var b := g.distance(path - side)
+	if b != MineGrid.UNREACHABLE and (a == MineGrid.UNREACHABLE or b > a):
+		side = -side
+	var upstream := Vector3(side.x, 0, side.y)
+	var scale := float(Models.TOWERS["shieldwall"]["scale"])
+	model.transform = Transform3D(Basis(upstream, Vector3.UP, -to_camp).scaled(Vector3.ONE * scale),
+		to_world(MineGrid.center(path)) - to_world(MineGrid.center(cell)))
+
+
+## Schaltet das Lager zwischen offen und festhaltend um: Sperre schwenken, Trupps tauschen, Wutring zeigen.
+func _set_camp_state(model: Node3D, holding: bool, instant := false) -> void:
+	# Ein Standardwert null zählt in Godot als „kein Standardwert", deshalb erst nachsehen.
+	if model.has_meta("holding") and model.get_meta("holding") == holding:
+		return
+	model.set_meta("holding", holding)
+	var barricade := model.find_child("Barricade", true, false) as Node3D
+	if barricade != null:
+		var target := 0.0 if holding else -PI / 2.0
+		if instant:
+			barricade.rotation.y = target
+		else:
+			barricade.create_tween().tween_property(barricade, "rotation:y", target, 0.25).set_trans(Tween.TRANS_BACK)
+	for pair in [["Squad_Fight", holding], ["Squad_Idle", not holding], ["RageAura", holding]]:
+		var n := model.find_child(pair[0], true, false) as Node3D
+		if n != null:
+			n.visible = pair[1]
+	var horn := model.find_child("HornBlast", true, false) as Node3D
+	if horn != null:
+		horn.visible = false
+		if holding and not instant:
+			horn.visible = true
+			get_tree().create_timer(0.4).timeout.connect(func() -> void:
+				if is_instance_valid(horn):
+					horn.visible = false)
 
 
 ## Ein Zwerg mit Axt und Laterne, der auf der Erzader steht.
@@ -1186,6 +1257,10 @@ func _build_environment() -> void:
 func cell_height(c: Vector2i) -> float:
 	match sim.grid.get_cell(c):
 		MineGrid.Cell.BUILD:
+			# Das Berserker-Lager steht auf Weghöhe, sein Bauplatz ist deshalb flach.
+			var tower := sim.tower_at(c)
+			if tower != null and Models.TOWERS.get(tower.type, {}).get("on_path", false):
+				return 0.0
 			return SLOT_HEIGHT
 		MineGrid.Cell.ROCK, MineGrid.Cell.ORE:
 			return 0.75 + _variation(c) * 0.45
@@ -1217,9 +1292,13 @@ func _rebuild_terrain() -> void:
 					floors.append(Transform3D(Basis(), at + Vector3(0, -0.1, 0)))
 					floor_colors.append(Color(0.37, 0.29, 0.22).lerp(Color(0.31, 0.25, 0.2), v))
 				MineGrid.Cell.BUILD:
-					blocks.append(_block(at, h))
-					block_colors.append(Color(0.36, 0.34, 0.33))
-					pads.append(Transform3D(Basis(), at + Vector3(0, h + 0.03, 0)))
+					if h <= 0.0:
+						floors.append(Transform3D(Basis(), at + Vector3(0, -0.1, 0)))
+						floor_colors.append(Color(0.37, 0.29, 0.22))
+					else:
+						blocks.append(_block(at, h))
+						block_colors.append(Color(0.36, 0.34, 0.33))
+						pads.append(Transform3D(Basis(), at + Vector3(0, h + 0.03, 0)))
 				MineGrid.Cell.ROCK:
 					blocks.append(_block(at, h))
 					block_colors.append(Color(0.2, 0.175, 0.155).lerp(Color(0.15, 0.135, 0.125), v))
@@ -1562,6 +1641,43 @@ func demo(state: String) -> void:
 			sim.upgrade_tower(slots[i])
 	if state == "build":
 		select_cell(slots[9])
+		return
+	if state == "camp_open" or state == "camp_hold":
+		# Zwei Lager nebeneinander am Stollen, im zweiten Bild halten sie Gegner fest.
+		sim.gold = 9999
+		var placed: Array[Vector2i] = []
+		for slot in slots:
+			if placed.size() >= 2:
+				break
+			for d in MineGrid.DIRS:
+				var side := Vector2i(-d.y, d.x)
+				if sim.grid.is_walkable(slot + d) and sim.grid.is_walkable(slot + d + side) and sim.grid.is_walkable(slot + d - side):
+					if sim.build_tower(slot, "shieldwall") == GameSim.Result.OK:
+						placed.append(slot)
+					break
+		sim.start_next_wave()
+		if state == "camp_hold":
+			# Drei zähe Gegner direkt an die Sperre stellen und festhalten.
+			var camp_tower := sim.tower_at(placed[0])
+			var model: Node3D = _tower_views[camp_tower.id].get_node("Model")
+			var hold := model.find_child("HoldPoint", true, false) as Node3D
+			for k in 3:
+				sim._spawn("draugr", 0)
+				var e: GameSim.Enemy = sim.enemies[-1]
+				e.hp = 1e9
+				e.max_hp = 1e9
+				var spot: Vector3 = hold.global_position if hold != null and hold.is_inside_tree() else _tower_views[camp_tower.id].position
+				e.pos = Vector2(spot.x, spot.z) / CELL + Vector2(0.25 * k, -0.2 + 0.2 * k)
+				e.prev_pos = e.pos
+				e.held_by = camp_tower
+				e.hold_left = 9.0
+			_sync_views(1.0)
+			var barricade := model.find_child("Barricade", true, false) as Node3D
+			barricade.rotation.y = 0.0
+		_sync_views(1.0)
+		rig.distance *= 0.32
+		rig.position = to_world(MineGrid.center(placed[0]))
+		rig._apply()
 		return
 	if state == "towers":
 		# Jeder Turmtyp in Stufe 1, 2, 3 und beiden Spezialisierungen, für einen Überblick.

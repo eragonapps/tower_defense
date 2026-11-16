@@ -116,3 +116,108 @@ func test_level_scene_swaps_models_on_upgrade_and_plays_enemy_poses() -> void:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(Progress.save_path))
 	Progress.save_path = real_save
 	Progress.load_progress()
+
+
+# --- Berserker-Lager ------------------------------------------------------
+
+func _camp_level() -> LevelView:
+	LevelView.level_id = "level_04"
+	LevelView.run_seed = 3
+	var l: LevelView = load("res://scenes/level.tscn").instantiate()
+	add_child_autofree(l)
+	l.set_process(false)
+	l.sim.gold = 9999
+	return l
+
+
+func _slot_beside_straight_path(l: LevelView) -> Vector2i:
+	for slot in l.sim.grid.cells_of_type(MineGrid.Cell.BUILD):
+		for d in MineGrid.DIRS:
+			var p := slot + d
+			var side := Vector2i(-d.y, d.x)
+			if l.sim.grid.is_walkable(p) and l.sim.grid.is_walkable(p + side) and l.sim.grid.is_walkable(p - side):
+				return slot
+	return LevelView.NO_CELL
+
+
+func test_camp_keeps_its_moving_parts() -> void:
+	var camp := Models.tower("shieldwall", 3, "")
+	for part in ["Barricade", "Squad_Fight", "Squad_Idle", "RageAura", "HornBlast", "HoldPoint", "Berserker_F0"]:
+		assert_not_null(camp.find_child(part, true, false), part)
+	assert_null(camp.find_child("Berserker_F0_Leg-1", true, false), "Körperteile werden zusammengefasst")
+	camp.free()
+
+
+func test_camp_stands_on_the_path_and_its_slot_is_flat() -> void:
+	var l := _camp_level()
+	var slot := _slot_beside_straight_path(l)
+	assert_ne(slot, LevelView.NO_CELL)
+	assert_eq(l.cell_height(slot), LevelView.SLOT_HEIGHT)
+	l.sim.build_tower(slot, "shieldwall")
+	assert_eq(l.cell_height(slot), 0.0, "der Bauplatz des Lagers liegt auf Weghöhe")
+	var view: Node3D = l._tower_views[l.sim.towers[0].id]
+	assert_almost_eq(view.position.y, 0.0, 0.001)
+	var model: Node3D = view.get_node("Model")
+	# Der Ursprung des Modells liegt in der Mitte des Stollenfelds neben dem Bauplatz.
+	var origin := view.position + model.position
+	var cell := MineGrid.cell_at(Vector2(origin.x, origin.z) / LevelView.CELL)
+	assert_true(l.sim.grid.is_walkable(cell), "Ursprung liegt auf dem Weg")
+	assert_eq((cell - slot).length_squared(), 1, "direkt neben dem Bauplatz")
+	# Das Lager selbst (im Modell -Z) zeigt vom Weg zum Bauplatz.
+	var to_camp := -model.basis.z.normalized()
+	assert_almost_eq(Vector2(to_camp.x, to_camp.z).dot(Vector2(slot - cell)), 1.0, 0.01)
+	# Verkauf: der Bauplatz wird wieder ein Block.
+	l.sim.sell_tower(slot)
+	assert_eq(l.cell_height(slot), LevelView.SLOT_HEIGHT)
+
+
+func test_camp_closes_the_path_while_holding_and_opens_again() -> void:
+	var l := _camp_level()
+	var slot := _slot_beside_straight_path(l)
+	l.sim.build_tower(slot, "shieldwall")
+	var t: GameSim.Tower = l.sim.towers[0]
+	var model: Node3D = l._tower_views[t.id].get_node("Model")
+	var barricade := model.find_child("Barricade", true, false) as Node3D
+	var fight := model.find_child("Squad_Fight", true, false) as Node3D
+	var idle := model.find_child("Squad_Idle", true, false) as Node3D
+	assert_almost_eq(barricade.rotation.y, -PI / 2.0, 0.001, "offen: Sperre am Wegrand")
+	assert_false(fight.visible)
+	assert_true(idle.visible)
+	l.sim.start_next_wave()
+	l.sim._spawn("draugr", 0)
+	var e: GameSim.Enemy = l.sim.enemies[-1]
+	e.held_by = t
+	e.hold_left = 3.0
+	l._sync_views(1.0)
+	assert_true(model.get_meta("holding"))
+	assert_true(fight.visible, "der Kampftrupp steht vor der Sperre")
+	assert_false(idle.visible)
+	assert_true((model.find_child("RageAura", true, false) as Node3D).visible)
+	await wait_seconds(0.4)
+	assert_almost_eq(barricade.rotation.y, 0.0, 0.05, "festhalten: Sperre quer über dem Weg")
+	e.hold_left = 0.0
+	e.held_by = null
+	l._sync_views(1.0)
+	assert_false(model.get_meta("holding"))
+	assert_true(idle.visible)
+	LevelView.run_seed = 0
+
+
+func test_moving_the_camp_turns_it_to_the_new_path() -> void:
+	var l := _camp_level()
+	var slots := l.sim.grid.cells_of_type(MineGrid.Cell.BUILD)
+	var slot := _slot_beside_straight_path(l)
+	l.sim.build_tower(slot, "shieldwall")
+	var target := LevelView.NO_CELL
+	for s in slots:
+		if s != slot and l.sim.tower_at(s) == null:
+			target = s
+			break
+	assert_eq(l.sim.move_tower(slot, target), GameSim.Result.OK)
+	assert_eq(l.cell_height(slot), LevelView.SLOT_HEIGHT, "der alte Platz ist wieder ein Block")
+	assert_eq(l.cell_height(target), 0.0)
+	var view: Node3D = l._tower_views[l.sim.towers[0].id]
+	var origin: Vector3 = view.position + (view.get_node("Model") as Node3D).position
+	var cell := MineGrid.cell_at(Vector2(origin.x, origin.z) / LevelView.CELL)
+	assert_eq((cell - target).length_squared(), 1)
+	LevelView.run_seed = 0
